@@ -11,13 +11,15 @@ This repository retains operator-accepted applications produced by the `@samchon
 For example:
 
 ```text
-codex/gpt-5.6-luna/todo/evidence/
-codex/gpt-5.6-luna/todo/plain/
+codex/gpt-5.6-terra/todo/evidence/
+codex/gpt-5.6-terra/todo/plain/
 claude-code/sonnet-5/todo/evidence/
 claude-code/sonnet-5/todo/plain/
 ```
 
 `project` is one of `todo`, `reddit`, `shopping`, or `erp`. `mode` is `evidence` or `plain`. Filesystem model names are stable lowercase slugs; `benchmark.json` retains the exact provider model identity.
+
+The current campaign uses Codex `gpt-5.6-terra` at `high` effort and Claude Code `sonnet-5` at `high` effort.
 
 ## Result contract
 
