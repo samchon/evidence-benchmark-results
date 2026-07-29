@@ -63,7 +63,8 @@ function readManifest(leaf) {
     !runId.test(manifest.runId ?? "") ||
     !commit.test(manifest.sourceCommit ?? "") ||
     !/^[0-9a-f]{64}$/i.test(manifest.instructionsTreeSha256 ?? "") ||
-    !/^[0-9a-f]{64}$/i.test(manifest.requirementsTreeSha256 ?? "")
+    !/^[0-9a-f]{64}$/i.test(manifest.requirementsTreeSha256 ?? "") ||
+    !/^[0-9a-f]{64}$/i.test(manifest.completedWorkspaceTreeSha256 ?? "")
   )
     throw new Error(`Invalid benchmark identity: ${relativeLeaf}/benchmark.json`);
   for (const required of [

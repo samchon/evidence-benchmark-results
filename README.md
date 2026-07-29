@@ -25,7 +25,7 @@ The current campaign uses Codex `gpt-5.6-terra` at `high` effort and Claude Code
 
 Each leaf is a self-contained generated application and includes:
 
-- `benchmark.json` with the agent, model, project, mode, run identity, source revision, frozen-input hashes, and acceptance status;
+- `benchmark.json` with the agent, model, project, mode, run identity, source revision, frozen-input hashes, completed-workspace hash, and acceptance status;
 - `benchmark-report.json` with elapsed time, native token categories, API-equivalent cost, coverage, quality, and intervention findings;
 - the complete application source, lockfile, and tests; and
 - `.benchmark-deps/*.tgz` when the frozen lockfile installs the locally packed evidence plugin.
