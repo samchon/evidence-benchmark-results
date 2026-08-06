@@ -1,0 +1,2 @@
+import * as core from "@nestia/core"; import { Controller } from "@nestjs/common"; import type { IAuth, IPage, IPayslip } from "@benchmark/erp-api"; import { PayrollProvider } from "../providers/PayrollProvider";
+/** Lists payslips. */ @Controller("payslip-search") export class PayslipIndexController { @core.TypedRoute.Patch() public async index(@core.TypedHeaders() h: IAuth.IHeaders, @core.TypedBody() input: IPayslip.IRequest): Promise<IPage<IPayslip>> { return PayrollProvider.payslipIndex(h, input); } }

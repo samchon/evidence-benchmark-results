@@ -1,0 +1,2 @@
+import * as core from "@nestia/core"; import { Controller } from "@nestjs/common"; import type { IAuth, IPage, IDisposition } from "@benchmark/erp-api"; import { QualityServiceProvider } from "../providers/QualityServiceProvider";
+/** Lists disposition records. */ @Controller("disposition-search") export class DispositionIndexController { @core.TypedRoute.Patch() public async index(@core.TypedHeaders() h: IAuth.IHeaders, @core.TypedBody() input: IDisposition.IRequest): Promise<IPage<IDisposition>> { return QualityServiceProvider.dispositionIndex(h, input); } }

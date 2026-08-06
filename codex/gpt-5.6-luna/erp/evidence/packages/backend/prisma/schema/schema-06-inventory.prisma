@@ -1,0 +1,57 @@
+/// Organization inventory item master.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-item-item-lifecycle Stores SKU, tracking, planning, and lifecycle identity.
+/// @evidence docs/analysis/03-functional-requirements.md#req-fun-item-item-operations Owns item master and stock-effect identity.
+/// @evidence docs/analysis/04-business-rules.md#req-rule-item-item-stock-effect-rules Preserves item tracking and stock-effect configuration.
+model items {
+  id String @id
+  organization_id String
+  sku String
+  name String
+  description String?
+  item_type String
+  uom_id String?
+  tracking_mode String
+  reorder_point Decimal?
+  active Boolean
+  created_at DateTime
+  updated_at DateTime
+  organization organizations @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  inventory_lots inventory_lots[]
+  item_serials item_serials[]
+  @@unique([organization_id, sku])
+  @@index([organization_id, active])
+}
+
+/// Organization warehouse master.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-warehouse-warehouses Stores warehouse identity and lifecycle.
+/// @evidence docs/analysis/03-functional-requirements.md#req-fun-warehouse-warehouse-operations Owns warehouse lifecycle and organization scope.
+model warehouses {
+  id String @id
+  organization_id String
+  code String
+  name String
+  active Boolean
+  created_at DateTime
+  updated_at DateTime
+  organization organizations @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  locations storage_locations[]
+  @@unique([organization_id, code])
+}
+
+/// Hierarchical storage location inside a warehouse.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-location-storage-locations Stores bounded location hierarchy and lifecycle.
+/// @evidence docs/analysis/03-functional-requirements.md#req-fun-location-storage-location-operations Owns storage location hierarchy and lifecycle.
+model storage_locations {
+  id String @id
+  warehouse_id String
+  parent_id String?
+  code String
+  name String
+  depth Int
+  active Boolean
+  created_at DateTime
+  updated_at DateTime
+  warehouse warehouses @relation(fields: [warehouse_id], references: [id], onDelete: Cascade)
+  @@unique([warehouse_id, code])
+  @@index([warehouse_id, parent_id])
+}

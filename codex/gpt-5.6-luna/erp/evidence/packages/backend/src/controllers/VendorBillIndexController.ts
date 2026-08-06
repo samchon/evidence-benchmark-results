@@ -1,0 +1,2 @@
+import * as core from "@nestia/core"; import { Controller } from "@nestjs/common"; import type { IAuth, IPage, IVendorBill } from "@benchmark/erp-api"; import { ProcurementSettlementProvider } from "../providers/ProcurementSettlementProvider";
+/** Lists vendor bills. */ @Controller("vendor-bill-search") export class VendorBillIndexController { @core.TypedRoute.Patch() public async index(@core.TypedHeaders() h: IAuth.IHeaders, @core.TypedBody() input: IVendorBill.IRequest): Promise<IPage<IVendorBill>> { return ProcurementSettlementProvider.billIndex(h, input); } }

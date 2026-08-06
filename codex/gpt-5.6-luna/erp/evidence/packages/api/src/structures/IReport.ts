@@ -1,0 +1,3 @@
+import type { tags } from "typia";
+export interface IReport { category: string; kind: string; organizationId: string & tags.Format<"uuid">; generatedAt: string & tags.Format<"date-time">; filters: IReport.IFilters; rows: Array<IReport.IRow>; }
+export namespace IReport { export interface IFilters { from?: null | (string & tags.Format<"date-time">); to?: null | (string & tags.Format<"date-time">); status?: null | string; customerId?: null | string; vendorId?: null | string; itemId?: null | string; warehouseId?: null | string; projectId?: null | string; employeeId?: null | string; } export interface IRow { key: string; count: number; amount?: number; status?: string; } export interface IRequest extends IFilters { kind: string; } }

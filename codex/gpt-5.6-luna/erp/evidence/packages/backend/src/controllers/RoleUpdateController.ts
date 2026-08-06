@@ -1,0 +1,2 @@
+import * as core from "@nestia/core"; import { Controller } from "@nestjs/common"; import type { IAuth, IRole } from "@benchmark/erp-api"; import { RoleProvider } from "../providers/RoleProvider";
+/** Updates an Owner-defined custom role's permission composition. */ @Controller("role-update") export class RoleUpdateController { @core.TypedRoute.Put(":id") public async update(@core.TypedHeaders() headers: IAuth.IHeaders, @core.TypedParam("id") id: string, @core.TypedBody() input: IRole.IUpdate): Promise<IRole> { return RoleProvider.update(headers, id, input); } }

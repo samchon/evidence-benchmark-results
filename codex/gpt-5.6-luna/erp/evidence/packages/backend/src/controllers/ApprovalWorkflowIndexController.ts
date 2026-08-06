@@ -1,0 +1,2 @@
+import * as core from "@nestia/core"; import { Controller } from "@nestjs/common"; import type { IApprovalWorkflow, IAuth, IPage } from "@benchmark/erp-api"; import { ApprovalProvider } from "../providers/ApprovalProvider";
+/** Lists approval workflows. */ @Controller("approval-workflow-search") export class ApprovalWorkflowIndexController { @core.TypedRoute.Patch() public async index(@core.TypedHeaders() h: IAuth.IHeaders, @core.TypedBody() input: IApprovalWorkflow.IRequest): Promise<IPage<IApprovalWorkflow>> { return ApprovalProvider.workflowIndex(h, input); } }

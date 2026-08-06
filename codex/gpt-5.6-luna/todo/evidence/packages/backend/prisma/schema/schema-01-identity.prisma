@@ -1,0 +1,101 @@
+/// Credentialed account identity used by the private Todo product.
+///
+/// @evidence docs/analysis/01-actors-and-auth.md#req-auth-provision-account-provisioning-and-login Stores the credential identity.
+/// @evidence docs/analysis/01-actors-and-auth.md#req-auth-provision-1-register-a-private-account Stores registration state.
+/// @evidence docs/analysis/01-actors-and-auth.md#req-auth-provision-2-log-in-with-email-and-password Stores login state.
+/// @evidence docs/analysis/01-actors-and-auth.md#req-auth-manage-account-management Stores account security state.
+/// @evidence docs/analysis/01-actors-and-auth.md#req-auth-manage-1-change-the-account-password Stores replacement state.
+/// @evidence docs/analysis/01-actors-and-auth.md#req-auth-manage-2-recover-a-forgotten-password Stores recoverable account state.
+/// @evidence docs/analysis/01-actors-and-auth.md#req-auth-manage-3-permanently-delete-the-account Owns terminal deletion.
+/// @evidence docs/analysis/01-actors-and-auth.md#req-auth-boundary-private-account-authority Defines ownership root.
+/// @evidence docs/analysis/01-actors-and-auth.md#req-auth-boundary-1-require-authentication-for-private-capabilities Anchors authority.
+/// @evidence docs/analysis/01-actors-and-auth.md#req-auth-boundary-2-limit-authority-to-owned-private-information Anchors owner identity.
+/// @evidence docs/analysis/04-business-rules.md#req-rule-credential-credential-rules Stores credential facts.
+/// @evidence docs/analysis/04-business-rules.md#req-rule-credential-1-canonicalize-and-uniquely-identify-email-accounts Stores unique canonical email.
+/// @evidence docs/analysis/04-business-rules.md#req-rule-credential-2-apply-the-password-length-rule Stores resulting credential.
+/// @evidence docs/analysis/04-business-rules.md#req-rule-credential-4-secure-credential-replacement Stores replacement state.
+/// @evidence docs/analysis/05-non-functional.md#req-nfr-privacy-private-data-isolation Anchors private ownership.
+/// @evidence docs/analysis/05-non-functional.md#req-nfr-privacy-1-isolate-every-accounts-private-information Anchors account isolation.
+model todo_accounts {
+  /// Application-assigned UUID.
+  id String @id
+
+  /// Canonical lower-case, trimmed login email.
+  email String @unique
+
+  /// Password hash; plaintext credentials never persist.
+  password_hash String
+
+  /// Account creation instant.
+  created_at DateTime
+
+  /// One private profile owned by the account.
+  profile todo_profiles?
+
+  /// Authenticated sessions issued for the account.
+  sessions todo_sessions[]
+
+  /// Owned Todo collection.
+  todos todo_todos[]
+}
+
+/// Private display profile paired one-to-one with an account.
+///
+/// @evidence docs/analysis/02-domain-model.md#req-dom-profile-profile-meaning-and-relationship Represents the private display identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-profile-1-define-the-user-profile Stores display identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-profile-2-bind-one-private-profile-to-each-account Enforces one-to-one ownership.
+/// @evidence docs/analysis/04-business-rules.md#req-rule-profile-display-name-rules Stores accepted display names.
+/// @evidence docs/analysis/04-business-rules.md#req-rule-profile-1-validate-private-display-names Stores the normalized name.
+/// @evidence docs/analysis/03-functional-requirements.md#req-func-profile-profile-operations Represents profile operation state.
+/// @evidence docs/analysis/03-functional-requirements.md#req-func-profile-1-view-the-current-users-profile Represents profile reads.
+/// @evidence docs/analysis/03-functional-requirements.md#req-func-profile-2-edit-the-display-name Represents profile edits.
+model todo_profiles {
+  /// Application-assigned UUID.
+  id String @id
+
+  /// Owning account identifier.
+  todo_account_id String @unique
+
+  /// Current private display name.
+  display_name String
+
+  /// Profile creation instant.
+  created_at DateTime
+
+  /// Last display-name change instant.
+  updated_at DateTime
+
+  /// Owning account.
+  account todo_accounts @relation(fields: [todo_account_id], references: [id], onDelete: Cascade)
+}
+
+/// One authenticated connection for an account.
+///
+/// @evidence docs/analysis/01-actors-and-auth.md#req-auth-session-session-continuity-and-logout Persists session continuity.
+/// @evidence docs/analysis/01-actors-and-auth.md#req-auth-session-1-continue-an-authenticated-session Persists renewable session.
+/// @evidence docs/analysis/01-actors-and-auth.md#req-auth-session-2-log-out-the-current-session Persists current revocation.
+/// @evidence docs/analysis/01-actors-and-auth.md#req-auth-session-3-log-out-all-sessions Persists account-wide revocation.
+model todo_sessions {
+  /// Application-assigned UUID.
+  id String @id
+
+  /// Owning account identifier.
+  todo_account_id String
+
+  /// Hash of the issued refresh proof.
+  refresh_token_hash String @unique
+
+  /// Session creation instant.
+  created_at DateTime
+
+  /// Refresh proof expiry instant.
+  expires_at DateTime
+
+  /// Revocation instant; null means currently valid.
+  revoked_at DateTime?
+
+  /// Owning account.
+  account todo_accounts @relation(fields: [todo_account_id], references: [id], onDelete: Cascade)
+
+  @@index([todo_account_id])
+}

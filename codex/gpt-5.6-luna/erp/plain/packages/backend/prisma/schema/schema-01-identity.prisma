@@ -1,0 +1,176 @@
+model users {
+ id String @id
+ email String @unique
+ password_hash String
+ display_name String
+ avatar String?
+ phone String?
+ locale String
+ timezone String
+ status String
+ created_at DateTime
+ updated_at DateTime
+ memberships memberships[]
+ sessions sessions[]
+ recovery_proofs recovery_proofs[]
+ accepted_invitations invitations[] @relation("accepted_invitations")
+ organizations organizations[] @relation("organization_creator")
+ issued_invitations invitations[] @relation("inviter")
+ attachments attachments[]
+ comments comments[]
+ contacts contacts[]
+ journal_entries journal_entries[] @relation("journal_creator")
+ period_close_events period_close_events[] @relation("close_actor")
+}
+model organizations {
+ id String @id
+ name String
+ code String @unique
+ status String
+ base_currency_code String
+ created_by_user_id String
+ created_at DateTime
+ updated_at DateTime
+ creator users @relation("organization_creator", fields:[created_by_user_id], references:[id])
+ memberships memberships[]
+ invitations invitations[]
+ roles roles[]
+ sessions sessions[]
+ system_principal system_principals?
+ addresses addresses[]
+ address_links address_links[]
+ contacts contacts[]
+ contact_assignments contact_assignments[]
+ currencies currencies[]
+ exchange_rates exchange_rates[]
+ payment_terms payment_terms[]
+ attachments attachments[]
+ comments comments[]
+ tags tags[]
+ tag_assignments tag_assignments[]
+ custom_field_definitions custom_field_definitions[]
+ custom_field_values custom_field_values[]
+ tax_jurisdictions tax_jurisdictions[]
+ tax_codes tax_codes[]
+ units_of_measure units_of_measure[]
+ document_number_sequences document_number_sequences[]
+ fiscal_years fiscal_years[]
+ ledger_accounts ledger_accounts[]
+ journal_entries journal_entries[]
+ period_close_events period_close_events[]
+ vendors vendors[]
+ customers customers[]
+ items items[]
+ warehouses warehouses[]
+ storage_locations storage_locations[]
+ departments departments[]
+ employees employees[]
+ projects projects[]
+ tasks tasks[]
+ purchase_requests purchase_requests[]
+ purchase_orders purchase_orders[]
+ vendor_bills vendor_bills[]
+ vendor_payments vendor_payments[]
+ sales_orders sales_orders[]
+ sales_invoices sales_invoices[]
+ stock_movements stock_movements[]
+ bank_accounts bank_accounts[]
+ bank_transactions bank_transactions[]
+ reconciliations reconciliations[]
+ tax_returns tax_returns[]
+ vendor_credits vendor_credits[]
+ payroll_runs payroll_runs[]
+ payslips payslips[]
+ fixed_assets fixed_assets[]
+ maintenance_orders maintenance_orders[]
+ workflow_definitions workflow_definitions[]
+ approval_requests approval_requests[]
+ audit_events audit_events[]
+ notifications notifications[]
+ timelogs timelogs[]
+ timesheets timesheets[]
+ budgets budgets[]
+ boms boms[]
+ production_orders production_orders[]
+ quality_inspections quality_inspections[]
+ quarantine_records quarantine_records[]
+  service_orders service_orders[]
+  business_records business_records[]
+}
+model memberships {
+ id String @id
+ user_id String
+ organization_id String
+ status String
+ created_at DateTime
+ updated_at DateTime
+ user users @relation(fields:[user_id], references:[id])
+ organization organizations @relation(fields:[organization_id], references:[id])
+ roles membership_roles[]
+ @@unique([user_id,organization_id])
+}
+model sessions {
+ id String @id
+ user_id String
+ organization_id String?
+ token_hash String @unique
+ expires_at DateTime
+ revoked_at DateTime?
+ created_at DateTime
+ user users @relation(fields:[user_id],references:[id])
+ organization organizations? @relation(fields:[organization_id],references:[id])
+}
+model recovery_proofs {
+ id String @id
+ user_id String
+ token_hash String @unique
+ expires_at DateTime
+ used_at DateTime?
+ created_at DateTime
+ user users @relation(fields:[user_id],references:[id])
+ @@index([user_id,expires_at])
+}
+model invitations {
+ id String @id
+ organization_id String
+ inviter_user_id String
+ accepted_user_id String?
+ email String
+ role_key String
+ token_hash String @unique
+ status String
+ expires_at DateTime
+ created_at DateTime
+ accepted_at DateTime?
+ organization organizations @relation(fields:[organization_id],references:[id])
+ inviter users @relation("inviter",fields:[inviter_user_id],references:[id])
+ accepted_user users? @relation("accepted_invitations",fields:[accepted_user_id],references:[id])
+}
+model roles {
+ id String @id
+ organization_id String
+ key String
+ name String
+ built_in Boolean
+ permissions String
+ created_at DateTime
+ organization organizations @relation(fields:[organization_id],references:[id])
+ memberships membership_roles[]
+ @@unique([organization_id,key])
+}
+model membership_roles {
+ id String @id
+ membership_id String
+ role_id String
+ created_at DateTime
+ membership memberships @relation(fields:[membership_id],references:[id])
+ role roles @relation(fields:[role_id],references:[id])
+ @@unique([membership_id,role_id])
+}
+model system_principals {
+ id String @id
+ organization_id String @unique
+ name String
+ created_at DateTime
+ organization organizations @relation(fields:[organization_id],references:[id])
+}

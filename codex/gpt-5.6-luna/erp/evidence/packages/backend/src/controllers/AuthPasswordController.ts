@@ -1,0 +1,2 @@
+import * as core from "@nestia/core"; import { Controller } from "@nestjs/common"; import type { IAuth } from "@benchmark/erp-api"; import { UserProvider } from "../providers/UserProvider";
+/** Changes the authenticated user's password and revokes other sessions. */ @Controller("auth-password") export class AuthPasswordController { @core.TypedRoute.Put() public async change(@core.TypedHeaders() headers: IAuth.IHeaders, @core.TypedBody() input: IAuth.IPasswordChange): Promise<{ success: true }> { return UserProvider.changePassword(headers, input); } }

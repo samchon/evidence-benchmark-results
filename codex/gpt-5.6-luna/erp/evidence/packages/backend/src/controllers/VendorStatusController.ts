@@ -1,0 +1,2 @@
+import * as core from "@nestia/core"; import { Controller } from "@nestjs/common"; import type { IAuth, IVendor } from "@benchmark/erp-api"; import { PartyProvider } from "../providers/PartyProvider";
+/** Activates or deactivates an external vendor. */ @Controller("vendor-status") export class VendorStatusController { @core.TypedRoute.Post(":id") public async status(@core.TypedHeaders() headers: IAuth.IHeaders, @core.TypedParam("id") id: string, @core.TypedBody() input: { active: boolean }): Promise<IVendor> { return PartyProvider.vendorStatus(headers, id, input.active); } }

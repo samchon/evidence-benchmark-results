@@ -1,0 +1,2 @@
+import * as core from "@nestia/core"; import { Controller } from "@nestjs/common"; import type { IAuth, IFixedAsset, IPage } from "@benchmark/erp-api"; import { AssetProvider } from "../providers/AssetProvider";
+/** Lists fixed assets. */ @Controller("fixed-asset-search") export class FixedAssetIndexController { @core.TypedRoute.Patch() public async index(@core.TypedHeaders() h: IAuth.IHeaders, @core.TypedBody() input: IFixedAsset.IRequest): Promise<IPage<IFixedAsset>> { return AssetProvider.assetIndex(h, input); } }

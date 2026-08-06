@@ -1,0 +1,2 @@
+import * as core from "@nestia/core"; import { Controller } from "@nestjs/common"; import type { IAuth, IPage, IQuarantine } from "@benchmark/erp-api"; import { QualityServiceProvider } from "../providers/QualityServiceProvider";
+/** Lists quarantine records. */ @Controller("quarantine-search") export class QuarantineIndexController { @core.TypedRoute.Patch() public async index(@core.TypedHeaders() h: IAuth.IHeaders, @core.TypedBody() input: IQuarantine.IRequest): Promise<IPage<IQuarantine>> { return QualityServiceProvider.quarantineIndex(h, input); } }

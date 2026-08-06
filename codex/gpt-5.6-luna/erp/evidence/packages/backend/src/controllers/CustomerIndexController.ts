@@ -1,0 +1,2 @@
+import * as core from "@nestia/core"; import { Controller } from "@nestjs/common"; import type { IAuth, ICustomer, IPage } from "@benchmark/erp-api"; import { PartyProvider } from "../providers/PartyProvider";
+/** Lists external customers. */ @Controller("customer-search") export class CustomerIndexController { @core.TypedRoute.Patch() public async index(@core.TypedHeaders() headers: IAuth.IHeaders, @core.TypedBody() input: ICustomer.IRequest): Promise<IPage<ICustomer>> { return PartyProvider.customerIndex(headers, input); } }

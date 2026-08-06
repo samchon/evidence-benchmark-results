@@ -1,0 +1,472 @@
+ /// Platform account with private credentials and a permanently reservable identity.
+ /// @evidence docs/analysis/01-actors-and-auth.md#req-auth-reg-account-provisioning-and-login Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/01-actors-and-auth.md#req-auth-reg-001-register-a-user-account Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/01-actors-and-auth.md#req-auth-reg-002-refuse-conflicting-registration Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/01-actors-and-auth.md#req-auth-reg-003-log-in-with-credentials Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/01-actors-and-auth.md#req-auth-reg-004-refuse-ineligible-login Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/01-actors-and-auth.md#req-auth-session-session-and-logout-lifecycle Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/01-actors-and-auth.md#req-auth-session-001-maintain-concurrent-sessions Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/01-actors-and-auth.md#req-auth-session-002-continue-an-authenticated-session Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/01-actors-and-auth.md#req-auth-session-003-log-out-the-current-session Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/01-actors-and-auth.md#req-auth-session-004-revoke-all-active-sessions Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/01-actors-and-auth.md#req-auth-mgmt-account-management-lifecycle Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/01-actors-and-auth.md#req-auth-mgmt-001-change-the-current-password Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/01-actors-and-auth.md#req-auth-mgmt-002-recover-a-forgotten-password Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/01-actors-and-auth.md#req-auth-mgmt-003-delete-a-user-account Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/01-actors-and-auth.md#req-auth-mgmt-004-apply-permanent-deleted-account-status Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/02-domain-model.md#req-dom-karma-karma-model Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/02-domain-model.md#req-dom-karma-001-define-the-single-signed-karma-total Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/02-domain-model.md#req-dom-karma-002-define-karma-contribution-mappings Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/04-business-rules.md#req-rule-identity-account-identity-rules Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/04-business-rules.md#req-rule-identity-001-enforce-case-insensitive-email-and-username-uniqueness Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/04-business-rules.md#req-rule-identity-002-require-complete-registration-credentials Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/04-business-rules.md#req-rule-identity-003-reserve-deleted-account-identifiers Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/05-non-functional.md#req-nfr-privacy-account-and-moderation-privacy Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/05-non-functional.md#req-nfr-privacy-001-keep-credentials-and-email-private Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/05-non-functional.md#req-nfr-privacy-002-keep-moderation-records-community-private Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/05-non-functional.md#req-nfr-privacy-003-preserve-public-profiles-and-community-content Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/05-non-functional.md#req-nfr-integrity-visible-aggregate-integrity Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/05-non-functional.md#req-nfr-continuity-browsing-continuity Persists the requirement-backed state represented by this model.
+model users {
+  /// UUID primary key.
+  id String @id
+  /// Case-preserved sign-in email.
+  email String
+  /// Lower-cased sign-in email used for uniqueness.
+  email_normalized String @unique
+  /// Public username.
+  username String
+  /// Lower-cased username used for uniqueness.
+  username_normalized String @unique
+  /// Password hash; never exposed.
+  password_hash String
+  /// Permanent deletion instant; null while active.
+  deleted_at DateTime?
+  /// Creation instant.
+  created_at DateTime
+  profile profiles?
+  sessions sessions[]
+  recovery_proofs recovery_proofs[]
+  owned_communities communities[] @relation("community_owner")
+  subscriptions subscriptions[]
+  moderators moderators[]
+  authored_posts posts[]
+  authored_comments comments[]
+  votes votes[]
+  reports reports[]
+  resolved_reports reports[] @relation("report_resolver")
+  bans bans[]
+  moderation_bans bans[] @relation("ban_actor")
+  @@index([deleted_at])
+}
+
+ /// Public profile belonging one-to-one to an account.
+  /// @evidence docs/analysis/02-domain-model.md#req-dom-profile-user-profile-model Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/02-domain-model.md#req-dom-profile-001-define-public-profile-attributes Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/02-domain-model.md#req-dom-profile-002-relate-profiles-to-karma-and-authored-content Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/02-domain-model.md#req-dom-profile-003-establish-initial-profile-values Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/03-functional-requirements.md#req-func-profile-profile-operations Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/04-business-rules.md#req-rule-profile-profile-validation-rules Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/04-business-rules.md#req-rule-profile-001-validate-profile-field-changes Persists the requirement-backed state represented by this model.
+model profiles {
+  /// UUID primary key.
+  id String @id
+  /// Owning account identifier.
+  user_id String @unique
+  /// Public display name.
+  display_name String
+  /// Public biography, possibly empty.
+  bio String
+  /// Optional public avatar URL or data reference.
+  avatar_url String?
+  /// Signed karma aggregate.
+  karma Int
+  /// Creation instant.
+  created_at DateTime
+  user users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+}
+
+/// Independent authenticated connection for one account.
+model sessions {
+  /// UUID primary key.
+  id String @id
+  /// Account identifier.
+  user_id String
+  /// Hash of the refresh proof.
+  refresh_token_hash String @unique
+  /// Session creation instant.
+  created_at DateTime
+  /// Expiration instant.
+  expires_at DateTime
+  /// Revocation instant; null while active.
+  revoked_at DateTime?
+  user users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  @@index([user_id, revoked_at])
+}
+
+/// One-time password recovery proof.
+model recovery_proofs {
+  /// UUID primary key.
+  id String @id
+  /// Account identifier.
+  user_id String
+  /// Hash of the emailed proof.
+  token_hash String @unique
+  /// Creation instant.
+  created_at DateTime
+  /// Expiration instant.
+  expires_at DateTime
+  /// Consumption instant; null while unused.
+  used_at DateTime?
+  user users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  @@index([user_id, created_at])
+}
+
+ /// Public discussion community and its current owner.
+ /// @evidence docs/analysis/02-domain-model.md#req-dom-community-community-model Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/02-domain-model.md#req-dom-community-001-define-community-attributes Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/02-domain-model.md#req-dom-community-002-relate-a-community-to-its-owner Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/02-domain-model.md#req-dom-community-003-relate-communities-to-subscribers Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/02-domain-model.md#req-dom-community-004-relate-communities-to-content-and-moderation Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/02-domain-model.md#req-dom-community-life-community-ownership-lifecycle Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/02-domain-model.md#req-dom-community-life-001-maintain-active-community-ownership Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/02-domain-model.md#req-dom-community-life-002-transfer-ownership-after-owner-deletion Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/02-domain-model.md#req-dom-community-life-003-archive-an-ownerless-community Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/02-domain-model.md#req-dom-community-life-004-enforce-archived-community-read-only-state Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/03-functional-requirements.md#req-func-community-community-operations Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/03-functional-requirements.md#req-func-community-001-create-a-community Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/03-functional-requirements.md#req-func-community-002-browse-all-communities Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/03-functional-requirements.md#req-func-community-003-search-communities-by-name Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/04-business-rules.md#req-rule-community-community-validation-and-discovery-rules Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/04-business-rules.md#req-rule-community-001-validate-community-creation-fields-and-unique-name Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/04-business-rules.md#req-rule-community-002-match-and-order-community-name-search Persists the requirement-backed state represented by this model.
+model communities {
+  /// UUID primary key.
+  id String @id
+  /// Case-preserved public name.
+  name String
+  /// Lower-cased searchable name.
+  name_normalized String @unique
+  /// Public description.
+  description String
+  /// Optional public icon reference.
+  icon_url String?
+  /// Active or archived lifecycle state.
+  status String
+  /// Current owner account identifier; null once archived.
+  owner_id String?
+  /// Creation instant.
+  created_at DateTime
+  owner users? @relation("community_owner", fields: [owner_id], references: [id], onDelete: SetNull)
+  subscriptions subscriptions[]
+  moderators moderators[]
+  posts posts[]
+  reports reports[]
+  bans bans[]
+  @@index([name_normalized])
+  @@index([status])
+}
+
+ /// User membership in a community, retaining tenure after ending.
+ /// @evidence docs/analysis/02-domain-model.md#req-dom-subscription-subscription-lifecycle Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/02-domain-model.md#req-dom-subscription-001-establish-active-subscription-state Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/02-domain-model.md#req-dom-subscription-002-end-active-subscription-state Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/03-functional-requirements.md#req-func-subscription-subscription-operations Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/03-functional-requirements.md#req-func-subscription-001-subscribe-to-a-community Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/03-functional-requirements.md#req-func-subscription-002-unsubscribe-from-a-community Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/05-non-functional.md#req-nfr-integrity-002-keep-subscription-count-and-home-feed-mutually-consistent Persists the requirement-backed state represented by this model.
+model subscriptions {
+  /// UUID primary key.
+  id String @id
+  /// Subscriber account identifier.
+  user_id String
+  /// Community identifier.
+  community_id String
+  /// Activation instant.
+  created_at DateTime
+  /// End instant; null while active.
+  ended_at DateTime?
+  user users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  community communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  @@index([community_id, ended_at, created_at])
+  @@index([user_id, ended_at])
+}
+
+ /// Community-scoped moderator assignment with tenure and revocation.
+ /// @evidence docs/analysis/01-actors-and-auth.md#req-auth-role-community-scoped-authority Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/01-actors-and-auth.md#req-auth-role-001-bootstrap-community-owner-and-subscriber Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/01-actors-and-auth.md#req-auth-role-002-owner-appointment-of-moderators Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/01-actors-and-auth.md#req-auth-role-003-moderator-appointment-of-peers Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/01-actors-and-auth.md#req-auth-role-004-owner-removal-of-moderators Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/01-actors-and-auth.md#req-auth-role-005-protect-owner-and-moderator-assignments Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/03-functional-requirements.md#req-func-role-moderator-assignment-operations Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/03-functional-requirements.md#req-func-role-001-add-a-moderator-as-community-owner Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/03-functional-requirements.md#req-func-role-002-add-a-moderator-as-community-moderator Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/03-functional-requirements.md#req-func-role-003-remove-a-moderator-as-community-owner Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/04-business-rules.md#req-rule-moderation-moderation-authority-rules Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/04-business-rules.md#req-rule-moderation-001-confine-moderation-actions-to-the-assigned-community Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/04-business-rules.md#req-rule-moderation-002-protect-owner-and-moderator-assignments-from-moderator-removal Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/04-business-rules.md#req-rule-moderation-003-protect-the-owner-from-community-bans Persists the requirement-backed state represented by this model.
+model moderators {
+  /// UUID primary key.
+  id String @id
+  /// Moderator account identifier.
+  user_id String
+  /// Community identifier.
+  community_id String
+  /// Assignment instant.
+  created_at DateTime
+  /// Revocation instant; null while current.
+  revoked_at DateTime?
+  user users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  community communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  @@index([community_id, revoked_at, created_at])
+}
+
+ /// User-authored post with exactly one type-specific payload.
+ /// @evidence docs/analysis/02-domain-model.md#req-dom-post-post-model Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/02-domain-model.md#req-dom-post-001-define-post-identity-and-relationships Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/02-domain-model.md#req-dom-post-002-define-post-types-and-payloads Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/02-domain-model.md#req-dom-post-003-define-post-participation-measures Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/02-domain-model.md#req-dom-post-004-define-full-and-feed-post-presentation Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/02-domain-model.md#req-dom-post-life-post-lifecycle Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/02-domain-model.md#req-dom-post-life-001-preserve-post-identity-during-editing Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/02-domain-model.md#req-dom-post-life-002-delete-a-post-and-dependent-participation Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/03-functional-requirements.md#req-func-post-post-operations Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/03-functional-requirements.md#req-func-post-001-create-a-post Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/03-functional-requirements.md#req-func-post-002-view-a-single-post Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/03-functional-requirements.md#req-func-post-003-edit-an-authored-post Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/03-functional-requirements.md#req-func-post-004-delete-an-authored-post Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/03-functional-requirements.md#req-func-post-005-delete-a-community-post-as-moderator Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/03-functional-requirements.md#req-func-feed-post-feed-journeys Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/03-functional-requirements.md#req-func-feed-001-view-the-authenticated-home-feed Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/03-functional-requirements.md#req-func-feed-002-view-the-public-popular-feed Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/03-functional-requirements.md#req-func-feed-003-view-a-public-community-feed Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/03-functional-requirements.md#req-func-feed-004-choose-feed-sorting-and-top-time-range Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/03-functional-requirements.md#req-func-feed-005-navigate-paginated-feed-results Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/03-functional-requirements.md#req-func-feed-006-display-feed-post-cards Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/04-business-rules.md#req-rule-post-post-content-rules Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/04-business-rules.md#req-rule-post-001-validate-required-title-and-exact-post-payload Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/04-business-rules.md#req-rule-post-002-validate-link-and-image-payloads Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/04-business-rules.md#req-rule-post-003-restrict-post-editing-to-title-and-same-type-content Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/04-business-rules.md#req-rule-participation-community-participation-rules Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/04-business-rules.md#req-rule-participation-001-require-subscription-for-post-creation Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/04-business-rules.md#req-rule-participation-002-allow-non-subscribers-to-comment Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/04-business-rules.md#req-rule-participation-003-refuse-banned-user-posting-and-commenting Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/04-business-rules.md#req-rule-participation-004-preserve-banned-user-viewing-access Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/04-business-rules.md#req-rule-feed-feed-ranking-and-pagination-rules Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/04-business-rules.md#req-rule-feed-001-order-feeds-by-new Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/04-business-rules.md#req-rule-feed-002-order-feeds-by-top-and-selected-time-range Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/04-business-rules.md#req-rule-feed-003-order-feeds-by-hot Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/04-business-rules.md#req-rule-feed-004-order-feeds-by-controversial Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/04-business-rules.md#req-rule-feed-005-apply-deterministic-pagination-boundaries Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/04-business-rules.md#req-rule-pagination-shared-pagination-rules Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/04-business-rules.md#req-rule-pagination-001-validate-requested-page-size Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/04-business-rules.md#req-rule-pagination-002-validate-continuation-scope-and-recover-from-stale-state Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/05-non-functional.md#req-nfr-integrity-003-keep-comment-count-consistent-with-comment-availability Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/05-non-functional.md#req-nfr-integrity-004-keep-deletion-effects-consistent-across-public-views Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/05-non-functional.md#req-nfr-continuity-001-provide-stable-paginated-continuation Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/05-non-functional.md#req-nfr-continuity-002-recover-from-an-invalid-or-stale-continuation Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/05-non-functional.md#req-nfr-continuity-004-keep-relative-time-anchored-to-creation Persists the requirement-backed state represented by this model.
+model posts {
+  /// UUID primary key.
+  id String @id
+  /// Author account identifier.
+  author_id String
+  /// Community identifier.
+  community_id String
+  /// Required public title.
+  title String
+  /// text, link, or image.
+  type String
+  /// Text payload when type is text.
+  text String?
+  /// URL payload when type is link.
+  url String?
+  /// Image payload reference when type is image.
+  image_url String?
+  /// Immutable creation instant.
+  created_at DateTime
+  /// Last edit instant.
+  updated_at DateTime?
+  /// Deletion instant; null while available.
+  deleted_at DateTime?
+  author users @relation(fields: [author_id], references: [id], onDelete: Cascade)
+  community communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  comments comments[]
+  votes votes[]
+  reports reports[]
+  @@index([community_id, deleted_at, created_at])
+  @@index([author_id, deleted_at, created_at])
+}
+
+ /// Nested user-authored comment; parent is optional for top-level comments.
+ /// @evidence docs/analysis/02-domain-model.md#req-dom-comment-comment-model Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/02-domain-model.md#req-dom-comment-001-define-comment-identity-and-display Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/02-domain-model.md#req-dom-comment-002-relate-comments-through-unbounded-nesting Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/02-domain-model.md#req-dom-comment-life-comment-lifecycle Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/02-domain-model.md#req-dom-comment-life-001-preserve-comment-identity-during-editing Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/02-domain-model.md#req-dom-comment-life-002-delete-comment-content-and-preserve-replies Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/03-functional-requirements.md#req-func-comment-comment-operations Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/03-functional-requirements.md#req-func-comment-001-write-a-top-level-comment Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/03-functional-requirements.md#req-func-comment-002-reply-to-a-comment Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/03-functional-requirements.md#req-func-comment-003-view-a-nested-comment-thread Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/03-functional-requirements.md#req-func-comment-004-sort-comments-on-a-post Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/03-functional-requirements.md#req-func-comment-005-edit-an-authored-comment Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/03-functional-requirements.md#req-func-comment-006-delete-an-authored-comment Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/03-functional-requirements.md#req-func-comment-007-delete-a-community-comment-as-moderator Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/04-business-rules.md#req-rule-comment-comment-tree-and-sorting-rules Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/04-business-rules.md#req-rule-comment-001-validate-same-post-acyclic-reply-relationships Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/04-business-rules.md#req-rule-comment-002-allow-unlimited-reply-depth Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/04-business-rules.md#req-rule-comment-003-order-comments-by-best Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/04-business-rules.md#req-rule-comment-004-order-comments-by-new Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/04-business-rules.md#req-rule-comment-005-order-comments-by-controversial Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/05-non-functional.md#req-nfr-continuity-003-preserve-navigable-reply-structure Persists the requirement-backed state represented by this model.
+model comments {
+  /// UUID primary key.
+  id String @id
+  /// Author account identifier.
+  author_id String
+  /// Parent post identifier.
+  post_id String
+  /// Immediate parent comment identifier; null for top-level.
+  parent_id String?
+  /// Comment text, nulled when content is deleted.
+  text String?
+  /// Immutable creation instant.
+  created_at DateTime
+  /// Last edit instant.
+  updated_at DateTime?
+  /// Deletion instant; null while available.
+  deleted_at DateTime?
+  author users @relation(fields: [author_id], references: [id], onDelete: Cascade)
+  post posts @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  parent comments? @relation("comment_tree", fields: [parent_id], references: [id], onDelete: SetNull)
+  children comments[] @relation("comment_tree")
+  votes votes[]
+  reports reports[]
+  @@index([post_id, parent_id, deleted_at, created_at])
+  @@index([author_id, deleted_at, created_at])
+}
+
+ /// One user's current vote on one post or comment target.
+ /// @evidence docs/analysis/02-domain-model.md#req-dom-vote-vote-model Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/02-domain-model.md#req-dom-vote-001-define-vote-identity-target-and-values Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/02-domain-model.md#req-dom-vote-002-relate-active-votes-to-content-score Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/02-domain-model.md#req-dom-vote-003-relate-active-votes-to-author-karma Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/02-domain-model.md#req-dom-vote-life-vote-lifecycle Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/02-domain-model.md#req-dom-vote-life-001-enter-upvote-state Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/02-domain-model.md#req-dom-vote-life-002-enter-downvote-state Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/02-domain-model.md#req-dom-vote-life-003-change-active-vote-direction Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/02-domain-model.md#req-dom-vote-life-004-remove-an-active-vote Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/03-functional-requirements.md#req-func-vote-voting-operations Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/03-functional-requirements.md#req-func-vote-001-cast-an-upvote-or-downvote Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/03-functional-requirements.md#req-func-vote-002-change-an-active-vote-direction Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/03-functional-requirements.md#req-func-vote-003-remove-an-active-vote Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/04-business-rules.md#req-rule-vote-voting-and-aggregate-rules Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/04-business-rules.md#req-rule-vote-001-enforce-one-active-vote-per-user-and-target Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/04-business-rules.md#req-rule-vote-002-calculate-content-vote-score Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/04-business-rules.md#req-rule-vote-003-adjust-author-karma-for-vote-transitions Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/04-business-rules.md#req-rule-vote-004-reverse-vote-aggregates-when-content-is-deleted Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/05-non-functional.md#req-nfr-integrity-001-keep-vote-score-and-karma-mutually-consistent Persists the requirement-backed state represented by this model.
+model votes {
+  /// UUID primary key.
+  id String @id
+  /// Voter account identifier.
+  user_id String
+  /// Post target, mutually exclusive with comment_id.
+  post_id String?
+  /// Comment target, mutually exclusive with post_id.
+  comment_id String?
+  /// +1 upvote or -1 downvote.
+  value Int
+  /// Creation instant.
+  created_at DateTime
+  /// Last transition instant.
+  updated_at DateTime?
+  user users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  post posts? @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  comment comments? @relation(fields: [comment_id], references: [id], onDelete: Cascade)
+  @@unique([user_id, post_id])
+  @@unique([user_id, comment_id])
+  @@index([post_id])
+  @@index([comment_id])
+}
+
+ /// Content report with unresolved and terminal moderation outcomes.
+ /// @evidence docs/analysis/02-domain-model.md#req-dom-report-content-report-model Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/02-domain-model.md#req-dom-report-001-define-report-target-reporter-and-reason Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/02-domain-model.md#req-dom-report-002-relate-unresolved-reports-to-a-community-queue Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/02-domain-model.md#req-dom-report-003-prevent-duplicate-unresolved-reports Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/02-domain-model.md#req-dom-report-life-content-report-lifecycle Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/02-domain-model.md#req-dom-report-life-001-enter-unresolved-report-state Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/02-domain-model.md#req-dom-report-life-002-approve-a-report-and-delete-its-target Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/02-domain-model.md#req-dom-report-life-003-dismiss-a-report-and-retain-its-target Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/02-domain-model.md#req-dom-report-life-004-retain-resolved-moderation-history Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/03-functional-requirements.md#req-func-report-content-reporting-and-resolution Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/03-functional-requirements.md#req-func-report-001-submit-a-post-or-comment-report Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/03-functional-requirements.md#req-func-report-002-view-unresolved-community-reports Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/03-functional-requirements.md#req-func-report-003-approve-a-report Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/03-functional-requirements.md#req-func-report-004-dismiss-a-report Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/04-business-rules.md#req-rule-report-reporting-rules Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/04-business-rules.md#req-rule-report-001-require-a-valid-report-target-and-reason Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/04-business-rules.md#req-rule-report-002-refuse-duplicate-unresolved-reports Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/04-business-rules.md#req-rule-report-003-restrict-report-queue-visibility-and-resolution Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/04-business-rules.md#req-rule-report-004-refuse-repeat-report-resolution Persists the requirement-backed state represented by this model.
+model reports {
+  /// UUID primary key.
+  id String @id
+  /// Reporter account identifier.
+  reporter_id String
+  /// Community owning the target.
+  community_id String
+  /// Post target, mutually exclusive with comment_id.
+  post_id String?
+  /// Comment target, mutually exclusive with post_id.
+  comment_id String?
+  /// Trimmed report reason.
+  reason String
+  /// unresolved, approved, or dismissed.
+  status String
+  /// Submission instant.
+  created_at DateTime
+  /// Resolution instant.
+  resolved_at DateTime?
+  /// Moderator who resolved the report.
+  resolver_id String?
+  reporter users @relation(fields: [reporter_id], references: [id], onDelete: Cascade)
+  community communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  post posts? @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  comment comments? @relation(fields: [comment_id], references: [id], onDelete: Cascade)
+  resolver users? @relation("report_resolver", fields: [resolver_id], references: [id], onDelete: SetNull)
+  @@index([community_id, status, created_at])
+  @@index([reporter_id, status])
+}
+
+ /// Community ban history with active and ended periods.
+ /// @evidence docs/analysis/02-domain-model.md#req-dom-ban-community-ban-lifecycle Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/02-domain-model.md#req-dom-ban-001-enter-active-ban-state Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/02-domain-model.md#req-dom-ban-002-end-active-ban-state Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/02-domain-model.md#req-dom-ban-003-retain-resolved-ban-history Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/03-functional-requirements.md#req-func-ban-community-ban-operations Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/03-functional-requirements.md#req-func-ban-001-ban-a-user-from-a-community Persists the requirement-backed state represented by this model.
+ /// @evidence docs/analysis/03-functional-requirements.md#req-func-ban-002-unban-a-user-from-a-community Persists the requirement-backed state represented by this model.
+model bans {
+  /// UUID primary key.
+  id String @id
+  /// Banned account identifier.
+  user_id String
+  /// Community identifier.
+  community_id String
+  /// Acting moderator account identifier.
+  actor_id String
+  /// Activation instant.
+  created_at DateTime
+  /// End instant; null while active.
+  ended_at DateTime?
+  user users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  community communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  actor users @relation("ban_actor", fields: [actor_id], references: [id], onDelete: Cascade)
+  @@index([community_id, ended_at, created_at])
+  @@index([user_id, community_id, ended_at])
+}

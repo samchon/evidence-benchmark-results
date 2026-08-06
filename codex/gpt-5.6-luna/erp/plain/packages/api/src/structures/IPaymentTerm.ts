@@ -1,0 +1,3 @@
+import type { tags } from "typia"; import type { IPage } from "../typings";
+export interface IPaymentTerm { id: string & tags.Format<"uuid">; name: string; dueDays: number; dueDayOfMonth: number | null; active: boolean; createdAt: string & tags.Format<"date-time">; updatedAt: string & tags.Format<"date-time">; }
+export namespace IPaymentTerm { export interface ICreate { name: string; dueDays: number; dueDayOfMonth?: number | null; } export interface IUpdate { name?: string; dueDays?: number; dueDayOfMonth?: number | null; } export interface IRequest extends IPage.IRequest { search?: string | null; active?: boolean | null; } }

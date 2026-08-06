@@ -1,0 +1,348 @@
+/// Account identity and profile.
+model users {
+  /// Primary key.
+  id String @id
+  /// Private sign-in email.
+  email String @unique
+  /// Case-folded email used for identity uniqueness.
+  normalized_email String @unique
+  /// Public unique username.
+  username String @unique
+  /// Case-folded username used for identity uniqueness.
+  normalized_username String @unique
+  /// Password hash.
+  password String
+  /// Public display name.
+  display_name String
+  /// Public biography.
+  bio String
+  /// Signed karma total derived from active received votes.
+  karma Int
+  /// Optional avatar payload.
+  avatar String?
+  /// Permanent deletion marker.
+  deleted_at DateTime?
+  /// Creation instant.
+  created_at DateTime
+  profile profiles? @relation("profile_user")
+  sessions sessions[]
+  owned_communities communities[] @relation("community_owner")
+  moderator_assignments moderators[] @relation("moderator_user")
+  subscriptions subscriptions[] @relation("subscription_user")
+  authored_posts posts[] @relation("post_author")
+  authored_comments comments[] @relation("comment_author")
+  post_votes post_votes[] @relation("post_vote_user")
+  comment_votes comment_votes[] @relation("comment_vote_user")
+  reports reports[] @relation("report_reporter")
+  bans bans[] @relation("ban_user")
+  ban_actions bans[] @relation("ban_moderator")
+  report_resolutions reports[] @relation("report_moderator")
+  ban_endings bans[] @relation("ban_unbanned_by")
+  recovery_proofs recovery_proofs[]
+}
+
+/// Authenticated session.
+model sessions {
+  /// Primary key.
+  id String @id
+  /// Owning user identifier.
+  user_id String
+  /// Access token digest.
+  token String @unique
+  /// Refresh token digest.
+  refresh_token String @unique
+  /// Creation instant.
+  created_at DateTime
+  /// Access-token expiry instant.
+  access_expires_at DateTime
+  /// Refresh-token expiry instant.
+  refresh_expires_at DateTime
+  /// Owning user.
+  user users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  @@index([user_id])
+}
+
+/// Public profile projection.
+model profiles {
+  /// Primary key and user identifier.
+  id String @id
+  /// Owning user identifier.
+  user_id String @unique
+  /// Owning user.
+  user users @relation("profile_user", fields: [user_id], references: [id], onDelete: Cascade)
+}
+
+/// Public discussion community.
+model communities {
+  /// Primary key.
+  id String @id
+  /// Stable public name.
+  name String @unique
+  /// Normalized lookup name.
+  normalized_name String @unique
+  /// Public description.
+  description String
+  /// Optional icon payload.
+  icon String?
+  /// Active or archived state.
+  status String
+  /// Current owner identifier.
+  owner_id String?
+  /// Creation instant.
+  created_at DateTime
+  /// Current owner.
+  owner users? @relation("community_owner", fields: [owner_id], references: [id], onDelete: SetNull)
+  subscriptions subscriptions[]
+  moderators moderators[]
+  bans bans[]
+  posts posts[]
+  reports reports[]
+  @@index([normalized_name])
+}
+
+/// Active user-community subscription.
+model subscriptions {
+  /// Primary key.
+  id String @id
+  /// User identifier.
+  user_id String
+  /// Community identifier.
+  community_id String
+  /// Activation instant.
+  created_at DateTime
+  /// User relation.
+  user users @relation("subscription_user", fields: [user_id], references: [id], onDelete: Cascade)
+  /// Community relation.
+  community communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  @@unique([user_id, community_id])
+}
+
+/// Community-scoped moderator assignment.
+model moderators {
+  /// Primary key.
+  id String @id
+  /// User identifier.
+  user_id String
+  /// Community identifier.
+  community_id String
+  /// Assignment instant.
+  created_at DateTime
+  /// User relation.
+  user users @relation("moderator_user", fields: [user_id], references: [id], onDelete: Cascade)
+  /// Community relation.
+  community communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  @@unique([user_id, community_id])
+}
+
+/// Community participation ban.
+model bans {
+  /// Primary key.
+  id String @id
+  /// Banned user identifier.
+  user_id String
+  /// Community identifier.
+  community_id String
+  /// Moderator identifier.
+  moderator_id String
+  /// Ending instant for resolved ban history.
+  ended_at DateTime?
+  /// User who ended the ban.
+  unbanned_by String?
+  /// Activation instant.
+  created_at DateTime
+  /// User relation.
+  user users @relation("ban_user", fields: [user_id], references: [id], onDelete: Cascade)
+  moderator users @relation("ban_moderator", fields: [moderator_id], references: [id], onDelete: Cascade)
+  unbanned_by_user users? @relation("ban_unbanned_by", fields: [unbanned_by], references: [id], onDelete: SetNull)
+  /// Community relation.
+  community communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  @@index([user_id, community_id, created_at])
+}
+
+/// Community post.
+model posts {
+  /// Primary key.
+  id String @id
+  /// Post title.
+  title String
+  /// Payload kind.
+  type String
+  /// Text payload.
+  text String?
+  /// Link payload.
+  url String?
+  /// Image payload.
+  image String?
+  /// Aspect-preserving image thumbnail.
+  thumbnail String?
+  /// Author identifier.
+  author_id String
+  /// Community identifier.
+  community_id String
+  /// Immutable creation instant.
+  created_at DateTime
+  /// Deletion instant.
+  deleted_at DateTime?
+  /// Author relation.
+  author users @relation("post_author", fields: [author_id], references: [id], onDelete: Cascade)
+  /// Community relation.
+  community communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  comments comments[]
+  votes post_votes[]
+  reports report_posts[]
+  @@index([community_id, created_at])
+}
+
+/// Nested post comment.
+model comments {
+  /// Primary key.
+  id String @id
+  /// Comment text.
+  text String
+  /// Author identifier.
+  author_id String
+  /// Post identifier.
+  post_id String
+  /// Optional parent identifier.
+  parent_id String?
+  /// Immutable creation instant.
+  created_at DateTime
+  /// Deletion instant.
+  deleted_at DateTime?
+  /// Author relation.
+  author users @relation("comment_author", fields: [author_id], references: [id], onDelete: Cascade)
+  /// Post relation.
+  post posts @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  /// Parent relation.
+  parent comments? @relation("comment_replies", fields: [parent_id], references: [id], onDelete: Cascade)
+  /// Replies relation.
+  replies comments[] @relation("comment_replies")
+  votes comment_votes[]
+  reports report_comments[]
+  @@index([post_id, parent_id])
+}
+
+/// Shared vote value and lifecycle row; exactly one subtype owns its target.
+model votes {
+  /// Primary key.
+  id String @id
+  /// Up or down.
+  value String
+  /// Creation instant.
+  created_at DateTime
+  /// Post-target subtype, or null when the comment subtype owns this row.
+  post_target post_votes?
+  /// Comment-target subtype, or null when the post subtype owns this row.
+  comment_target comment_votes?
+}
+
+/// User vote targeting one post; the unique pair prevents duplicate active votes.
+model post_votes {
+  /// Shared vote identifier and primary key.
+  vote_id String @id
+  /// Voter identifier.
+  user_id String
+  /// Target post identifier.
+  post_id String
+  /// Shared vote value.
+  vote votes @relation(fields: [vote_id], references: [id], onDelete: Cascade)
+  /// Voter.
+  user users @relation("post_vote_user", fields: [user_id], references: [id], onDelete: Cascade)
+  /// Target post.
+  post posts @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  @@unique([user_id, post_id])
+  @@index([post_id])
+}
+
+/// User vote targeting one comment; the unique pair prevents duplicate active votes.
+model comment_votes {
+  /// Shared vote identifier and primary key.
+  vote_id String @id
+  /// Voter identifier.
+  user_id String
+  /// Target comment identifier.
+  comment_id String
+  /// Shared vote value.
+  vote votes @relation(fields: [vote_id], references: [id], onDelete: Cascade)
+  /// Voter.
+  user users @relation("comment_vote_user", fields: [user_id], references: [id], onDelete: Cascade)
+  /// Target comment.
+  comment comments @relation(fields: [comment_id], references: [id], onDelete: Cascade)
+  @@unique([user_id, comment_id])
+  @@index([comment_id])
+}
+
+/// Content report and its terminal moderation outcome.
+model reports {
+  /// Primary key.
+  id String @id
+  /// Reporter identifier.
+  reporter_id String
+  /// Community identifier.
+  community_id String
+  /// Reason text.
+  reason String
+  /// Pending, approved, or dismissed.
+  status String
+  /// Submission instant.
+  created_at DateTime
+  /// Moderator who resolved the report.
+  moderator_id String?
+  /// Resolution instant.
+  resolved_at DateTime?
+  /// Reporter relation.
+  reporter users @relation("report_reporter", fields: [reporter_id], references: [id], onDelete: Cascade)
+  moderator users? @relation("report_moderator", fields: [moderator_id], references: [id], onDelete: SetNull)
+  /// Community relation.
+  community communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  /// Post-target subtype, or null when the comment subtype owns this report.
+  post_target report_posts?
+  /// Comment-target subtype, or null when the post subtype owns this report.
+  comment_target report_comments?
+  @@index([community_id, status, created_at])
+}
+
+/// Post target for one report, enforcing exactly one report target subtype.
+model report_posts {
+  /// Report identifier and primary key.
+  report_id String @id
+  /// Target post identifier.
+  post_id String
+  /// Report row.
+  report reports @relation(fields: [report_id], references: [id], onDelete: Cascade)
+  /// Target post.
+  post posts @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  @@index([post_id])
+}
+
+/// Comment target for one report, enforcing exactly one report target subtype.
+model report_comments {
+  /// Report identifier and primary key.
+  report_id String @id
+  /// Target comment identifier.
+  comment_id String
+  /// Report row.
+  report reports @relation(fields: [report_id], references: [id], onDelete: Cascade)
+  /// Target comment.
+  comment comments @relation(fields: [comment_id], references: [id], onDelete: Cascade)
+  @@index([comment_id])
+}
+
+/// One-time password recovery proof.
+model recovery_proofs {
+  /// Primary key.
+  id String @id
+  /// Normalized email requested for recovery.
+  email String
+  /// Owning user.
+  user_id String
+  /// Hashed or opaque proof value.
+  proof String @unique
+  /// Expiry instant.
+  expires_at DateTime
+  /// Consumption instant, if used.
+  used_at DateTime?
+  /// Owning user relation.
+  user users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  @@index([email, expires_at])
+}

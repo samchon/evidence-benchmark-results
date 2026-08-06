@@ -1,0 +1,2 @@
+import * as core from "@nestia/core"; import { Controller } from "@nestjs/common"; import type { IApprovalRequest, IAuth } from "@benchmark/erp-api"; import { ApprovalProvider as P } from "../providers/ApprovalProvider";
+/** Marks a pending approval step as escalated for fallback handling. */ @Controller("approval-request-escalate") export class ApprovalRequestEscalateController { @core.TypedRoute.Post(":id") public async escalate(@core.TypedHeaders() h: IAuth.IHeaders, @core.TypedParam("id") id: string): Promise<IApprovalRequest> { return P.requestEscalate(h, id); } }

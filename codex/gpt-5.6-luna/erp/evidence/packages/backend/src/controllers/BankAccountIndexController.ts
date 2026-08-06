@@ -1,0 +1,2 @@
+import * as core from "@nestia/core"; import { Controller } from "@nestjs/common"; import type { IAuth, IBankAccount, IPage } from "@benchmark/erp-api"; import { BankProvider } from "../providers/BankProvider";
+/** Lists bank accounts and reconciliation state. */ @Controller("bank-account-search") export class BankAccountIndexController { @core.TypedRoute.Patch() public async index(@core.TypedHeaders() headers: IAuth.IHeaders, @core.TypedBody() input: IBankAccount.IRequest): Promise<IPage<IBankAccount>> { return BankProvider.accountIndex(headers, input); } }

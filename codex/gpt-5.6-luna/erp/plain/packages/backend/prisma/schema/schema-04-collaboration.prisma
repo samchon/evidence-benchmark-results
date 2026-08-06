@@ -1,0 +1,51 @@
+model attachments {
+ id String @id
+ organization_id String
+ uploader_user_id String
+ target_type String
+ target_id String
+ file_name String
+ storage_key String
+ mime_type String
+ size_bytes Int
+ created_at DateTime
+ deleted_at DateTime?
+ organization organizations @relation(fields:[organization_id],references:[id])
+ uploader users @relation(fields:[uploader_user_id],references:[id])
+}
+model comments {
+ id String @id
+ organization_id String
+ author_user_id String
+ target_type String
+ target_id String
+ body String
+ created_at DateTime
+ updated_at DateTime
+ deleted_at DateTime?
+ organization organizations @relation(fields:[organization_id],references:[id])
+ author users @relation(fields:[author_user_id],references:[id])
+}
+model tags {
+ id String @id
+ organization_id String
+ label String
+ description String?
+ active Boolean
+ created_at DateTime
+ updated_at DateTime
+ organization organizations @relation(fields:[organization_id],references:[id])
+ assignments tag_assignments[]
+ @@unique([organization_id,label])
+}
+model tag_assignments {
+ id String @id
+ organization_id String
+ tag_id String
+ target_type String
+ target_id String
+ created_at DateTime
+ organization organizations @relation(fields:[organization_id],references:[id])
+ tag tags @relation(fields:[tag_id],references:[id])
+ @@unique([organization_id,tag_id,target_type,target_id])
+}

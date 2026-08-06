@@ -1,0 +1,60 @@
+/// Quality inspection result for an item or receipt.
+model quality_inspections {
+  id String @id
+  organization_id String
+  item_id String
+  source_document_id String?
+  status String
+  result String?
+  inspected_quantity Decimal
+  notes String?
+  created_at DateTime
+  updated_at DateTime
+  organization organizations @relation(fields:[organization_id], references:[id])
+  @@index([organization_id,item_id,status])
+}
+/// Stock quarantined pending quality disposition.
+model quarantine_records {
+  id String @id
+  organization_id String
+  item_id String
+  warehouse_id String
+  quantity Decimal
+  status String
+  reason String
+  disposition String?
+  created_at DateTime
+  updated_at DateTime
+  organization organizations @relation(fields:[organization_id], references:[id])
+  @@index([organization_id,item_id,status])
+}
+/// Customer service order with parts, labor, and billing state.
+model service_orders {
+  id String @id
+  organization_id String
+  customer_id String
+  number String
+  title String
+  status String
+  billable Boolean
+  notes String?
+  created_at DateTime
+  updated_at DateTime
+  organization organizations @relation(fields:[organization_id], references:[id])
+  @@unique([organization_id,number])
+  @@index([organization_id,status,customer_id])
+}
+model business_records {
+  id String @id
+  organization_id String
+  kind String
+  number String?
+  name String?
+  status String
+  payload_json String
+  created_at DateTime
+  updated_at DateTime
+  organization organizations @relation(fields:[organization_id], references:[id])
+  @@index([organization_id,kind,status])
+  @@index([organization_id,created_at])
+}

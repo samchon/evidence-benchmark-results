@@ -1,0 +1,2 @@
+import * as core from "@nestia/core"; import { Controller } from "@nestjs/common"; import type { IAuth, IJournal } from "@benchmark/erp-api"; import { JournalProvider } from "../providers/JournalProvider";
+/** Reverses a posted journal while preserving its identity and lines. */ @Controller("journal-reverse") export class JournalReverseController { @core.TypedRoute.Post(":id") public async reverse(@core.TypedHeaders() headers: IAuth.IHeaders, @core.TypedParam("id") id: string): Promise<IJournal> { return JournalProvider.reverse(headers, id); } }

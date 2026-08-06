@@ -1,0 +1,50 @@
+/// Organization-scoped external vendor; never an authenticating user.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-vendor-vendor-lifecycle Stores commercial identity and lifecycle without credentials.
+/// @evidence docs/analysis/03-functional-requirements.md#req-fun-vendor-vendor-operations Owns vendor identity and lifecycle.
+/// @evidence docs/analysis/04-business-rules.md#req-rule-vendor-vendor-integrity-rules Preserves vendor history and organization ownership.
+model vendors {
+  id String @id
+  organization_id String
+  code String
+  legal_name String
+  display_name String?
+  email String?
+  phone String?
+  tax_registration String?
+  currency_id String?
+  payment_term_id String?
+  risk_classification String?
+  notes String?
+  bank_account_reference String?
+  active Boolean
+  created_at DateTime
+  updated_at DateTime
+  organization organizations @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  @@unique([organization_id, code])
+  @@index([organization_id, active])
+}
+
+/// Organization-scoped external customer; never an authenticating user.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-customer-customer-lifecycle Stores commercial identity and lifecycle without credentials.
+/// @evidence docs/analysis/03-functional-requirements.md#req-fun-customer-customer-operations Owns customer identity, credit, and lifecycle.
+/// @evidence docs/analysis/04-business-rules.md#req-rule-customer-customer-credit-and-history-rules Preserves customer credit and historical identity.
+model customers {
+  id String @id
+  organization_id String
+  code String
+  legal_name String
+  display_name String?
+  email String?
+  phone String?
+  tax_registration String?
+  currency_id String?
+  payment_term_id String?
+  credit_limit Decimal?
+  notes String?
+  active Boolean
+  created_at DateTime
+  updated_at DateTime
+  organization organizations @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  @@unique([organization_id, code])
+  @@index([organization_id, active])
+}

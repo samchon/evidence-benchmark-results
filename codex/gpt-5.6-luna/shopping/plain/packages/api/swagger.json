@@ -1,0 +1,7908 @@
+{
+  "openapi": "3.2.0",
+  "servers": [
+    {
+      "url": "https://github.com/samchon/nestia",
+      "description": "insert your server url"
+    }
+  ],
+  "info": {
+    "version": "0.1.0",
+    "title": "@benchmark/shopping-backend",
+    "description": "NestJS, Nestia, and Prisma backend for benchmark-shopping"
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "summary": "Returns the process health marker",
+        "description": "Returns the process health marker.",
+        "tags": [],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Literal marker used by local and deployed health probes.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "health",
+          "get"
+        ],
+        "x-samchon-controller": "HealthController"
+      }
+    },
+    "/shopping/auth/customer/join": {
+      "post": {
+        "tags": [],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IShoppingAuth.IJoin"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IShoppingAuth.IAuthorized"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "auth",
+          "customer",
+          "join",
+          "customerJoin"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      }
+    },
+    "/shopping/auth/customer/login": {
+      "post": {
+        "tags": [],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IShoppingAuth.ILogin"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IShoppingAuth.IAuthorized"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "auth",
+          "customer",
+          "login",
+          "customerLogin"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      }
+    },
+    "/shopping/auth/customer/refresh": {
+      "post": {
+        "tags": [],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IShoppingAuth.IRefresh"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IShoppingAuth.IAuthorized"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "auth",
+          "customer",
+          "refresh",
+          "customerRefresh"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      }
+    },
+    "/shopping/auth/customer/recovery": {
+      "post": {
+        "tags": [],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IShoppingAuth.IRecoveryRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IShoppingAuth.IRecoveryChallenge"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "auth",
+          "customer",
+          "recovery",
+          "customerRecoveryRequest"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      },
+      "put": {
+        "tags": [],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IShoppingAuth.IRecoveryComplete"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IEntity"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "auth",
+          "customer",
+          "recovery",
+          "customerRecoveryComplete"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      }
+    },
+    "/shopping/auth/seller/join": {
+      "post": {
+        "tags": [],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IShoppingAuth.IJoin"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IShoppingAuth.IAuthorized"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "auth",
+          "seller",
+          "join",
+          "sellerJoin"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      }
+    },
+    "/shopping/auth/seller/login": {
+      "post": {
+        "tags": [],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IShoppingAuth.ILogin"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IShoppingAuth.IAuthorized"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "auth",
+          "seller",
+          "login",
+          "sellerLogin"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      }
+    },
+    "/shopping/auth/seller/refresh": {
+      "post": {
+        "tags": [],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IShoppingAuth.IRefresh"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IShoppingAuth.IAuthorized"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "auth",
+          "seller",
+          "refresh",
+          "sellerRefresh"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      }
+    },
+    "/shopping/auth/seller/recovery": {
+      "post": {
+        "tags": [],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IShoppingAuth.IRecoveryRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IShoppingAuth.IRecoveryChallenge"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "auth",
+          "seller",
+          "recovery",
+          "sellerRecoveryRequest"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      },
+      "put": {
+        "tags": [],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IShoppingAuth.IRecoveryComplete"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IEntity"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "auth",
+          "seller",
+          "recovery",
+          "sellerRecoveryComplete"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      }
+    },
+    "/shopping/customer/logout": {
+      "post": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IEntity"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "customer",
+          "logout",
+          "customerLogout"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      }
+    },
+    "/shopping/customer/logout-all": {
+      "post": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IEntity"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "customer",
+          "logout_all",
+          "customerLogoutAll"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      }
+    },
+    "/shopping/seller/logout": {
+      "post": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IEntity"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "seller",
+          "logout",
+          "sellerLogout"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      }
+    },
+    "/shopping/seller/logout-all": {
+      "post": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IEntity"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "seller",
+          "logout_all",
+          "sellerLogoutAll"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      }
+    },
+    "/shopping/customer/password": {
+      "put": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IShoppingAuth.IPasswordChange"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IEntity"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "customer",
+          "password",
+          "customerPassword"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      }
+    },
+    "/shopping/customer/account": {
+      "delete": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IShoppingAuth.IAccountDelete"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IEntity"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "customer",
+          "account",
+          "customerAccountDelete"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      }
+    },
+    "/shopping/customer/profile": {
+      "get": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IShoppingCustomerProfile.IDetail"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "customer",
+          "profile",
+          "customerProfile"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      },
+      "patch": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IShoppingCustomerProfile.IUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IShoppingCustomerProfile.IDetail"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "customer",
+          "profile",
+          "customerProfileUpdate"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      }
+    },
+    "/shopping/customer/address": {
+      "patch": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IPage.IRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IPageIShoppingAddress.IDetail"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "customer",
+          "address",
+          "customerAddresses"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      },
+      "post": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IShoppingAddress.ICreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IShoppingAddress.IDetail"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "customer",
+          "address",
+          "customerAddressCreate"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      }
+    },
+    "/shopping/customer/address/{id}": {
+      "put": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IShoppingAddress.IUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IShoppingAddress.IDetail"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "customer",
+          "address",
+          "customerAddressUpdate"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      },
+      "delete": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IEntity"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "customer",
+          "address",
+          "customerAddressDelete"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      }
+    },
+    "/shopping/customer/address/{id}/default": {
+      "put": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IShoppingAddress.IDetail"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "customer",
+          "address",
+          "_default",
+          "customerAddressDefault"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      }
+    },
+    "/shopping/seller/profile": {
+      "get": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IShoppingSellerProfile.IDetail"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "seller",
+          "profile",
+          "sellerProfile"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      },
+      "patch": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IShoppingSellerProfile.IUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IShoppingSellerProfile.IDetail"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "seller",
+          "profile",
+          "sellerProfileUpdate"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      }
+    },
+    "/shopping/seller/password": {
+      "put": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IShoppingAuth.IPasswordChange"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IEntity"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "seller",
+          "password",
+          "sellerPassword"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      }
+    },
+    "/shopping/seller/account": {
+      "delete": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IShoppingAuth.IAccountDelete"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IEntity"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "seller",
+          "account",
+          "sellerAccountDelete"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      }
+    },
+    "/shopping/seller/profile/snapshot": {
+      "patch": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IPage.IRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IPageIShoppingSellerProfile.ISnapshot"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "seller",
+          "profile",
+          "snapshot",
+          "sellerProfileSnapshots"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      }
+    },
+    "/shopping/admin/seller/{id}/snapshot": {
+      "patch": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IPage.IRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IPageIShoppingSellerProfile.ISnapshot"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "admin",
+          "seller",
+          "snapshot",
+          "adminSellerProfileSnapshots"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      }
+    },
+    "/shopping/seller/profile/{id}": {
+      "get": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IShoppingSellerProfile.IDetail"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "seller",
+          "profile",
+          "sellerProfilePublic"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      }
+    },
+    "/shopping/seller/approval": {
+      "get": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IShoppingSellerApproval.IDetail"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "seller",
+          "approval",
+          "sellerApproval"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      }
+    },
+    "/shopping/seller/approval/resubmit": {
+      "post": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IShoppingSellerApproval.IDetail"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "seller",
+          "approval",
+          "resubmit",
+          "sellerApprovalResubmit"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      }
+    },
+    "/shopping/admin/seller/approval": {
+      "patch": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IPage.IRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IPageIShoppingSellerApproval.IDetail"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "admin",
+          "seller",
+          "approval",
+          "sellerApprovals"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      }
+    },
+    "/shopping/admin/seller/approval/approve/{id}": {
+      "put": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IShoppingSellerApproval.IDetail"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "admin",
+          "seller",
+          "approval",
+          "approve",
+          "sellerApprove"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      }
+    },
+    "/shopping/admin/seller/approval/reject/{id}": {
+      "put": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IShoppingSellerApproval.IDecision"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IShoppingSellerApproval.IDetail"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "admin",
+          "seller",
+          "approval",
+          "reject",
+          "sellerReject"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      }
+    },
+    "/shopping/admin/seller/suspend/{id}": {
+      "put": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IShoppingSellerProfile.IDetail"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "admin",
+          "seller",
+          "suspend",
+          "sellerSuspend"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      }
+    },
+    "/shopping/admin/seller/unsuspend/{id}": {
+      "put": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IShoppingSellerProfile.IDetail"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "admin",
+          "seller",
+          "unsuspend",
+          "sellerUnsuspend"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      }
+    },
+    "/shopping/admin/category": {
+      "post": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IShoppingCategory.ICreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IShoppingCategory.IDetail"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "admin",
+          "category",
+          "categoryCreate"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      }
+    },
+    "/shopping/admin/category/{id}": {
+      "put": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IShoppingCategory.IUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IShoppingCategory.IDetail"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "admin",
+          "category",
+          "categoryUpdate"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      },
+      "delete": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IEntity"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "admin",
+          "category",
+          "categoryDelete"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      }
+    },
+    "/shopping/customer/category": {
+      "get": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/IShoppingCategory.IDetail"
+                  },
+                  "type": "array"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "customer",
+          "category",
+          "categories"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      }
+    },
+    "/shopping/customer/category/{id}/product": {
+      "patch": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IShoppingProduct.IRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IPageIShoppingProduct.ISummary"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "customer",
+          "category",
+          "product",
+          "categoryProducts"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      }
+    },
+    "/shopping/seller/product": {
+      "post": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IShoppingProduct.ICreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IShoppingProduct.IDetail"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "seller",
+          "product",
+          "productCreate"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      }
+    },
+    "/shopping/seller/product/{id}": {
+      "put": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IShoppingProduct.IUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IShoppingProduct.IDetail"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "seller",
+          "product",
+          "productUpdate"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      },
+      "delete": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IEntity"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "seller",
+          "product",
+          "productDelete"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      }
+    },
+    "/shopping/seller/product/{id}/image": {
+      "post": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IShoppingProduct.IImageCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IShoppingProduct.IDetail"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "seller",
+          "product",
+          "image",
+          "imageUpload"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      },
+      "put": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IShoppingProduct.IImageReorder"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IShoppingProduct.IDetail"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "seller",
+          "product",
+          "image",
+          "imageReorder"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      }
+    },
+    "/shopping/seller/product/image/{id}": {
+      "delete": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IShoppingProduct.IDetail"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "seller",
+          "product",
+          "image",
+          "imageDelete"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      }
+    },
+    "/shopping/customer/product": {
+      "patch": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IShoppingProduct.IRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IPageIShoppingProduct.ISummary"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "customer",
+          "product",
+          "products"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      }
+    },
+    "/shopping/customer/product/{id}": {
+      "get": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IShoppingProduct.IDetail"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "customer",
+          "product",
+          "productAt"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      }
+    },
+    "/shopping/seller/product/{id}/snapshot": {
+      "patch": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IPage.IRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IPageIShoppingProduct.ISnapshot"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "seller",
+          "product",
+          "snapshot",
+          "sellerProductSnapshots"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      }
+    },
+    "/shopping/admin/product": {
+      "patch": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IShoppingProduct.IRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IPageIShoppingProduct.ISummary"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "admin",
+          "product",
+          "adminProducts"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      }
+    },
+    "/shopping/admin/product/{id}": {
+      "get": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IShoppingProduct.IDetail"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "admin",
+          "product",
+          "adminProductAt"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      },
+      "delete": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IShoppingAdmin.IReason"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IEntity"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "admin",
+          "product",
+          "adminProductDelete"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      }
+    },
+    "/shopping/admin/product/{id}/snapshot": {
+      "patch": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IPage.IRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IPageIShoppingProduct.ISnapshot"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "admin",
+          "product",
+          "snapshot",
+          "adminProductSnapshots"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      }
+    },
+    "/shopping/seller/product/{id}/variant": {
+      "post": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IShoppingProduct.IVariantCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IShoppingProduct.IDetail"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "seller",
+          "product",
+          "variant",
+          "variantCreate"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      }
+    },
+    "/shopping/seller/product/{productId}/variant/{id}": {
+      "put": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "productId",
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IShoppingProduct.IVariantUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IShoppingProduct.IDetail"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "seller",
+          "product",
+          "variant",
+          "variantUpdate"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      },
+      "delete": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "productId",
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IShoppingProduct.IDetail"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "seller",
+          "product",
+          "variant",
+          "variantDelete"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      }
+    },
+    "/shopping/seller/product/variant/inventory/{id}": {
+      "post": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IShoppingInventory.ICreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IShoppingProduct.IDetail"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "seller",
+          "product",
+          "variant",
+          "inventory",
+          "inventoryAdd"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      },
+      "patch": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IPage.IRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IShoppingInventory.IHistory"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "seller",
+          "product",
+          "variant",
+          "inventory",
+          "inventoryHistory"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      }
+    },
+    "/shopping/customer/cart": {
+      "get": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IShoppingCart.ISummary"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "customer",
+          "cart",
+          "cart"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      },
+      "post": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IShoppingCart.ICreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IShoppingCart.ISummary"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "customer",
+          "cart",
+          "cartAdd"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      }
+    },
+    "/shopping/customer/cart/{id}": {
+      "put": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IShoppingCart.IUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IShoppingCart.ISummary"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "customer",
+          "cart",
+          "cartUpdate"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      },
+      "delete": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IEntity"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "customer",
+          "cart",
+          "cartDelete"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      }
+    },
+    "/shopping/customer/wishlist": {
+      "patch": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IPage.IRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IPageIShoppingWishlist.ISummary"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "customer",
+          "wishlist",
+          "wishlist"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      }
+    },
+    "/shopping/customer/wishlist/{id}": {
+      "post": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IEntity"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "customer",
+          "wishlist",
+          "wishlistAdd"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      },
+      "delete": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IEntity"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "customer",
+          "wishlist",
+          "wishlistDelete"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      }
+    },
+    "/shopping/customer/checkout/start": {
+      "post": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IShoppingCheckout.IStart"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IShoppingCheckout.ISummary"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "customer",
+          "checkout",
+          "start",
+          "checkoutStart"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      }
+    },
+    "/shopping/customer/checkout/{id}": {
+      "get": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IShoppingCheckout.ISummary"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "customer",
+          "checkout",
+          "checkoutReview"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      }
+    },
+    "/shopping/customer/checkout/{id}/payment": {
+      "post": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IShoppingCheckout.IPayment"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IShoppingCheckout.IPaymentResult"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "customer",
+          "checkout",
+          "payment",
+          "checkoutPayment"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      }
+    },
+    "/shopping/customer/order": {
+      "patch": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IPage.IRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IPageIShoppingOrder.ISummary"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "customer",
+          "order",
+          "orderList"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      }
+    },
+    "/shopping/customer/order/{id}": {
+      "get": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IShoppingOrder.IDetail"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "customer",
+          "order",
+          "orderAt"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      }
+    },
+    "/shopping/admin/order": {
+      "patch": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IShoppingOrder.IAdminRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IPageIShoppingAdmin.IOrderSummary"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "admin",
+          "order",
+          "adminOrderList"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      }
+    },
+    "/shopping/admin/order/{id}": {
+      "get": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IShoppingOrder.IDetail"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "admin",
+          "order",
+          "adminOrderAt"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      }
+    },
+    "/shopping/admin/action": {
+      "patch": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IShoppingAdmin.IActionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IPageIShoppingAdmin.IAction"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "admin",
+          "action",
+          "adminActions"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      }
+    },
+    "/shopping/admin/order-item/cancel/{id}": {
+      "put": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IShoppingAdmin.IReason"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IShoppingOrder.IDetail"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "admin",
+          "order_item",
+          "cancel",
+          "forceCancelItem"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      }
+    },
+    "/shopping/admin/order/cancel/{id}": {
+      "put": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IShoppingAdmin.IReason"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IShoppingOrder.IDetail"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "admin",
+          "order",
+          "cancel",
+          "forceCancelOrder"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      }
+    },
+    "/shopping/admin/order-item/refund/{id}": {
+      "put": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IShoppingAdmin.IReason"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IShoppingOrder.IDetail"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "admin",
+          "order_item",
+          "refund",
+          "forceRefundItem"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      }
+    },
+    "/shopping/admin/order/refund/{id}": {
+      "put": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IShoppingAdmin.IReason"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IShoppingOrder.IDetail"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "admin",
+          "order",
+          "refund",
+          "forceRefundOrder"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      }
+    },
+    "/shopping/seller/order/shipment/{id}": {
+      "post": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IShoppingShipment.ICreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IShoppingOrder.IDetail"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "seller",
+          "order",
+          "shipment",
+          "shipmentCreate"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      }
+    },
+    "/shopping/customer/shipment/deliver/{id}": {
+      "put": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IShoppingOrder.IDetail"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "customer",
+          "shipment",
+          "deliver",
+          "shipmentDeliver"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      }
+    },
+    "/shopping/customer/shipment/{id}": {
+      "get": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IShoppingOrder.IDetail"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "customer",
+          "shipment",
+          "shipmentTrack"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      }
+    },
+    "/shopping/customer/shipment/auto-confirm/{id}": {
+      "put": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IShoppingOrder.IDetail"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "customer",
+          "shipment",
+          "auto_confirm",
+          "shipmentAutoConfirm"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      }
+    },
+    "/shopping/seller/order-item": {
+      "patch": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IShoppingOrder.ISellerRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IPageIShoppingOrder.IItem"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "seller",
+          "order_item",
+          "sellerQueue"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      }
+    },
+    "/shopping/customer/cancellation": {
+      "post": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IShoppingRequest.ICreate__type"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IShoppingRequest.IDetail"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "customer",
+          "cancellation",
+          "cancellationCreate"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      }
+    },
+    "/shopping/customer/refund": {
+      "post": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IShoppingRequest.ICreate__type.o1"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IShoppingRequest.IDetail"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "customer",
+          "refund",
+          "refundCreate"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      }
+    },
+    "/shopping/seller/cancellation": {
+      "patch": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IPage.IRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IPageIShoppingRequest.IDetail"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "seller",
+          "cancellation",
+          "cancellationList"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      }
+    },
+    "/shopping/seller/refund": {
+      "patch": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IPage.IRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IPageIShoppingRequest.IDetail"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "seller",
+          "refund",
+          "refundList"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      }
+    },
+    "/shopping/seller/request/approve/{id}": {
+      "put": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IShoppingRequest.IDetail"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "seller",
+          "request",
+          "approve",
+          "requestApprove"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      }
+    },
+    "/shopping/seller/request/reject/{id}": {
+      "put": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IShoppingRequest.IDetail"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "seller",
+          "request",
+          "reject",
+          "requestReject"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      }
+    },
+    "/shopping/customer/review": {
+      "post": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IShoppingReview.ICreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IShoppingReview.IDetail"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "customer",
+          "review",
+          "reviewCreate"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      }
+    },
+    "/shopping/customer/review/{id}": {
+      "put": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IShoppingReview.IUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IShoppingReview.IDetail"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "customer",
+          "review",
+          "reviewUpdate"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      },
+      "delete": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IEntity"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "customer",
+          "review",
+          "reviewDelete"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      }
+    },
+    "/shopping/customer/admin-application": {
+      "post": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IShoppingAdminApplication.ICreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IShoppingAdminApplication.IDetail"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "customer",
+          "admin_application",
+          "adminApplicationCreate"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      },
+      "patch": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IPage.IRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IPageIShoppingAdminApplication.IDetail"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "customer",
+          "admin_application",
+          "adminApplications"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      }
+    },
+    "/shopping/seller/admin-application": {
+      "post": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IShoppingAdminApplication.ICreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IShoppingAdminApplication.IDetail"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "seller",
+          "admin_application",
+          "sellerAdminApplicationCreate"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      },
+      "patch": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IPage.IRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IPageIShoppingAdminApplication.IDetail"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "seller",
+          "admin_application",
+          "sellerAdminApplications"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      }
+    },
+    "/shopping/admin/admin-application": {
+      "patch": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IPage.IRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IPageIShoppingAdminApplication.IDetail"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "admin",
+          "admin_application",
+          "adminApplicationsPending"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      }
+    },
+    "/shopping/admin/admin-application/approve/{id}": {
+      "put": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IShoppingAdminApplication.IDetail"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "admin",
+          "admin_application",
+          "approve",
+          "adminApplicationApprove"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      }
+    },
+    "/shopping/admin/admin-application/reject/{id}": {
+      "put": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IShoppingAdminApplication.IDetail"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "admin",
+          "admin_application",
+          "reject",
+          "adminApplicationReject"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      }
+    },
+    "/shopping/admin/grade/promote/{id}": {
+      "put": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IShoppingAdmin.IUserSummary"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "admin",
+          "grade",
+          "promote",
+          "adminGradePromote"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      }
+    },
+    "/shopping/admin/grade/demote/{id}": {
+      "put": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IShoppingAdmin.IUserSummary"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "admin",
+          "grade",
+          "demote",
+          "adminGradeDemote"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      }
+    },
+    "/shopping/admin/customer": {
+      "patch": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IPage.IRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IPageIShoppingAdmin.IUserSummary"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "admin",
+          "customer",
+          "adminCustomers"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      }
+    },
+    "/shopping/admin/seller": {
+      "patch": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IPage.IRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IPageIShoppingAdmin.IUserSummary"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "admin",
+          "seller",
+          "adminSellers"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      }
+    },
+    "/shopping/admin/customer/ban/{id}": {
+      "put": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IShoppingAdmin.IUserSummary"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "admin",
+          "customer",
+          "ban",
+          "adminCustomerBan"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      }
+    },
+    "/shopping/admin/customer/unban/{id}": {
+      "put": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IShoppingAdmin.IUserSummary"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "admin",
+          "customer",
+          "unban",
+          "adminCustomerUnban"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      }
+    },
+    "/shopping/admin/seller/ban/{id}": {
+      "put": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IShoppingAdmin.IUserSummary"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "admin",
+          "seller",
+          "ban",
+          "adminSellerBan"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      }
+    },
+    "/shopping/admin/seller/unban/{id}": {
+      "put": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IShoppingAdmin.IUserSummary"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "admin",
+          "seller",
+          "unban",
+          "adminSellerUnban"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      }
+    },
+    "/shopping/seller/dashboard": {
+      "get": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IShoppingAdmin.ISummary"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "shopping",
+          "seller",
+          "dashboard",
+          "sellerDashboard"
+        ],
+        "x-samchon-controller": "ShoppingController"
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "IShoppingAuth.IAuthorized": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "type": {
+            "oneOf": [
+              {
+                "const": "customer",
+                "description": null,
+                "title": null
+              },
+              {
+                "const": "seller",
+                "description": null,
+                "title": null
+              }
+            ]
+          },
+          "token": {
+            "type": "string"
+          },
+          "refreshToken": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "token",
+          "refreshToken"
+        ],
+        "type": "object"
+      },
+      "IShoppingAuth.IJoin": {
+        "additionalProperties": false,
+        "properties": {
+          "email": {
+            "format": "email",
+            "type": "string"
+          },
+          "password": {
+            "minLength": 8,
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ],
+        "type": "object"
+      },
+      "IShoppingAuth.ILogin": {
+        "additionalProperties": false,
+        "properties": {
+          "email": {
+            "format": "email",
+            "type": "string"
+          },
+          "password": {
+            "minLength": 8,
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ],
+        "type": "object"
+      },
+      "IShoppingAuth.IRefresh": {
+        "additionalProperties": false,
+        "properties": {
+          "refreshToken": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "refreshToken"
+        ],
+        "type": "object"
+      },
+      "IShoppingAuth.IRecoveryChallenge": {
+        "additionalProperties": false,
+        "properties": {
+          "token": {
+            "type": "string"
+          },
+          "expiresAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "token",
+          "expiresAt"
+        ],
+        "type": "object"
+      },
+      "IShoppingAuth.IRecoveryRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "email": {
+            "format": "email",
+            "type": "string"
+          }
+        },
+        "required": [
+          "email"
+        ],
+        "type": "object"
+      },
+      "IEntity": {
+        "additionalProperties": false,
+        "description": "Minimal reference to one persisted entity.",
+        "properties": {
+          "id": {
+            "description": "Primary identifier of the referenced entity.",
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "type": "object"
+      },
+      "IShoppingAuth.IRecoveryComplete": {
+        "additionalProperties": false,
+        "properties": {
+          "token": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "newPassword": {
+            "minLength": 8,
+            "type": "string"
+          }
+        },
+        "required": [
+          "token",
+          "newPassword"
+        ],
+        "type": "object"
+      },
+      "IShoppingAuth.IPasswordChange": {
+        "additionalProperties": false,
+        "properties": {
+          "currentPassword": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "newPassword": {
+            "minLength": 8,
+            "type": "string"
+          }
+        },
+        "required": [
+          "currentPassword",
+          "newPassword"
+        ],
+        "type": "object"
+      },
+      "IShoppingAuth.IAccountDelete": {
+        "additionalProperties": false,
+        "properties": {
+          "password": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "password"
+        ],
+        "type": "object"
+      },
+      "IShoppingCustomerProfile.IDetail": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "displayName",
+          "phone"
+        ],
+        "type": "object"
+      },
+      "IShoppingCustomerProfile.IUpdate": {
+        "additionalProperties": false,
+        "properties": {
+          "displayName": {
+            "maxLength": 255,
+            "minLength": 1,
+            "type": "string"
+          },
+          "phone": {
+            "maxLength": 64,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "displayName",
+          "phone"
+        ],
+        "type": "object"
+      },
+      "IPage.IPagination": {
+        "additionalProperties": false,
+        "description": "Position and size of one page within the complete result set.",
+        "properties": {
+          "current": {
+            "description": "One-indexed page represented by this response.",
+            "minimum": 1,
+            "type": "integer"
+          },
+          "limit": {
+            "description": "Maximum records requested for this page.",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "records": {
+            "description": "Total records matching the request.",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "pages": {
+            "description": "Total pages matching the request.",
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "current",
+          "limit",
+          "records",
+          "pages"
+        ],
+        "type": "object"
+      },
+      "IPageIShoppingAddress.IDetail": {
+        "additionalProperties": false,
+        "description": "One page of a larger result set.",
+        "properties": {
+          "pagination": {
+            "$ref": "#/components/schemas/IPage.IPagination",
+            "description": "Position and size of this page within the complete result set."
+          },
+          "data": {
+            "description": "Records returned for the current page.",
+            "items": {
+              "$ref": "#/components/schemas/IShoppingAddress.IDetail"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "pagination",
+          "data"
+        ],
+        "type": "object"
+      },
+      "IShoppingAddress.IDetail": {
+        "additionalProperties": false,
+        "properties": {
+          "recipientName": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "streetAddress": {
+            "type": "string"
+          },
+          "city": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string"
+          },
+          "postalCode": {
+            "type": "string"
+          },
+          "country": {
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "isDefault": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "recipientName",
+          "phone",
+          "streetAddress",
+          "city",
+          "state",
+          "postalCode",
+          "country",
+          "id",
+          "isDefault"
+        ],
+        "type": "object"
+      },
+      "IPage.IRequest": {
+        "additionalProperties": false,
+        "description": "Pagination controls accepted by list operations.",
+        "properties": {
+          "page": {
+            "description": "One-indexed page to read.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "minimum": 1,
+                "type": "integer"
+              }
+            ]
+          },
+          "limit": {
+            "description": "Maximum number of records returned per page. Zero requests every record.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "minimum": 0,
+                "type": "integer"
+              }
+            ]
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
+      "IShoppingAddress.ICreate": {
+        "additionalProperties": false,
+        "properties": {
+          "recipientName": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "streetAddress": {
+            "type": "string"
+          },
+          "city": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string"
+          },
+          "postalCode": {
+            "type": "string"
+          },
+          "country": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "recipientName",
+          "phone",
+          "streetAddress",
+          "city",
+          "state",
+          "postalCode",
+          "country"
+        ],
+        "type": "object"
+      },
+      "IShoppingAddress.IUpdate": {
+        "additionalProperties": false,
+        "properties": {
+          "recipientName": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "streetAddress": {
+            "type": "string"
+          },
+          "city": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string"
+          },
+          "postalCode": {
+            "type": "string"
+          },
+          "country": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "recipientName",
+          "phone",
+          "streetAddress",
+          "city",
+          "state",
+          "postalCode",
+          "country"
+        ],
+        "type": "object"
+      },
+      "IShoppingSellerProfile.IDetail": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "shopName": {
+            "type": "string"
+          },
+          "shopDescription": {
+            "type": "string"
+          },
+          "shopLogo": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "approvalStatus": {
+            "type": "string"
+          },
+          "suspended": {
+            "type": "boolean"
+          },
+          "banned": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "shopName",
+          "shopDescription",
+          "shopLogo",
+          "approvalStatus",
+          "suspended",
+          "banned"
+        ],
+        "type": "object"
+      },
+      "IShoppingSellerProfile.IUpdate": {
+        "additionalProperties": false,
+        "properties": {
+          "shopName": {
+            "maxLength": 255,
+            "minLength": 1,
+            "type": "string"
+          },
+          "shopDescription": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "shopLogo": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          }
+        },
+        "required": [
+          "shopName",
+          "shopDescription"
+        ],
+        "type": "object"
+      },
+      "IPageIShoppingSellerProfile.ISnapshot": {
+        "additionalProperties": false,
+        "description": "One page of a larger result set.",
+        "properties": {
+          "pagination": {
+            "$ref": "#/components/schemas/IPage.IPagination",
+            "description": "Position and size of this page within the complete result set."
+          },
+          "data": {
+            "description": "Records returned for the current page.",
+            "items": {
+              "$ref": "#/components/schemas/IShoppingSellerProfile.ISnapshot"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "pagination",
+          "data"
+        ],
+        "type": "object"
+      },
+      "IShoppingSellerProfile.ISnapshot": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "sellerId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "changedFields": {
+            "type": "string"
+          },
+          "before": {
+            "type": "string"
+          },
+          "after": {
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "sellerId",
+          "changedFields",
+          "before",
+          "after",
+          "createdAt"
+        ],
+        "type": "object"
+      },
+      "IShoppingSellerApproval.IDetail": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "sellerId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "seller": {
+            "$ref": "#/components/schemas/IShoppingSellerProfile.IDetail"
+          },
+          "status": {
+            "type": "string"
+          },
+          "reason": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "decidedAt": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "format": "date-time",
+                "type": "string"
+              }
+            ]
+          },
+          "decidedById": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "format": "uuid",
+                "type": "string"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "sellerId",
+          "seller",
+          "status",
+          "reason",
+          "createdAt",
+          "decidedAt",
+          "decidedById"
+        ],
+        "type": "object"
+      },
+      "IPageIShoppingSellerApproval.IDetail": {
+        "additionalProperties": false,
+        "description": "One page of a larger result set.",
+        "properties": {
+          "pagination": {
+            "$ref": "#/components/schemas/IPage.IPagination",
+            "description": "Position and size of this page within the complete result set."
+          },
+          "data": {
+            "description": "Records returned for the current page.",
+            "items": {
+              "$ref": "#/components/schemas/IShoppingSellerApproval.IDetail"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "pagination",
+          "data"
+        ],
+        "type": "object"
+      },
+      "IShoppingSellerApproval.IDecision": {
+        "additionalProperties": false,
+        "properties": {
+          "reason": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
+      "IShoppingCategory.IDetail": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "parentId": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "format": "uuid",
+                "type": "string"
+              }
+            ]
+          },
+          "children": {
+            "items": {
+              "$ref": "#/components/schemas/IShoppingCategory.ISummary"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "description",
+          "parentId",
+          "children"
+        ],
+        "type": "object"
+      },
+      "IShoppingCategory.ISummary": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "parentId": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "format": "uuid",
+                "type": "string"
+              }
+            ]
+          },
+          "children": {
+            "items": {
+              "$ref": "#/components/schemas/IShoppingCategory.ISummary"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "description",
+          "parentId",
+          "children"
+        ],
+        "type": "object"
+      },
+      "IShoppingCategory.ICreate": {
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "parentId": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "format": "uuid",
+                "type": "string"
+              }
+            ]
+          }
+        },
+        "required": [
+          "name",
+          "description"
+        ],
+        "type": "object"
+      },
+      "IShoppingCategory.IUpdate": {
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "description"
+        ],
+        "type": "object"
+      },
+      "IPageIShoppingProduct.ISummary": {
+        "additionalProperties": false,
+        "description": "One page of a larger result set.",
+        "properties": {
+          "pagination": {
+            "$ref": "#/components/schemas/IPage.IPagination",
+            "description": "Position and size of this page within the complete result set."
+          },
+          "data": {
+            "description": "Records returned for the current page.",
+            "items": {
+              "$ref": "#/components/schemas/IShoppingProduct.ISummary"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "pagination",
+          "data"
+        ],
+        "type": "object"
+      },
+      "IShoppingProduct.ISummary": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "sellerId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "sellerName": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "basePrice": {
+            "type": "number"
+          },
+          "priceMin": {
+            "type": "number"
+          },
+          "priceMax": {
+            "type": "number"
+          },
+          "thumbnail": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "available": {
+            "type": "boolean"
+          },
+          "averageRating": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "number"
+              }
+            ]
+          },
+          "reviewCount": {
+            "type": "number"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "sellerId",
+          "sellerName",
+          "name",
+          "description",
+          "basePrice",
+          "priceMin",
+          "priceMax",
+          "thumbnail",
+          "available",
+          "averageRating",
+          "reviewCount",
+          "createdAt"
+        ],
+        "type": "object"
+      },
+      "IShoppingProduct.IRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "page": {
+            "description": "One-indexed page to read.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "minimum": 1,
+                "type": "integer"
+              }
+            ]
+          },
+          "limit": {
+            "description": "Maximum number of records returned per page. Zero requests every record.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "minimum": 0,
+                "type": "integer"
+              }
+            ]
+          },
+          "search": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "categoryId": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "format": "uuid",
+                "type": "string"
+              }
+            ]
+          },
+          "sellerId": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "format": "uuid",
+                "type": "string"
+              }
+            ]
+          },
+          "minPrice": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "number"
+              }
+            ]
+          },
+          "maxPrice": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "number"
+              }
+            ]
+          },
+          "inStock": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "boolean"
+              }
+            ]
+          },
+          "sort": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "const": "newest",
+                "description": null,
+                "title": null
+              },
+              {
+                "const": "priceAsc",
+                "description": null,
+                "title": null
+              },
+              {
+                "const": "priceDesc",
+                "description": null,
+                "title": null
+              }
+            ]
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
+      "IShoppingProduct.IDetail": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "sellerId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "sellerName": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "basePrice": {
+            "type": "number"
+          },
+          "priceMin": {
+            "type": "number"
+          },
+          "priceMax": {
+            "type": "number"
+          },
+          "thumbnail": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "available": {
+            "type": "boolean"
+          },
+          "averageRating": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "number"
+              }
+            ]
+          },
+          "reviewCount": {
+            "type": "number"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "categoryId": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "format": "uuid",
+                "type": "string"
+              }
+            ]
+          },
+          "images": {
+            "items": {
+              "$ref": "#/components/schemas/IShoppingProduct.IImage"
+            },
+            "type": "array"
+          },
+          "variants": {
+            "items": {
+              "$ref": "#/components/schemas/IShoppingProduct.IVariant"
+            },
+            "type": "array"
+          },
+          "reviews": {
+            "items": {
+              "$ref": "#/components/schemas/IShoppingReview.IDetail"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "sellerId",
+          "sellerName",
+          "name",
+          "description",
+          "basePrice",
+          "priceMin",
+          "priceMax",
+          "thumbnail",
+          "available",
+          "averageRating",
+          "reviewCount",
+          "createdAt",
+          "categoryId",
+          "images",
+          "variants",
+          "reviews"
+        ],
+        "type": "object"
+      },
+      "IShoppingProduct.IImage": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "uri": {
+            "type": "string"
+          },
+          "sequence": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "uri",
+          "sequence"
+        ],
+        "type": "object"
+      },
+      "IShoppingProduct.IVariant": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "sku": {
+            "type": "string"
+          },
+          "options": {
+            "$ref": "#/components/schemas/Recordstringstring"
+          },
+          "priceOverride": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "number"
+              }
+            ]
+          },
+          "stock": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "sku",
+          "options",
+          "priceOverride",
+          "stock"
+        ],
+        "type": "object"
+      },
+      "IShoppingReview.IDetail": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "productId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "authorId": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "format": "uuid",
+                "type": "string"
+              }
+            ]
+          },
+          "authorName": {
+            "type": "string"
+          },
+          "rating": {
+            "type": "number"
+          },
+          "text": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "productId",
+          "authorId",
+          "authorName",
+          "rating",
+          "text",
+          "createdAt"
+        ],
+        "type": "object"
+      },
+      "Recordstringstring": {
+        "additionalProperties": {
+          "type": "string"
+        },
+        "type": "object"
+      },
+      "IShoppingProduct.ICreate": {
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "categoryId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "basePrice": {
+            "minimum": 0,
+            "type": "number"
+          }
+        },
+        "required": [
+          "name",
+          "description",
+          "categoryId",
+          "basePrice"
+        ],
+        "type": "object"
+      },
+      "IShoppingProduct.IUpdate": {
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "categoryId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "basePrice": {
+            "minimum": 0,
+            "type": "number"
+          }
+        },
+        "required": [
+          "name",
+          "description",
+          "categoryId",
+          "basePrice"
+        ],
+        "type": "object"
+      },
+      "IShoppingProduct.IImageCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "uri": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "uri"
+        ],
+        "type": "object"
+      },
+      "IShoppingProduct.IImageReorder": {
+        "additionalProperties": false,
+        "properties": {
+          "imageIds": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "imageIds"
+        ],
+        "type": "object"
+      },
+      "IPageIShoppingProduct.ISnapshot": {
+        "additionalProperties": false,
+        "description": "One page of a larger result set.",
+        "properties": {
+          "pagination": {
+            "$ref": "#/components/schemas/IPage.IPagination",
+            "description": "Position and size of this page within the complete result set."
+          },
+          "data": {
+            "description": "Records returned for the current page.",
+            "items": {
+              "$ref": "#/components/schemas/IShoppingProduct.ISnapshot"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "pagination",
+          "data"
+        ],
+        "type": "object"
+      },
+      "IShoppingProduct.ISnapshot": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "productId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "changedFields": {
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "before": {
+            "type": "string"
+          },
+          "after": {
+            "type": "string"
+          },
+          "payload": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "productId",
+          "changedFields",
+          "createdAt",
+          "before",
+          "after",
+          "payload"
+        ],
+        "type": "object"
+      },
+      "IShoppingAdmin.IReason": {
+        "additionalProperties": false,
+        "properties": {
+          "reason": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "reason"
+        ],
+        "type": "object"
+      },
+      "IShoppingProduct.IVariantCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "sku": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "options": {
+            "$ref": "#/components/schemas/Recordstringstring"
+          },
+          "priceOverride": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "minimum": 0,
+                "type": "number"
+              }
+            ]
+          }
+        },
+        "required": [
+          "sku",
+          "options"
+        ],
+        "type": "object"
+      },
+      "IShoppingProduct.IVariantUpdate": {
+        "additionalProperties": false,
+        "properties": {
+          "sku": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "options": {
+            "$ref": "#/components/schemas/Recordstringstring"
+          },
+          "priceOverride": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "minimum": 0,
+                "type": "number"
+              }
+            ]
+          }
+        },
+        "required": [
+          "sku",
+          "options"
+        ],
+        "type": "object"
+      },
+      "IShoppingInventory.ICreate": {
+        "additionalProperties": false,
+        "description": "Seller-entered stock movement. Quantity is always a positive magnitude;\n`operation` selects whether it is added or subtracted from the ledger.",
+        "properties": {
+          "quantity": {
+            "minimum": 1,
+            "type": "integer"
+          },
+          "reason": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "operation": {
+            "oneOf": [
+              {
+                "const": "adjustment",
+                "description": null,
+                "title": null
+              },
+              {
+                "const": "loss",
+                "description": null,
+                "title": null
+              },
+              {
+                "const": "restock",
+                "description": null,
+                "title": null
+              }
+            ]
+          }
+        },
+        "required": [
+          "quantity",
+          "reason"
+        ],
+        "type": "object"
+      },
+      "IShoppingInventory.IHistory": {
+        "additionalProperties": false,
+        "description": "Paginated movement history together with the ledger's calculated current stock.",
+        "properties": {
+          "pagination": {
+            "$ref": "#/components/schemas/IPage.IPagination",
+            "description": "Position and size of this page within the complete result set."
+          },
+          "data": {
+            "description": "Records returned for the current page.",
+            "items": {
+              "$ref": "#/components/schemas/IShoppingInventory.IMovement"
+            },
+            "type": "array"
+          },
+          "currentStock": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "pagination",
+          "data",
+          "currentStock"
+        ],
+        "type": "object"
+      },
+      "IShoppingInventory.IMovement": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "quantity": {
+            "type": "number"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "quantity",
+          "reason",
+          "createdAt"
+        ],
+        "type": "object"
+      },
+      "IShoppingCart.ILine": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "variantId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "productId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "productName": {
+            "type": "string"
+          },
+          "sku": {
+            "type": "string"
+          },
+          "options": {
+            "$ref": "#/components/schemas/Recordstringstring"
+          },
+          "unitPrice": {
+            "type": "number"
+          },
+          "quantity": {
+            "type": "number"
+          },
+          "subtotal": {
+            "type": "number"
+          },
+          "available": {
+            "type": "boolean"
+          },
+          "shortage": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "variantId",
+          "productId",
+          "productName",
+          "sku",
+          "options",
+          "unitPrice",
+          "quantity",
+          "subtotal",
+          "available",
+          "shortage"
+        ],
+        "type": "object"
+      },
+      "IShoppingCart.ISummary": {
+        "additionalProperties": false,
+        "properties": {
+          "lines": {
+            "items": {
+              "$ref": "#/components/schemas/IShoppingCart.ILine"
+            },
+            "type": "array"
+          },
+          "total": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "lines",
+          "total"
+        ],
+        "type": "object"
+      },
+      "IShoppingCart.ICreate": {
+        "additionalProperties": false,
+        "properties": {
+          "variantId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "quantity": {
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "variantId",
+          "quantity"
+        ],
+        "type": "object"
+      },
+      "IShoppingCart.IUpdate": {
+        "additionalProperties": false,
+        "properties": {
+          "quantity": {
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "quantity"
+        ],
+        "type": "object"
+      },
+      "IPageIShoppingWishlist.ISummary": {
+        "additionalProperties": false,
+        "description": "One page of a larger result set.",
+        "properties": {
+          "pagination": {
+            "$ref": "#/components/schemas/IPage.IPagination",
+            "description": "Position and size of this page within the complete result set."
+          },
+          "data": {
+            "description": "Records returned for the current page.",
+            "items": {
+              "$ref": "#/components/schemas/IShoppingWishlist.ISummary"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "pagination",
+          "data"
+        ],
+        "type": "object"
+      },
+      "IShoppingWishlist.ISummary": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "productId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "product": {
+            "$ref": "#/components/schemas/IShoppingProduct.ISummary"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "productId",
+          "product",
+          "createdAt"
+        ],
+        "type": "object"
+      },
+      "IShoppingCheckout.ILine": {
+        "additionalProperties": false,
+        "properties": {
+          "variantId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "productId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "productName": {
+            "type": "string"
+          },
+          "variantSku": {
+            "type": "string"
+          },
+          "unitPrice": {
+            "type": "number"
+          },
+          "quantity": {
+            "type": "number"
+          },
+          "subtotal": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "variantId",
+          "productId",
+          "productName",
+          "variantSku",
+          "unitPrice",
+          "quantity",
+          "subtotal"
+        ],
+        "type": "object"
+      },
+      "IShoppingCheckout.ISummary": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "total": {
+            "type": "number"
+          },
+          "recipientName": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "streetAddress": {
+            "type": "string"
+          },
+          "city": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string"
+          },
+          "postalCode": {
+            "type": "string"
+          },
+          "country": {
+            "type": "string"
+          },
+          "lines": {
+            "items": {
+              "$ref": "#/components/schemas/IShoppingCheckout.ILine"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "total",
+          "recipientName",
+          "phone",
+          "streetAddress",
+          "city",
+          "state",
+          "postalCode",
+          "country",
+          "lines"
+        ],
+        "type": "object"
+      },
+      "IShoppingCheckout.IStart": {
+        "additionalProperties": false,
+        "properties": {
+          "addressId": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "format": "uuid",
+                "type": "string"
+              }
+            ]
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
+      "IShoppingAdmin.IAction": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "actorId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "targetKind": {
+            "type": "string"
+          },
+          "targetId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "action": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "outcome": {
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "actorId",
+          "targetKind",
+          "targetId",
+          "action",
+          "reason",
+          "outcome",
+          "createdAt"
+        ],
+        "type": "object"
+      },
+      "IShoppingCheckout.IPaymentResult": {
+        "additionalProperties": false,
+        "properties": {
+          "status": {
+            "oneOf": [
+              {
+                "const": "failed",
+                "description": null,
+                "title": null
+              },
+              {
+                "const": "succeeded",
+                "description": null,
+                "title": null
+              },
+              {
+                "const": "unknown",
+                "description": null,
+                "title": null
+              }
+            ]
+          },
+          "checkout": {
+            "$ref": "#/components/schemas/IShoppingCheckout.ISummary"
+          },
+          "order": {
+            "$ref": "#/components/schemas/IShoppingOrder.IDetail"
+          }
+        },
+        "required": [
+          "status",
+          "checkout"
+        ],
+        "type": "object"
+      },
+      "IShoppingOrder.IDetail": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "orderNumber": {
+            "type": "string"
+          },
+          "total": {
+            "type": "number"
+          },
+          "status": {
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "itemCount": {
+            "type": "number"
+          },
+          "recipientName": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "streetAddress": {
+            "type": "string"
+          },
+          "city": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string"
+          },
+          "postalCode": {
+            "type": "string"
+          },
+          "country": {
+            "type": "string"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/IShoppingOrder.IItem"
+            },
+            "type": "array"
+          },
+          "shipments": {
+            "items": {
+              "$ref": "#/components/schemas/IShoppingOrder.IShipment"
+            },
+            "type": "array"
+          },
+          "requests": {
+            "items": {
+              "$ref": "#/components/schemas/IShoppingRequest.IDetail"
+            },
+            "type": "array"
+          },
+          "adminActions": {
+            "items": {
+              "$ref": "#/components/schemas/IShoppingAdmin.IAction"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "orderNumber",
+          "total",
+          "status",
+          "createdAt",
+          "itemCount",
+          "recipientName",
+          "phone",
+          "streetAddress",
+          "city",
+          "state",
+          "postalCode",
+          "country",
+          "items",
+          "shipments"
+        ],
+        "type": "object"
+      },
+      "IShoppingOrder.IItem": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "productId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "productName": {
+            "type": "string"
+          },
+          "variantSku": {
+            "type": "string"
+          },
+          "options": {
+            "$ref": "#/components/schemas/Recordstringstring"
+          },
+          "sellerId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "sellerName": {
+            "type": "string"
+          },
+          "unitPrice": {
+            "type": "number"
+          },
+          "quantity": {
+            "type": "number"
+          },
+          "status": {
+            "oneOf": [
+              {
+                "const": "cancelled",
+                "description": null,
+                "title": null
+              },
+              {
+                "const": "delivered",
+                "description": null,
+                "title": null
+              },
+              {
+                "const": "paid",
+                "description": null,
+                "title": null
+              },
+              {
+                "const": "refunded",
+                "description": null,
+                "title": null
+              },
+              {
+                "const": "shipped",
+                "description": null,
+                "title": null
+              }
+            ]
+          },
+          "purchasedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "deliveredAt": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "format": "date-time",
+                "type": "string"
+              }
+            ]
+          },
+          "refundAmount": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "number"
+              }
+            ]
+          },
+          "orderId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "orderNumber": {
+            "type": "string"
+          },
+          "recipientName": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "streetAddress": {
+            "type": "string"
+          },
+          "city": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string"
+          },
+          "postalCode": {
+            "type": "string"
+          },
+          "country": {
+            "type": "string"
+          },
+          "productDescription": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "productId",
+          "productName",
+          "variantSku",
+          "options",
+          "sellerId",
+          "sellerName",
+          "unitPrice",
+          "quantity",
+          "status",
+          "purchasedAt"
+        ],
+        "type": "object"
+      },
+      "IShoppingOrder.IShipment": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "sellerId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "carrier": {
+            "type": "string"
+          },
+          "trackingNumber": {
+            "type": "string"
+          },
+          "shippedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "deliveredAt": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "format": "date-time",
+                "type": "string"
+              }
+            ]
+          },
+          "itemIds": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "sellerId",
+          "carrier",
+          "trackingNumber",
+          "shippedAt",
+          "deliveredAt",
+          "itemIds"
+        ],
+        "type": "object"
+      },
+      "IShoppingRequest.IDetail": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "itemId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "kind": {
+            "oneOf": [
+              {
+                "const": "cancellation",
+                "description": null,
+                "title": null
+              },
+              {
+                "const": "refund",
+                "description": null,
+                "title": null
+              }
+            ]
+          },
+          "reason": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "decidedAt": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "format": "date-time",
+                "type": "string"
+              }
+            ]
+          },
+          "snapshots": {
+            "items": {
+              "$ref": "#/components/schemas/IShoppingRequest.ISnapshot"
+            },
+            "type": "array"
+          },
+          "orderId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "orderNumber": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "number"
+          },
+          "deliveredAt": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "format": "date-time",
+                "type": "string"
+              }
+            ]
+          },
+          "productName": {
+            "type": "string"
+          },
+          "variantSku": {
+            "type": "string"
+          },
+          "sellerId": {
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "itemId",
+          "kind",
+          "reason",
+          "status",
+          "createdAt",
+          "decidedAt"
+        ],
+        "type": "object"
+      },
+      "IShoppingRequest.ISnapshot": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "beforeStatus": {
+            "type": "string"
+          },
+          "afterStatus": {
+            "type": "string"
+          },
+          "beforeReason": {
+            "type": "string"
+          },
+          "afterReason": {
+            "type": "string"
+          },
+          "actorId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "actorKind": {
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "beforeStatus",
+          "afterStatus",
+          "beforeReason",
+          "afterReason",
+          "actorId",
+          "actorKind",
+          "createdAt"
+        ],
+        "type": "object"
+      },
+      "IShoppingCheckout.IPayment": {
+        "additionalProperties": false,
+        "description": "Gateway result submitted for one idempotent payment attempt.\n\n`status` is the authoritative result.  `succeeded` remains accepted for\ncompatibility with the original boolean gateway stub; when omitted the\nprovider treats the result as `unknown` until reconciliation resolves it.",
+        "properties": {
+          "paymentAttemptId": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "status": {
+            "oneOf": [
+              {
+                "const": "failed",
+                "description": null,
+                "title": null
+              },
+              {
+                "const": "succeeded",
+                "description": null,
+                "title": null
+              },
+              {
+                "const": "unknown",
+                "description": null,
+                "title": null
+              }
+            ]
+          },
+          "succeeded": {
+            "type": "boolean"
+          },
+          "amount": {
+            "minimum": 0,
+            "type": "number"
+          }
+        },
+        "required": [
+          "paymentAttemptId",
+          "amount"
+        ],
+        "type": "object"
+      },
+      "IPageIShoppingOrder.ISummary": {
+        "additionalProperties": false,
+        "description": "One page of a larger result set.",
+        "properties": {
+          "pagination": {
+            "$ref": "#/components/schemas/IPage.IPagination",
+            "description": "Position and size of this page within the complete result set."
+          },
+          "data": {
+            "description": "Records returned for the current page.",
+            "items": {
+              "$ref": "#/components/schemas/IShoppingOrder.ISummary"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "pagination",
+          "data"
+        ],
+        "type": "object"
+      },
+      "IShoppingOrder.ISummary": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "orderNumber": {
+            "type": "string"
+          },
+          "total": {
+            "type": "number"
+          },
+          "status": {
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "itemCount": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "orderNumber",
+          "total",
+          "status",
+          "createdAt",
+          "itemCount"
+        ],
+        "type": "object"
+      },
+      "IPageIShoppingAdmin.IOrderSummary": {
+        "additionalProperties": false,
+        "description": "One page of a larger result set.",
+        "properties": {
+          "pagination": {
+            "$ref": "#/components/schemas/IPage.IPagination",
+            "description": "Position and size of this page within the complete result set."
+          },
+          "data": {
+            "description": "Records returned for the current page.",
+            "items": {
+              "$ref": "#/components/schemas/IShoppingAdmin.IOrderSummary"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "pagination",
+          "data"
+        ],
+        "type": "object"
+      },
+      "IShoppingAdmin.IOrderSummary": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "orderNumber": {
+            "type": "string"
+          },
+          "total": {
+            "type": "number"
+          },
+          "status": {
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "itemCount": {
+            "type": "number"
+          },
+          "customerId": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "format": "uuid",
+                "type": "string"
+              }
+            ]
+          },
+          "sellerCount": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "orderNumber",
+          "total",
+          "status",
+          "createdAt",
+          "itemCount",
+          "customerId",
+          "sellerCount"
+        ],
+        "type": "object"
+      },
+      "IShoppingOrder.IAdminRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "page": {
+            "description": "One-indexed page to read.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "minimum": 1,
+                "type": "integer"
+              }
+            ]
+          },
+          "limit": {
+            "description": "Maximum number of records returned per page. Zero requests every record.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "minimum": 0,
+                "type": "integer"
+              }
+            ]
+          },
+          "status": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "customerId": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "format": "uuid",
+                "type": "string"
+              }
+            ]
+          },
+          "sellerId": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "format": "uuid",
+                "type": "string"
+              }
+            ]
+          },
+          "createdFrom": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "format": "date-time",
+                "type": "string"
+              }
+            ]
+          },
+          "createdTo": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "format": "date-time",
+                "type": "string"
+              }
+            ]
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
+      "IPageIShoppingAdmin.IAction": {
+        "additionalProperties": false,
+        "description": "One page of a larger result set.",
+        "properties": {
+          "pagination": {
+            "$ref": "#/components/schemas/IPage.IPagination",
+            "description": "Position and size of this page within the complete result set."
+          },
+          "data": {
+            "description": "Records returned for the current page.",
+            "items": {
+              "$ref": "#/components/schemas/IShoppingAdmin.IAction"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "pagination",
+          "data"
+        ],
+        "type": "object"
+      },
+      "IShoppingAdmin.IActionRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "page": {
+            "description": "One-indexed page to read.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "minimum": 1,
+                "type": "integer"
+              }
+            ]
+          },
+          "limit": {
+            "description": "Maximum number of records returned per page. Zero requests every record.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "minimum": 0,
+                "type": "integer"
+              }
+            ]
+          },
+          "targetKind": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "targetId": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "format": "uuid",
+                "type": "string"
+              }
+            ]
+          },
+          "action": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
+      "IShoppingShipment.ICreate": {
+        "additionalProperties": false,
+        "properties": {
+          "itemIds": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "carrier": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "trackingNumber": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "itemIds",
+          "carrier",
+          "trackingNumber"
+        ],
+        "type": "object"
+      },
+      "IPageIShoppingOrder.IItem": {
+        "additionalProperties": false,
+        "description": "One page of a larger result set.",
+        "properties": {
+          "pagination": {
+            "$ref": "#/components/schemas/IPage.IPagination",
+            "description": "Position and size of this page within the complete result set."
+          },
+          "data": {
+            "description": "Records returned for the current page.",
+            "items": {
+              "$ref": "#/components/schemas/IShoppingOrder.IItem"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "pagination",
+          "data"
+        ],
+        "type": "object"
+      },
+      "IShoppingOrder.ISellerRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "page": {
+            "description": "One-indexed page to read.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "minimum": 1,
+                "type": "integer"
+              }
+            ]
+          },
+          "limit": {
+            "description": "Maximum number of records returned per page. Zero requests every record.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "minimum": 0,
+                "type": "integer"
+              }
+            ]
+          },
+          "status": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "const": "cancelled",
+                "description": null,
+                "title": null
+              },
+              {
+                "const": "delivered",
+                "description": null,
+                "title": null
+              },
+              {
+                "const": "paid",
+                "description": null,
+                "title": null
+              },
+              {
+                "const": "refunded",
+                "description": null,
+                "title": null
+              },
+              {
+                "const": "shipped",
+                "description": null,
+                "title": null
+              }
+            ]
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
+      "IShoppingRequest.ICreate__type": {
+        "additionalProperties": false,
+        "properties": {
+          "reason": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "itemId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "reason",
+          "itemId"
+        ],
+        "type": "object"
+      },
+      "IShoppingRequest.ICreate__type.o1": {
+        "additionalProperties": false,
+        "properties": {
+          "reason": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "itemId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "reason",
+          "itemId"
+        ],
+        "type": "object"
+      },
+      "IPageIShoppingRequest.IDetail": {
+        "additionalProperties": false,
+        "description": "One page of a larger result set.",
+        "properties": {
+          "pagination": {
+            "$ref": "#/components/schemas/IPage.IPagination",
+            "description": "Position and size of this page within the complete result set."
+          },
+          "data": {
+            "description": "Records returned for the current page.",
+            "items": {
+              "$ref": "#/components/schemas/IShoppingRequest.IDetail"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "pagination",
+          "data"
+        ],
+        "type": "object"
+      },
+      "IShoppingReview.ICreate": {
+        "additionalProperties": false,
+        "properties": {
+          "productId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "orderId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "rating": {
+            "maximum": 5,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "text": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          }
+        },
+        "required": [
+          "productId",
+          "orderId",
+          "rating"
+        ],
+        "type": "object"
+      },
+      "IShoppingReview.IUpdate": {
+        "additionalProperties": false,
+        "properties": {
+          "rating": {
+            "maximum": 5,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "text": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          }
+        },
+        "required": [
+          "rating"
+        ],
+        "type": "object"
+      },
+      "IShoppingAdminApplication.IDetail": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "applicantId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "applicantKind": {
+            "oneOf": [
+              {
+                "const": "customer",
+                "description": null,
+                "title": null
+              },
+              {
+                "const": "seller",
+                "description": null,
+                "title": null
+              }
+            ]
+          },
+          "reason": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "decidedAt": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "format": "date-time",
+                "type": "string"
+              }
+            ]
+          },
+          "decidedById": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "format": "uuid",
+                "type": "string"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "applicantId",
+          "applicantKind",
+          "reason",
+          "status",
+          "createdAt",
+          "decidedAt",
+          "decidedById"
+        ],
+        "type": "object"
+      },
+      "IShoppingAdminApplication.ICreate": {
+        "additionalProperties": false,
+        "properties": {
+          "reason": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "reason"
+        ],
+        "type": "object"
+      },
+      "IPageIShoppingAdminApplication.IDetail": {
+        "additionalProperties": false,
+        "description": "One page of a larger result set.",
+        "properties": {
+          "pagination": {
+            "$ref": "#/components/schemas/IPage.IPagination",
+            "description": "Position and size of this page within the complete result set."
+          },
+          "data": {
+            "description": "Records returned for the current page.",
+            "items": {
+              "$ref": "#/components/schemas/IShoppingAdminApplication.IDetail"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "pagination",
+          "data"
+        ],
+        "type": "object"
+      },
+      "IShoppingAdmin.IUserSummary": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "displayName": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "kind": {
+            "type": "string"
+          },
+          "banned": {
+            "type": "boolean"
+          },
+          "grades": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "email",
+          "displayName",
+          "kind",
+          "banned",
+          "grades",
+          "createdAt"
+        ],
+        "type": "object"
+      },
+      "IPageIShoppingAdmin.IUserSummary": {
+        "additionalProperties": false,
+        "description": "One page of a larger result set.",
+        "properties": {
+          "pagination": {
+            "$ref": "#/components/schemas/IPage.IPagination",
+            "description": "Position and size of this page within the complete result set."
+          },
+          "data": {
+            "description": "Records returned for the current page.",
+            "items": {
+              "$ref": "#/components/schemas/IShoppingAdmin.IUserSummary"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "pagination",
+          "data"
+        ],
+        "type": "object"
+      },
+      "IShoppingAdmin.ISummary": {
+        "additionalProperties": false,
+        "properties": {
+          "products": {
+            "type": "number"
+          },
+          "orderItems": {
+            "type": "number"
+          },
+          "pendingCancellations": {
+            "type": "number"
+          },
+          "pendingRefunds": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "products",
+          "orderItems",
+          "pendingCancellations",
+          "pendingRefunds"
+        ],
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "bearer": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    }
+  },
+  "tags": [],
+  "x-typia-emended-v12": true
+}

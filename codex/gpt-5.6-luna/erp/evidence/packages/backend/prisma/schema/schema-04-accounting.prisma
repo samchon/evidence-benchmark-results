@@ -1,0 +1,66 @@
+/// Organization chart-of-accounts entry.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-account-ledger-account-lifecycle Retains account identity, hierarchy, currency, and lifecycle.
+/// @evidence docs/analysis/03-functional-requirements.md#req-fun-account-ledger-account-operations Stores account lifecycle and approved merge destinations.
+model accounts {
+  id String @id
+  organization_id String
+  code String
+  name String
+  account_type String
+  parent_id String?
+  currency_id String?
+  description String?
+  active Boolean
+  created_at DateTime
+  updated_at DateTime
+  organization organizations @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  /// Merge requests where this account is the source whose history is preserved.
+  source_merges account_merge_requests[] @relation("SourceAccountMerge")
+  /// Merge requests where this account survives as the target.
+  target_merges account_merge_requests[] @relation("TargetAccountMerge")
+  @@unique([organization_id, code])
+  @@index([organization_id, account_type, active])
+}
+
+/// Approved account merge request that preserves posted journal history under a surviving account.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-account-004-an-ledger-account-for-approved-merge-source Retains source, target, approval, reason, and application state.
+/// @evidence docs/analysis/03-functional-requirements.md#req-fun-account-006-receives-approval-for Records the requested and approved account merge workflow.
+model account_merge_requests {
+  /// UUID primary key.
+  id String @id
+  /// Owning organization identifier.
+  organization_id String
+  /// Account whose posted history is reassigned.
+  source_account_id String
+  /// Surviving account receiving the history.
+  target_account_id String
+  /// Business reason for the merge.
+  reason String
+  /// pending, approved, rejected, or applied.
+  status String
+  /// Requesting user identifier.
+  requested_by_user_id String
+  /// Deciding user identifier.
+  decided_by_user_id String?
+  /// Application instant after journal history is reassigned.
+  applied_at DateTime?
+  /// Creation instant.
+  created_at DateTime
+  /// Last workflow update instant.
+  updated_at DateTime
+
+  /// Organization owning the request.
+  organization organizations @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  /// Source account.
+  source_account accounts @relation("SourceAccountMerge", fields: [source_account_id], references: [id])
+  /// Target account.
+  target_account accounts @relation("TargetAccountMerge", fields: [target_account_id], references: [id])
+  /// Requesting user.
+  requested_by users @relation("AccountMergeRequestedBy", fields: [requested_by_user_id], references: [id])
+  /// Deciding user.
+  decided_by users? @relation("AccountMergeDecidedBy", fields: [decided_by_user_id], references: [id])
+
+  @@index([organization_id, status])
+  @@index([source_account_id])
+  @@index([target_account_id])
+}

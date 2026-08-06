@@ -1,0 +1,2 @@
+import * as core from "@nestia/core"; import { Controller } from "@nestjs/common"; import type { IAuth, IPage, ITag } from "@benchmark/erp-api"; import { TagProvider } from "../providers/TagProvider";
+/** Lists organization tags. */ @Controller("tag-search") export class TagIndexController { @core.TypedRoute.Patch() public async index(@core.TypedHeaders() headers: IAuth.IHeaders, @core.TypedBody() input: ITag.IRequest): Promise<IPage<ITag>> { return TagProvider.index({ headers, input }); } }

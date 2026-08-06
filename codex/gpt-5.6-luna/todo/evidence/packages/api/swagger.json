@@ -1,0 +1,1483 @@
+{
+  "openapi": "3.2.0",
+  "servers": [
+    {
+      "url": "https://github.com/samchon/nestia",
+      "description": "insert your server url"
+    }
+  ],
+  "info": {
+    "version": "0.1.0",
+    "title": "@benchmark/todo-backend",
+    "description": "NestJS, Nestia, and Prisma backend for benchmark-todo"
+  },
+  "paths": {
+    "/todo-auth-account": {
+      "delete": {
+        "tags": [],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IAuth.IDeleteAccount"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IActionResult"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "todo_auth_account",
+          "erase"
+        ],
+        "x-samchon-controller": "AuthAccountController"
+      }
+    },
+    "/todo-auth-join": {
+      "post": {
+        "summary": "Registration operation",
+        "description": "Registration operation.",
+        "tags": [],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IAuth.IJoin"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IAuth.IAuthorized"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "todo_auth_join",
+          "join"
+        ],
+        "x-samchon-controller": "AuthJoinController"
+      }
+    },
+    "/todo-auth-login": {
+      "post": {
+        "tags": [],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IAuth.ILogin"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IAuth.IAuthorized"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "todo_auth_login",
+          "login"
+        ],
+        "x-samchon-controller": "AuthLoginController"
+      }
+    },
+    "/todo-auth-logout-all": {
+      "post": {
+        "tags": [],
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IActionResult"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "todo_auth_logout_all",
+          "logoutAll"
+        ],
+        "x-samchon-controller": "AuthLogoutAllController"
+      }
+    },
+    "/todo-auth-logout": {
+      "post": {
+        "tags": [],
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IActionResult"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "todo_auth_logout",
+          "logout"
+        ],
+        "x-samchon-controller": "AuthLogoutController"
+      }
+    },
+    "/todo-auth-password": {
+      "put": {
+        "tags": [],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IAuth.IChangePassword"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IActionResult"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "todo_auth_password",
+          "password"
+        ],
+        "x-samchon-controller": "AuthPasswordController"
+      }
+    },
+    "/todo-auth-recover": {
+      "post": {
+        "tags": [],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IAuth.IRecover"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IActionResult"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "todo_auth_recover",
+          "recover"
+        ],
+        "x-samchon-controller": "AuthRecoverController"
+      }
+    },
+    "/todo-auth-refresh": {
+      "post": {
+        "tags": [],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IAuth.IRefresh"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IAuth.IAuthorized"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "todo_auth_refresh",
+          "refresh"
+        ],
+        "x-samchon-controller": "AuthRefreshController"
+      }
+    },
+    "/health": {
+      "get": {
+        "summary": "Returns the process health marker",
+        "description": "Returns the process health marker.",
+        "tags": [],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Literal marker used by local and deployed health probes.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "health",
+          "get"
+        ],
+        "x-samchon-controller": "HealthController"
+      }
+    },
+    "/todo-profile": {
+      "get": {
+        "tags": [],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IProfile"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "todo_profile",
+          "at"
+        ],
+        "x-samchon-controller": "ProfileController"
+      }
+    },
+    "/todo-profile-update": {
+      "put": {
+        "tags": [],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IProfileUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IProfile"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "todo_profile_update",
+          "update"
+        ],
+        "x-samchon-controller": "ProfileUpdateController"
+      }
+    },
+    "/todo-detail/{id}": {
+      "get": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ITodo"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "todo_detail",
+          "at"
+        ],
+        "x-samchon-controller": "TodoAtController"
+      }
+    },
+    "/todo-completion/{id}/completion": {
+      "put": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ITodoCompletion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ITodo"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "todo_completion",
+          "completion"
+        ],
+        "x-samchon-controller": "TodoCompletionController"
+      }
+    },
+    "/todo-create": {
+      "post": {
+        "tags": [],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ITodoCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ITodo"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "todo_create",
+          "create"
+        ],
+        "x-samchon-controller": "TodoCreateController"
+      }
+    },
+    "/todo-history/{id}/history": {
+      "get": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ITodoHistory"
+                  },
+                  "type": "array"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "todo_history",
+          "history"
+        ],
+        "x-samchon-controller": "TodoHistoryController"
+      }
+    },
+    "/todo-index": {
+      "patch": {
+        "tags": [],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ITodoRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IPageITodoSummary"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "todo_index",
+          "index"
+        ],
+        "x-samchon-controller": "TodoIndexController"
+      }
+    },
+    "/todo-trash/{id}": {
+      "delete": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ITodo"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "todo_trash",
+          "trash"
+        ],
+        "x-samchon-controller": "TodoTrashController"
+      }
+    },
+    "/todo-update/{id}": {
+      "put": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ITodoUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ITodo"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "todo_update",
+          "update"
+        ],
+        "x-samchon-controller": "TodoUpdateController"
+      }
+    },
+    "/todo-trash-detail/{id}": {
+      "get": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ITodo"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "todo_trash_detail",
+          "at"
+        ],
+        "x-samchon-controller": "TrashAtController"
+      }
+    },
+    "/todo-trash-erase/{id}": {
+      "delete": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IActionResult"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "todo_trash_erase",
+          "erase"
+        ],
+        "x-samchon-controller": "TrashEraseController"
+      }
+    },
+    "/todo-trash-index": {
+      "patch": {
+        "tags": [],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ITodoRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IPageITodoSummary"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "todo_trash_index",
+          "index"
+        ],
+        "x-samchon-controller": "TrashIndexController"
+      }
+    },
+    "/todo-trash-restore/{id}/restore": {
+      "put": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ITodo"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "todo_trash_restore",
+          "restore"
+        ],
+        "x-samchon-controller": "TrashRestoreController"
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "IActionResult": {
+        "additionalProperties": false,
+        "description": "A successful command acknowledgement.",
+        "properties": {
+          "success": {
+            "const": true,
+            "description": null,
+            "title": null
+          }
+        },
+        "required": [
+          "success"
+        ],
+        "type": "object"
+      },
+      "IAuth.IDeleteAccount": {
+        "additionalProperties": false,
+        "description": "Password confirmation for terminal account deletion.",
+        "properties": {
+          "currentPassword": {
+            "description": "Current password proving authority.",
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "currentPassword"
+        ],
+        "type": "object"
+      },
+      "IAuth.IAuthorized": {
+        "additionalProperties": false,
+        "description": "Issued session material.",
+        "properties": {
+          "token": {
+            "additionalProperties": false,
+            "description": "Tokens retained by the client connection.",
+            "properties": {
+              "access": {
+                "type": "string"
+              },
+              "refresh": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "access",
+              "refresh"
+            ],
+            "type": "object"
+          },
+          "accessTokenExpiresAt": {
+            "description": "Access-token expiry instant.",
+            "format": "date-time",
+            "type": "string"
+          },
+          "refreshTokenExpiresAt": {
+            "description": "Refresh-token expiry instant.",
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "token",
+          "accessTokenExpiresAt",
+          "refreshTokenExpiresAt"
+        ],
+        "type": "object"
+      },
+      "IAuth.IJoin": {
+        "additionalProperties": false,
+        "description": "Creates an account, profile, empty Todo collection, and first session.",
+        "properties": {
+          "email": {
+            "description": "Canonicalized email identity.",
+            "format": "email",
+            "type": "string"
+          },
+          "password": {
+            "description": "Plaintext password accepted only at the transport boundary.",
+            "maxLength": 128,
+            "minLength": 8,
+            "type": "string"
+          },
+          "displayName": {
+            "description": "Initial private display name.",
+            "maxLength": 100,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "password",
+          "displayName"
+        ],
+        "type": "object"
+      },
+      "IAuth.ILogin": {
+        "additionalProperties": false,
+        "description": "Login input.",
+        "properties": {
+          "email": {
+            "description": "Email identity.",
+            "format": "email",
+            "type": "string"
+          },
+          "password": {
+            "description": "Plaintext password.",
+            "maxLength": 128,
+            "minLength": 8,
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ],
+        "type": "object"
+      },
+      "IAuth.IChangePassword": {
+        "additionalProperties": false,
+        "description": "Password replacement input.",
+        "properties": {
+          "currentPassword": {
+            "description": "Current password proving authority.",
+            "minLength": 1,
+            "type": "string"
+          },
+          "newPassword": {
+            "description": "New password.",
+            "maxLength": 128,
+            "minLength": 8,
+            "type": "string"
+          }
+        },
+        "required": [
+          "currentPassword",
+          "newPassword"
+        ],
+        "type": "object"
+      },
+      "IAuth.IRecover": {
+        "additionalProperties": false,
+        "description": "Email-proven forgotten-password replacement input.",
+        "properties": {
+          "email": {
+            "description": "Registered email identity.",
+            "format": "email",
+            "type": "string"
+          },
+          "newPassword": {
+            "description": "Replacement password.",
+            "maxLength": 128,
+            "minLength": 8,
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "newPassword"
+        ],
+        "type": "object"
+      },
+      "IAuth.IRefresh": {
+        "additionalProperties": false,
+        "description": "Refresh input.",
+        "properties": {
+          "refreshToken": {
+            "description": "Previously issued refresh proof.",
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "refreshToken"
+        ],
+        "type": "object"
+      },
+      "IProfile": {
+        "additionalProperties": false,
+        "description": "The authenticated account's private profile.",
+        "properties": {
+          "id": {
+            "description": "Stable profile identifier.",
+            "format": "uuid",
+            "type": "string"
+          },
+          "displayName": {
+            "description": "Current trimmed display name.",
+            "maxLength": 100,
+            "minLength": 1,
+            "type": "string"
+          },
+          "createdAt": {
+            "description": "Creation instant.",
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "description": "Last update instant.",
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "displayName",
+          "createdAt",
+          "updatedAt"
+        ],
+        "type": "object"
+      },
+      "IProfileUpdate": {
+        "additionalProperties": false,
+        "description": "Display-name replacement body.",
+        "properties": {
+          "displayName": {
+            "description": "Trimmed display name.",
+            "maxLength": 100,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "displayName"
+        ],
+        "type": "object"
+      },
+      "ITodo": {
+        "additionalProperties": false,
+        "description": "Complete private Todo detail.",
+        "properties": {
+          "id": {
+            "description": "Stable Todo identity.",
+            "format": "uuid",
+            "type": "string"
+          },
+          "title": {
+            "description": "User-authored title.",
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string"
+          },
+          "description": {
+            "description": "Optional description.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "maxLength": 10000,
+                "type": "string"
+              }
+            ]
+          },
+          "startDate": {
+            "description": "Optional start instant.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "format": "date-time",
+                "type": "string"
+              }
+            ]
+          },
+          "dueDate": {
+            "description": "Optional due instant.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "format": "date-time",
+                "type": "string"
+              }
+            ]
+          },
+          "completed": {
+            "description": "Completion state.",
+            "type": "boolean"
+          },
+          "createdAt": {
+            "description": "Creation instant.",
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "description": "Last accepted content or completion edit.",
+            "format": "date-time",
+            "type": "string"
+          },
+          "availability": {
+            "description": "Active or trashed availability.",
+            "oneOf": [
+              {
+                "const": "active",
+                "description": null,
+                "title": null
+              },
+              {
+                "const": "trashed",
+                "description": null,
+                "title": null
+              }
+            ]
+          },
+          "trashedAt": {
+            "description": "Soft-delete instant.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "format": "date-time",
+                "type": "string"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "description",
+          "startDate",
+          "dueDate",
+          "completed",
+          "createdAt",
+          "updatedAt",
+          "availability",
+          "trashedAt"
+        ],
+        "type": "object"
+      },
+      "ITodoCompletion": {
+        "additionalProperties": false,
+        "description": "Completion command body.\nCompletion state command body.",
+        "properties": {
+          "completed": {
+            "description": "Requested completion state.",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "completed"
+        ],
+        "type": "object"
+      },
+      "ITodoCreate": {
+        "additionalProperties": false,
+        "description": "Todo creation body.",
+        "properties": {
+          "title": {
+            "description": "User-authored title.",
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string"
+          },
+          "description": {
+            "description": "Optional description.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "maxLength": 10000,
+                "type": "string"
+              }
+            ]
+          },
+          "startDate": {
+            "description": "Optional start instant.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "format": "date-time",
+                "type": "string"
+              }
+            ]
+          },
+          "dueDate": {
+            "description": "Optional due instant.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "format": "date-time",
+                "type": "string"
+              }
+            ]
+          }
+        },
+        "required": [
+          "title"
+        ],
+        "type": "object"
+      },
+      "ITodoHistory": {
+        "additionalProperties": false,
+        "description": "Immutable content-edit history item.",
+        "properties": {
+          "id": {
+            "description": "Stable history identity.",
+            "format": "uuid",
+            "type": "string"
+          },
+          "createdAt": {
+            "description": "History creation instant.",
+            "format": "date-time",
+            "type": "string"
+          },
+          "title": {
+            "description": "Historical title value.",
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string"
+          },
+          "description": {
+            "description": "Historical description value.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "maxLength": 10000,
+                "type": "string"
+              }
+            ]
+          },
+          "startDate": {
+            "description": "Historical start instant.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "format": "date-time",
+                "type": "string"
+              }
+            ]
+          },
+          "dueDate": {
+            "description": "Historical due instant.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "format": "date-time",
+                "type": "string"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "createdAt"
+        ],
+        "type": "object"
+      },
+      "IPage.IPagination": {
+        "additionalProperties": false,
+        "description": "Position and size of one page within the complete result set.",
+        "properties": {
+          "current": {
+            "description": "One-indexed page represented by this response.",
+            "minimum": 1,
+            "type": "integer"
+          },
+          "limit": {
+            "description": "Maximum records requested for this page.",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "records": {
+            "description": "Total records matching the request.",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "pages": {
+            "description": "Total pages matching the request.",
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "current",
+          "limit",
+          "records",
+          "pages"
+        ],
+        "type": "object"
+      },
+      "IPageITodoSummary": {
+        "additionalProperties": false,
+        "description": "One page of a larger result set.",
+        "properties": {
+          "pagination": {
+            "$ref": "#/components/schemas/IPage.IPagination",
+            "description": "Position and size of this page within the complete result set."
+          },
+          "data": {
+            "description": "Records returned for the current page.",
+            "items": {
+              "$ref": "#/components/schemas/ITodoSummary"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "pagination",
+          "data"
+        ],
+        "type": "object"
+      },
+      "ITodoSummary": {
+        "additionalProperties": false,
+        "description": "Compact item returned by active and trash lists.",
+        "properties": {
+          "id": {
+            "description": "Stable item identity.",
+            "format": "uuid",
+            "type": "string"
+          },
+          "title": {
+            "description": "User-authored title.",
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string"
+          },
+          "completed": {
+            "description": "Completion state.",
+            "type": "boolean"
+          },
+          "startDate": {
+            "description": "Optional start instant.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "format": "date-time",
+                "type": "string"
+              }
+            ]
+          },
+          "dueDate": {
+            "description": "Optional due instant.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "format": "date-time",
+                "type": "string"
+              }
+            ]
+          },
+          "createdAt": {
+            "description": "Creation instant.",
+            "format": "date-time",
+            "type": "string"
+          },
+          "trashedAt": {
+            "description": "Soft-delete instant.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "format": "date-time",
+                "type": "string"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "completed",
+          "startDate",
+          "dueDate",
+          "createdAt",
+          "trashedAt"
+        ],
+        "type": "object"
+      },
+      "ITodoRequest": {
+        "additionalProperties": false,
+        "description": "Active and trash list request.",
+        "properties": {
+          "page": {
+            "description": "One-indexed page to read.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "minimum": 1,
+                "type": "integer"
+              }
+            ]
+          },
+          "limit": {
+            "description": "Maximum number of records returned per page. Zero requests every record.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "minimum": 0,
+                "type": "integer"
+              }
+            ]
+          },
+          "filter": {
+            "description": "Completion filter selects the visible completion scope.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "const": "all",
+                "description": null,
+                "title": null
+              },
+              {
+                "const": "complete-only",
+                "description": null,
+                "title": null
+              },
+              {
+                "const": "incomplete-only",
+                "description": null,
+                "title": null
+              }
+            ]
+          },
+          "sort": {
+            "description": "Sort field selects the supported ordering key.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "const": "createdAt",
+                "description": null,
+                "title": null
+              },
+              {
+                "const": "dueDate",
+                "description": null,
+                "title": null
+              },
+              {
+                "const": "startDate",
+                "description": null,
+                "title": null
+              }
+            ]
+          },
+          "direction": {
+            "description": "Sort direction selects ascending or descending ordering.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "const": "asc",
+                "description": null,
+                "title": null
+              },
+              {
+                "const": "desc",
+                "description": null,
+                "title": null
+              }
+            ]
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
+      "ITodoUpdate": {
+        "additionalProperties": false,
+        "description": "Todo content edit body.",
+        "properties": {
+          "title": {
+            "description": "Replacement title.",
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string"
+          },
+          "description": {
+            "description": "Replacement description.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "maxLength": 10000,
+                "type": "string"
+              }
+            ]
+          },
+          "startDate": {
+            "description": "Replacement start instant.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "format": "date-time",
+                "type": "string"
+              }
+            ]
+          },
+          "dueDate": {
+            "description": "Replacement due instant.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "format": "date-time",
+                "type": "string"
+              }
+            ]
+          },
+          "expectedUpdatedAt": {
+            "description": "Optimistic concurrency marker.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "format": "date-time",
+                "type": "string"
+              }
+            ]
+          }
+        },
+        "required": [],
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "bearer": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    }
+  },
+  "tags": [],
+  "x-typia-emended-v12": true
+}

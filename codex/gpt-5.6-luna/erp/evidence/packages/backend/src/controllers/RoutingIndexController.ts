@@ -1,0 +1,2 @@
+import * as core from "@nestia/core"; import { Controller } from "@nestjs/common"; import type { IAuth, IPage, IRouting } from "@benchmark/erp-api"; import { ManufacturingProvider } from "../providers/ManufacturingProvider";
+/** Lists routings. */ @Controller("routing-search") export class RoutingIndexController { @core.TypedRoute.Patch() public async index(@core.TypedHeaders() h: IAuth.IHeaders, @core.TypedBody() input: IRouting.IRequest): Promise<IPage<IRouting>> { return ManufacturingProvider.routingIndex(h, input); } }

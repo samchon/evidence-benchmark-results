@@ -1,0 +1,2 @@
+import * as core from "@nestia/core"; import { Controller } from "@nestjs/common"; import type { IAuth } from "@benchmark/erp-api"; import { AccountProvider } from "../providers/AccountProvider";
+/** Deletes an unused leaf ledger account. */ @Controller("account-delete") export class AccountDeleteController { @core.TypedRoute.Delete(":id") public async remove(@core.TypedHeaders() headers: IAuth.IHeaders, @core.TypedParam("id") id: string): Promise<{ success: true }> { return AccountProvider.remove(headers, id); } }

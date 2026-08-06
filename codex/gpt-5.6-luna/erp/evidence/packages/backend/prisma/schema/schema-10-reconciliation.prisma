@@ -1,0 +1,36 @@
+/// Bank statement reconciliation period.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-reconciliation-bank-reconciliation-lifecycle Freezes statement balances and included lines.
+/// @evidence docs/analysis/03-functional-requirements.md#req-fun-reconciliation-bank-reconciliation-operations Owns reconciliation lifecycle, completion, and approved reopening.
+/// @evidence docs/analysis/04-business-rules.md#req-rule-bank-bank-reconciliation-rules Preserves balanced reconciliation evidence.
+model reconciliations {
+  id String @id
+  organization_id String
+  bank_account_id String
+  period_start DateTime
+  period_end DateTime
+  beginning_balance Decimal
+  ending_balance Decimal
+  status String
+  operator_user_id String
+  completed_at DateTime?
+  reopened_at DateTime?
+  created_at DateTime
+  updated_at DateTime
+  organization organizations @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  bank_account bank_accounts @relation(fields: [bank_account_id], references: [id], onDelete: Cascade)
+  lines reconciliation_lines[]
+  @@index([organization_id, bank_account_id, period_end])
+}
+
+/// Included statement transaction line in a reconciliation.
+/// Included bank statement transaction within a reconciliation period.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-reconciliation-bank-reconciliation-lifecycle Preserves the transaction inclusion decision used by reconciliation completion.
+model reconciliation_lines {
+  id String @id
+  reconciliation_id String
+  bank_transaction_id String
+  included Boolean
+  created_at DateTime
+  reconciliation reconciliations @relation(fields: [reconciliation_id], references: [id], onDelete: Cascade)
+  @@unique([reconciliation_id, bank_transaction_id])
+}

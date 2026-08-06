@@ -1,0 +1,2010 @@
+{
+  "openapi": "3.2.0",
+  "servers": [
+    {
+      "url": "https://github.com/samchon/nestia",
+      "description": "insert your server url"
+    }
+  ],
+  "info": {
+    "version": "0.1.0",
+    "title": "@benchmark/todo-backend",
+    "description": "NestJS, Nestia, and Prisma backend for benchmark-todo"
+  },
+  "paths": {
+    "/auth/user/join": {
+      "post": {
+        "summary": "Register a private account and issue its first session",
+        "description": "Register a private account and issue its first session.",
+        "tags": [
+          "Auth"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "description": "Email, password, and initial display name.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IAuth"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "The new private session and profile display name.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IAuth.IAuthorized"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "for a duplicate canonical email; 422 for invalid input.",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "auth",
+          "user",
+          "join"
+        ],
+        "x-samchon-controller": "AuthController"
+      }
+    },
+    "/auth/user/login": {
+      "post": {
+        "summary": "Authenticate an existing account without revealing credential failure details",
+        "description": "Authenticate an existing account without revealing credential failure details.",
+        "tags": [
+          "Auth"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "description": "Existing email and password.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IAuth.ILogin"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "A new session for the authenticated account.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IAuth.IAuthorized"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "for either an unknown email or an incorrect password.",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "auth",
+          "user",
+          "login"
+        ],
+        "x-samchon-controller": "AuthController"
+      }
+    },
+    "/auth/user/refresh": {
+      "post": {
+        "summary": "Continue a valid session by exchanging its refresh token",
+        "description": "Continue a valid session by exchanging its refresh token.",
+        "tags": [
+          "Auth"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "description": "Previously issued refresh token.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IAuth.IRefresh"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Refreshed tokens for the same account and session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IAuth.IAuthorized"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "when the token is missing, expired, invalid, or revoked.",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "auth",
+          "user",
+          "refresh"
+        ],
+        "x-samchon-controller": "AuthController"
+      }
+    },
+    "/auth/user/logout": {
+      "post": {
+        "summary": "End only the current authenticated session",
+        "description": "End only the current authenticated session.",
+        "tags": [
+          "Auth"
+        ],
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "A success marker after the current session is revoked.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "success": {
+                      "const": true,
+                      "description": null,
+                      "title": null
+                    }
+                  },
+                  "required": [
+                    "success"
+                  ],
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "when no valid caller session is present.",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "auth",
+          "user",
+          "logout"
+        ],
+        "x-samchon-controller": "AuthController"
+      }
+    },
+    "/auth/user/logout-all": {
+      "post": {
+        "summary": "End every session belonging to the current account",
+        "description": "End every session belonging to the current account.",
+        "tags": [
+          "Auth"
+        ],
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "A success marker after all account sessions are revoked.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "success": {
+                      "const": true,
+                      "description": null,
+                      "title": null
+                    }
+                  },
+                  "required": [
+                    "success"
+                  ],
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "when no valid caller session is present.",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "auth",
+          "user",
+          "logout_all",
+          "logoutAll"
+        ],
+        "x-samchon-controller": "AuthController"
+      }
+    },
+    "/auth/user/password": {
+      "put": {
+        "summary": "Replace the current password and invalidate all old sessions",
+        "description": "Replace the current password and invalidate all old sessions.",
+        "tags": [
+          "Auth"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "description": "Current password and accepted replacement password.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IAuth.IChangePassword"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "A success marker after the credential transaction commits.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "success": {
+                      "const": true,
+                      "description": null,
+                      "title": null
+                    }
+                  },
+                  "required": [
+                    "success"
+                  ],
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "when unauthenticated; 403 for a wrong current password; 422 for invalid or reused input.",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "auth",
+          "user",
+          "password",
+          "changePassword"
+        ],
+        "x-samchon-controller": "AuthController"
+      }
+    },
+    "/auth/user/recover/start": {
+      "post": {
+        "summary": "Start non-disclosing forgotten-password recovery",
+        "description": "Start non-disclosing forgotten-password recovery.",
+        "tags": [
+          "Auth"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "description": "Email identity requesting an out-of-band recovery proof.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IAuth.IRecoverStart"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "A proof-shaped response with no account-existence signal.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "proof": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "proof"
+                  ],
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "for an invalid email value.",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "auth",
+          "user",
+          "recover",
+          "start",
+          "recoverStart"
+        ],
+        "x-samchon-controller": "AuthController"
+      }
+    },
+    "/auth/user/recover": {
+      "post": {
+        "summary": "Complete forgotten-password recovery with the proven email identity",
+        "description": "Complete forgotten-password recovery with the proven email identity.",
+        "tags": [
+          "Auth"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "description": "Registered email, one-time proof, and replacement password.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IAuth.IRecoverPassword"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "A success marker after credential and session invalidation commit.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "success": {
+                      "const": true,
+                      "description": null,
+                      "title": null
+                    }
+                  },
+                  "required": [
+                    "success"
+                  ],
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "for an invalid or reused proof; 422 for an invalid replacement.",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "auth",
+          "user",
+          "recover",
+          "recover"
+        ],
+        "x-samchon-controller": "AuthController"
+      }
+    },
+    "/auth/user/account": {
+      "delete": {
+        "summary": "Permanently delete the current account and all owned private data",
+        "description": "Permanently delete the current account and all owned private data.",
+        "tags": [
+          "Auth"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "description": "Current password confirmation.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IAuth.IDeleteAccount"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "A success marker after cascading account deletion commits.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "success": {
+                      "const": true,
+                      "description": null,
+                      "title": null
+                    }
+                  },
+                  "required": [
+                    "success"
+                  ],
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "when unauthenticated; 403 for a wrong current password.",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "auth",
+          "user",
+          "account",
+          "deleteAccount"
+        ],
+        "x-samchon-controller": "AuthController"
+      }
+    },
+    "/health": {
+      "get": {
+        "summary": "Returns the process health marker",
+        "description": "Returns the process health marker.",
+        "tags": [],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Literal marker used by local and deployed health probes.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "health",
+          "get"
+        ],
+        "x-samchon-controller": "HealthController"
+      }
+    },
+    "/profile": {
+      "get": {
+        "summary": "Read the display name for the authenticated account",
+        "description": "Read the display name for the authenticated account.",
+        "tags": [
+          "Profile"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The caller's current display name only.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IProfile"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "when unauthenticated; 404 when the account profile is absent.",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "profile",
+          "at"
+        ],
+        "x-samchon-controller": "ProfileController"
+      },
+      "put": {
+        "summary": "Replace only the authenticated account's display name",
+        "description": "Replace only the authenticated account's display name.",
+        "tags": [
+          "Profile"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "description": "Trimmed display-name replacement.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IProfile.IUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "The updated private display name.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IProfile"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "when unauthenticated; 422 for an empty or overlong name.",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "profile",
+          "update"
+        ],
+        "x-samchon-controller": "ProfileController"
+      }
+    },
+    "/todo": {
+      "patch": {
+        "summary": "Browse the owner's active todos with filter, sort, and pagination",
+        "description": "Browse the owner's active todos with filter, sort, and pagination.",
+        "tags": [
+          "Todo"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "description": "Completion filter, supported date sort, and bounded page.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ITodo.IRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "One page of compact active todo summaries and totals.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IPageITodo.ISummary"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "when unauthenticated; 422 for unsupported controls.",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "todo",
+          "index"
+        ],
+        "x-samchon-controller": "TodoController"
+      },
+      "post": {
+        "summary": "Create one active incomplete todo owned by the caller",
+        "description": "Create one active incomplete todo owned by the caller.",
+        "tags": [
+          "Todo"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "description": "Required title and independent optional content/date fields.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ITodo.ICreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "The newly created active todo.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ITodo"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "when unauthenticated; 422 for invalid content or dates.",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "todo",
+          "create"
+        ],
+        "x-samchon-controller": "TodoController"
+      }
+    },
+    "/todo/{id}": {
+      "get": {
+        "summary": "Read one owned active todo",
+        "description": "Read one owned active todo.",
+        "tags": [
+          "Todo"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "required": true,
+            "description": "Stable todo identifier."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Full active todo content and state.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ITodo"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "when unauthenticated; 404 when absent, trashed, or foreign.",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "todo",
+          "at"
+        ],
+        "x-samchon-controller": "TodoController"
+      },
+      "put": {
+        "summary": "Edit owned active todo content and append one history entry",
+        "description": "Edit owned active todo content and append one history entry.",
+        "tags": [
+          "Todo"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "required": true,
+            "description": "Stable todo identifier."
+          }
+        ],
+        "requestBody": {
+          "description": "Changed content plus the required revision read before editing.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ITodo.IUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "The updated active todo.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ITodo"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "todo",
+          "update"
+        ],
+        "x-samchon-controller": "TodoController"
+      },
+      "delete": {
+        "summary": "Move an owned active todo to trash without adding content history",
+        "description": "Move an owned active todo to trash without adding content history.",
+        "tags": [
+          "Todo"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "required": true,
+            "description": "Stable todo identifier."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The same todo in trashed availability.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ITodo"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "todo",
+          "erase"
+        ],
+        "x-samchon-controller": "TodoController"
+      }
+    },
+    "/todo/{id}/complete": {
+      "put": {
+        "summary": "Mark an owned active todo complete, idempotently",
+        "description": "Mark an owned active todo complete, idempotently.",
+        "tags": [
+          "Todo"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "required": true,
+            "description": "Stable todo identifier."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The active todo with complete status.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ITodo"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "todo",
+          "complete"
+        ],
+        "x-samchon-controller": "TodoController"
+      }
+    },
+    "/todo/{id}/incomplete": {
+      "put": {
+        "summary": "Mark an owned active todo incomplete, idempotently",
+        "description": "Mark an owned active todo incomplete, idempotently.",
+        "tags": [
+          "Todo"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "required": true,
+            "description": "Stable todo identifier."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The active todo with incomplete status.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ITodo"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "todo",
+          "incomplete"
+        ],
+        "x-samchon-controller": "TodoController"
+      }
+    },
+    "/todo/{id}/history": {
+      "get": {
+        "summary": "Read complete content-edit history for an owned active or trashed todo",
+        "description": "Read complete content-edit history for an owned active or trashed todo.",
+        "tags": [
+          "Todo"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "required": true,
+            "description": "Stable todo identifier."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Immutable history entries newest first.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ITodoHistory"
+                  },
+                  "type": "array"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "todo",
+          "history"
+        ],
+        "x-samchon-controller": "TodoController"
+      }
+    },
+    "/trash": {
+      "patch": {
+        "summary": "Browse the owner's trashed todos newest-deleted first",
+        "description": "Browse the owner's trashed todos newest-deleted first.",
+        "tags": [
+          "Trash"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "description": "Bounded one-based page controls.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IPage.IRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "One page of trashed summaries with trash-entry times and totals.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IPageITodo.ITrashSummary"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "when unauthenticated; 422 for invalid pagination.",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "trash",
+          "index"
+        ],
+        "x-samchon-controller": "TrashController"
+      }
+    },
+    "/trash/{id}": {
+      "get": {
+        "summary": "Read one owned trashed todo",
+        "description": "Read one owned trashed todo.",
+        "tags": [
+          "Trash"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "required": true,
+            "description": "Stable todo identifier."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Full preserved todo content, trash time, and trashed state.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ITodo"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "trash",
+          "at"
+        ],
+        "x-samchon-controller": "TrashController"
+      },
+      "delete": {
+        "summary": "Permanently delete one owned trashed todo and its history",
+        "description": "Permanently delete one owned trashed todo and its history.",
+        "tags": [
+          "Trash"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "required": true,
+            "description": "Stable todo identifier."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A success marker after cascading todo deletion commits.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "success": {
+                      "const": true,
+                      "description": null,
+                      "title": null
+                    }
+                  },
+                  "required": [
+                    "success"
+                  ],
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "trash",
+          "erase"
+        ],
+        "x-samchon-controller": "TrashController"
+      }
+    },
+    "/trash/{id}/restore": {
+      "put": {
+        "summary": "Restore one owned trashed todo to active work",
+        "description": "Restore one owned trashed todo to active work.",
+        "tags": [
+          "Trash"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "required": true,
+            "description": "Stable todo identifier."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The same todo in active availability.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ITodo"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "trash",
+          "restore"
+        ],
+        "x-samchon-controller": "TrashController"
+      }
+    },
+    "/trash/{id}/history": {
+      "get": {
+        "summary": "Read complete content-edit history for one trashed todo",
+        "description": "Read complete content-edit history for one trashed todo.",
+        "tags": [
+          "Trash"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "required": true,
+            "description": "Stable todo identifier."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Immutable history entries newest first.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ITodoHistory"
+                  },
+                  "type": "array"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "trash",
+          "history"
+        ],
+        "x-samchon-controller": "TrashController"
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "IAuth.IAuthorized": {
+        "additionalProperties": false,
+        "description": "Issued authorization material and private actor identity.",
+        "properties": {
+          "id": {
+            "description": "Account identifier.",
+            "format": "uuid",
+            "type": "string"
+          },
+          "accessToken": {
+            "description": "Bearer access token.",
+            "type": "string"
+          },
+          "refreshToken": {
+            "description": "Bearer refresh token.",
+            "type": "string"
+          },
+          "token": {
+            "additionalProperties": false,
+            "description": "Tokens retained by the SDK connection helper.",
+            "properties": {
+              "access": {
+                "type": "string"
+              },
+              "refresh": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "access",
+              "refresh"
+            ],
+            "type": "object"
+          },
+          "expiresIn": {
+            "description": "Access-token lifetime in seconds.",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "profile": {
+            "additionalProperties": false,
+            "description": "Current private profile.",
+            "properties": {
+              "displayName": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "displayName"
+            ],
+            "type": "object"
+          }
+        },
+        "required": [
+          "id",
+          "accessToken",
+          "refreshToken",
+          "token",
+          "expiresIn",
+          "profile"
+        ],
+        "type": "object"
+      },
+      "IAuth": {
+        "additionalProperties": false,
+        "description": "Account registration input.",
+        "properties": {
+          "email": {
+            "description": "Canonicalized email identity.",
+            "maxLength": 320,
+            "minLength": 1,
+            "type": "string"
+          },
+          "password": {
+            "description": "Password evaluated exactly as submitted.",
+            "maxLength": 128,
+            "minLength": 8,
+            "type": "string"
+          },
+          "displayName": {
+            "description": "Initial private display name.",
+            "maxLength": 100,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "password",
+          "displayName"
+        ],
+        "type": "object"
+      },
+      "IAuth.ILogin": {
+        "additionalProperties": false,
+        "description": "Email/password login input.",
+        "properties": {
+          "email": {
+            "maxLength": 320,
+            "minLength": 1,
+            "type": "string"
+          },
+          "password": {
+            "maxLength": 128,
+            "minLength": 8,
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ],
+        "type": "object"
+      },
+      "IAuth.IRefresh": {
+        "additionalProperties": false,
+        "description": "Refresh input carrying the previously issued refresh token.",
+        "properties": {
+          "refreshToken": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "refreshToken"
+        ],
+        "type": "object"
+      },
+      "IAuth.IChangePassword": {
+        "additionalProperties": false,
+        "description": "Known-current-password plus replacement input.",
+        "properties": {
+          "currentPassword": {
+            "maxLength": 128,
+            "minLength": 8,
+            "type": "string"
+          },
+          "newPassword": {
+            "maxLength": 128,
+            "minLength": 8,
+            "type": "string"
+          }
+        },
+        "required": [
+          "currentPassword",
+          "newPassword"
+        ],
+        "type": "object"
+      },
+      "IAuth.IRecoverStart": {
+        "additionalProperties": false,
+        "description": "Recovery-start input.",
+        "properties": {
+          "email": {
+            "maxLength": 320,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "email"
+        ],
+        "type": "object"
+      },
+      "IAuth.IRecoverPassword": {
+        "additionalProperties": false,
+        "description": "Forgotten-password recovery proof and replacement.",
+        "properties": {
+          "email": {
+            "maxLength": 320,
+            "minLength": 1,
+            "type": "string"
+          },
+          "newPassword": {
+            "maxLength": 128,
+            "minLength": 8,
+            "type": "string"
+          },
+          "proof": {
+            "description": "Proof token issued by the recovery-start operation.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "newPassword",
+          "proof"
+        ],
+        "type": "object"
+      },
+      "IAuth.IDeleteAccount": {
+        "additionalProperties": false,
+        "description": "Current-password confirmation for terminal account deletion.",
+        "properties": {
+          "currentPassword": {
+            "description": "Current password required for terminal deletion.",
+            "maxLength": 128,
+            "minLength": 8,
+            "type": "string"
+          }
+        },
+        "required": [
+          "currentPassword"
+        ],
+        "type": "object"
+      },
+      "IProfile": {
+        "additionalProperties": false,
+        "description": "Private profile read shape.",
+        "properties": {
+          "displayName": {
+            "description": "Current trimmed display name.",
+            "maxLength": 100,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "displayName"
+        ],
+        "type": "object"
+      },
+      "IProfile.IUpdate": {
+        "additionalProperties": false,
+        "description": "Display-name replacement input.",
+        "properties": {
+          "displayName": {
+            "description": "Proposed display name, trimmed by the server.",
+            "maxLength": 100,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "displayName"
+        ],
+        "type": "object"
+      },
+      "IPage.IPagination": {
+        "additionalProperties": false,
+        "description": "Position and size of one page within the complete result set.",
+        "properties": {
+          "current": {
+            "description": "One-indexed page represented by this response.",
+            "minimum": 1,
+            "type": "integer"
+          },
+          "limit": {
+            "description": "Maximum records requested for this page.",
+            "minimum": 1,
+            "type": "integer"
+          },
+          "records": {
+            "description": "Total records matching the request.",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "pages": {
+            "description": "Total pages matching the request.",
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "current",
+          "limit",
+          "records",
+          "pages"
+        ],
+        "type": "object"
+      },
+      "IPageITodo.ISummary": {
+        "additionalProperties": false,
+        "description": "One page of a larger result set.",
+        "properties": {
+          "pagination": {
+            "$ref": "#/components/schemas/IPage.IPagination",
+            "description": "Position and size of this page within the complete result set."
+          },
+          "data": {
+            "description": "Records returned for the current page.",
+            "items": {
+              "$ref": "#/components/schemas/ITodo.ISummary"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "pagination",
+          "data"
+        ],
+        "type": "object"
+      },
+      "ITodo.ISummary": {
+        "additionalProperties": false,
+        "description": "Compact active-list item.",
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "title": {
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string"
+          },
+          "startDate": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "format": "date",
+                "type": "string"
+              }
+            ]
+          },
+          "dueDate": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "format": "date",
+                "type": "string"
+              }
+            ]
+          },
+          "status": {
+            "oneOf": [
+              {
+                "const": "complete",
+                "description": null,
+                "title": null
+              },
+              {
+                "const": "incomplete",
+                "description": null,
+                "title": null
+              }
+            ]
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "startDate",
+          "dueDate",
+          "status",
+          "createdAt"
+        ],
+        "type": "object"
+      },
+      "ITodo.IRequest": {
+        "additionalProperties": false,
+        "description": "Active-list request.",
+        "properties": {
+          "page": {
+            "description": "One-indexed page to read.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "minimum": 1,
+                "type": "integer"
+              }
+            ]
+          },
+          "limit": {
+            "description": "Maximum number of records returned per page.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "maximum": 100,
+                "minimum": 1,
+                "type": "integer"
+              }
+            ]
+          },
+          "filter": {
+            "oneOf": [
+              {
+                "const": "all",
+                "description": null,
+                "title": null
+              },
+              {
+                "const": "complete-only",
+                "description": null,
+                "title": null
+              },
+              {
+                "const": "incomplete-only",
+                "description": null,
+                "title": null
+              }
+            ]
+          },
+          "sort": {
+            "oneOf": [
+              {
+                "const": "createdAt",
+                "description": null,
+                "title": null
+              },
+              {
+                "const": "dueDate",
+                "description": null,
+                "title": null
+              },
+              {
+                "const": "startDate",
+                "description": null,
+                "title": null
+              }
+            ]
+          },
+          "direction": {
+            "oneOf": [
+              {
+                "const": "asc",
+                "description": null,
+                "title": null
+              },
+              {
+                "const": "desc",
+                "description": null,
+                "title": null
+              }
+            ]
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
+      "ITodo": {
+        "additionalProperties": false,
+        "description": "Complete private todo detail.",
+        "properties": {
+          "id": {
+            "description": "Stable todo identifier.",
+            "format": "uuid",
+            "type": "string"
+          },
+          "title": {
+            "description": "Required trimmed title.",
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string"
+          },
+          "description": {
+            "description": "Optional full description; null means empty.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "maxLength": 10000,
+                "type": "string"
+              }
+            ]
+          },
+          "startDate": {
+            "description": "Optional start calendar date.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "format": "date",
+                "type": "string"
+              }
+            ]
+          },
+          "dueDate": {
+            "description": "Optional due calendar date.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "format": "date",
+                "type": "string"
+              }
+            ]
+          },
+          "status": {
+            "description": "Completion state.",
+            "oneOf": [
+              {
+                "const": "complete",
+                "description": null,
+                "title": null
+              },
+              {
+                "const": "incomplete",
+                "description": null,
+                "title": null
+              }
+            ]
+          },
+          "availability": {
+            "description": "Availability state.",
+            "oneOf": [
+              {
+                "const": "active",
+                "description": null,
+                "title": null
+              },
+              {
+                "const": "trashed",
+                "description": null,
+                "title": null
+              }
+            ]
+          },
+          "createdAt": {
+            "description": "Original creation instant.",
+            "format": "date-time",
+            "type": "string"
+          },
+          "trashedAt": {
+            "description": "Most recent trash instant, or null while active.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "format": "date-time",
+                "type": "string"
+              }
+            ]
+          },
+          "updatedAt": {
+            "description": "Latest content revision instant, used for stale-edit detection.",
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "description",
+          "startDate",
+          "dueDate",
+          "status",
+          "availability",
+          "createdAt",
+          "trashedAt",
+          "updatedAt"
+        ],
+        "type": "object"
+      },
+      "ITodo.ICreate": {
+        "additionalProperties": false,
+        "description": "Caller-supplied creation fields.",
+        "properties": {
+          "title": {
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string"
+          },
+          "description": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "maxLength": 10000,
+                "type": "string"
+              }
+            ]
+          },
+          "startDate": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "format": "date",
+                "type": "string"
+              }
+            ]
+          },
+          "dueDate": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "format": "date",
+                "type": "string"
+              }
+            ]
+          }
+        },
+        "required": [
+          "title"
+        ],
+        "type": "object"
+      },
+      "ITodo.IUpdate": {
+        "additionalProperties": false,
+        "description": "Partial content edit. Omitted differs from explicit null.",
+        "properties": {
+          "title": {
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string"
+          },
+          "description": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "maxLength": 10000,
+                "type": "string"
+              }
+            ]
+          },
+          "startDate": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "format": "date",
+                "type": "string"
+              }
+            ]
+          },
+          "dueDate": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "format": "date",
+                "type": "string"
+              }
+            ]
+          },
+          "updatedAt": {
+            "description": "Detail revision read before editing, required for stale-write refusal.",
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "updatedAt"
+        ],
+        "type": "object"
+      },
+      "ITodoHistory": {
+        "additionalProperties": false,
+        "description": "One immutable accepted content-edit entry.",
+        "properties": {
+          "id": {
+            "description": "Stable history identifier.",
+            "format": "uuid",
+            "type": "string"
+          },
+          "editedAt": {
+            "description": "Edit instant.",
+            "format": "date-time",
+            "type": "string"
+          },
+          "title": {
+            "description": "Changed-to title when title participated.",
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string"
+          },
+          "description": {
+            "description": "Changed-to description; null explicitly records clearing.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "maxLength": 10000,
+                "type": "string"
+              }
+            ]
+          },
+          "startDate": {
+            "description": "Changed-to start date; null explicitly records clearing.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "format": "date",
+                "type": "string"
+              }
+            ]
+          },
+          "dueDate": {
+            "description": "Changed-to due date; null explicitly records clearing.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "format": "date",
+                "type": "string"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "editedAt"
+        ],
+        "type": "object"
+      },
+      "IPageITodo.ITrashSummary": {
+        "additionalProperties": false,
+        "description": "One page of a larger result set.",
+        "properties": {
+          "pagination": {
+            "$ref": "#/components/schemas/IPage.IPagination",
+            "description": "Position and size of this page within the complete result set."
+          },
+          "data": {
+            "description": "Records returned for the current page.",
+            "items": {
+              "$ref": "#/components/schemas/ITodo.ITrashSummary"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "pagination",
+          "data"
+        ],
+        "type": "object"
+      },
+      "ITodo.ITrashSummary": {
+        "additionalProperties": false,
+        "description": "Compact trash-list item, including the most recent trash instant.",
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "title": {
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string"
+          },
+          "startDate": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "format": "date",
+                "type": "string"
+              }
+            ]
+          },
+          "dueDate": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "format": "date",
+                "type": "string"
+              }
+            ]
+          },
+          "status": {
+            "oneOf": [
+              {
+                "const": "complete",
+                "description": null,
+                "title": null
+              },
+              {
+                "const": "incomplete",
+                "description": null,
+                "title": null
+              }
+            ]
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "trashedAt": {
+            "description": "Most recent move into trash.",
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "startDate",
+          "dueDate",
+          "status",
+          "createdAt",
+          "trashedAt"
+        ],
+        "type": "object"
+      },
+      "IPage.IRequest": {
+        "additionalProperties": false,
+        "description": "Pagination controls accepted by list operations.",
+        "properties": {
+          "page": {
+            "description": "One-indexed page to read.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "minimum": 1,
+                "type": "integer"
+              }
+            ]
+          },
+          "limit": {
+            "description": "Maximum number of records returned per page.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "maximum": 100,
+                "minimum": 1,
+                "type": "integer"
+              }
+            ]
+          }
+        },
+        "required": [],
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "bearer": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Auth"
+    },
+    {
+      "name": "Profile"
+    },
+    {
+      "name": "Todo"
+    },
+    {
+      "name": "Trash"
+    }
+  ],
+  "x-typia-emended-v12": true
+}

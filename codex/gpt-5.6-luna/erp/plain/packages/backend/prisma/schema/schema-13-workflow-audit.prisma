@@ -1,0 +1,64 @@
+/// Versioned organization approval workflow definition.
+model workflow_definitions {
+  id String @id
+  organization_id String
+  target_type String
+  name String
+  version Int
+  status String
+  steps_json String
+  created_at DateTime
+  updated_at DateTime
+  organization organizations @relation(fields:[organization_id], references:[id])
+  @@unique([organization_id,target_type,version])
+  @@index([organization_id,target_type,status])
+}
+/// Active approval request locking a source document.
+model approval_requests {
+  id String @id
+  organization_id String
+  target_type String
+  target_id String
+  requester_user_id String
+  status String
+  current_step Int
+  reason String?
+  history_json String
+  created_at DateTime
+  updated_at DateTime
+  organization organizations @relation(fields:[organization_id], references:[id])
+  @@index([organization_id,status,target_type,target_id])
+}
+/// Immutable audit event for sensitive organization actions.
+model audit_events {
+  id String @id
+  organization_id String
+  actor_user_id String?
+  action String
+  target_type String
+  target_id String?
+  risk_level String
+  reason String?
+  before_json String?
+  after_json String?
+  ip_address String?
+  user_agent String?
+  created_at DateTime
+  organization organizations @relation(fields:[organization_id], references:[id])
+  @@index([organization_id,created_at,action,target_type])
+}
+/// Notification addressed to an organization member.
+model notifications {
+  id String @id
+  organization_id String
+  recipient_user_id String
+  category String
+  title String
+  body String
+  status String
+  retry_count Int
+  created_at DateTime
+  read_at DateTime?
+  organization organizations @relation(fields:[organization_id], references:[id])
+  @@index([organization_id,recipient_user_id,status,created_at])
+}

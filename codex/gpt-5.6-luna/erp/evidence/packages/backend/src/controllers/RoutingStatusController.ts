@@ -1,0 +1,2 @@
+import * as core from "@nestia/core"; import { Controller } from "@nestjs/common"; import type { IAuth, IRouting } from "@benchmark/erp-api"; import { ManufacturingProvider } from "../providers/ManufacturingProvider";
+/** Releases or obsoletes a routing. */ @Controller("routing-status") export class RoutingStatusController { @core.TypedRoute.Post(":id") public async status(@core.TypedHeaders() h: IAuth.IHeaders, @core.TypedParam("id") id: string, @core.TypedBody() input: IRouting.IStatus): Promise<IRouting> { return ManufacturingProvider.routingStatus(h, id, input); } }

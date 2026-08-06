@@ -1,0 +1,2 @@
+import * as core from "@nestia/core"; import { Controller } from "@nestjs/common"; import type { IAuth, ITag } from "@benchmark/erp-api"; import { TagProvider } from "../providers/TagProvider";
+/** Activates or retires an organization tag. */ @Controller("tag-status") export class TagStatusController { @core.TypedRoute.Post(":id") public async status(@core.TypedHeaders() headers: IAuth.IHeaders, @core.TypedParam("id") id: string, @core.TypedBody() input: { active: boolean }): Promise<ITag> { return TagProvider.status({ headers, id, active: input.active }); } }

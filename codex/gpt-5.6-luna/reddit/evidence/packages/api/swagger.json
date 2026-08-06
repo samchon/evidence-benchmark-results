@@ -1,0 +1,3256 @@
+{
+  "openapi": "3.2.0",
+  "servers": [
+    {
+      "url": "https://github.com/samchon/nestia",
+      "description": "insert your server url"
+    }
+  ],
+  "info": {
+    "version": "0.1.0",
+    "title": "@benchmark/reddit2-backend",
+    "description": "NestJS, Nestia, and Prisma backend for benchmark-reddit2"
+  },
+  "paths": {
+    "/auth/user/join/execute": {
+      "post": {
+        "summary": "Register a new account, profile, and authenticated session",
+        "description": "Register a new account, profile, and authenticated session.",
+        "tags": [],
+        "parameters": [],
+        "requestBody": {
+          "description": "Registration credentials.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IAuth.IJoin"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "The new identity and bearer material.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IAuth.IAuthorized"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "auth",
+          "user",
+          "join",
+          "execute",
+          "join"
+        ],
+        "x-samchon-controller": "AuthController"
+      }
+    },
+    "/auth/user/login/execute": {
+      "post": {
+        "summary": "Log in with an active account's email and password",
+        "description": "Log in with an active account's email and password.",
+        "tags": [],
+        "parameters": [],
+        "requestBody": {
+          "description": "Login credentials.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IAuth.ILogin"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "New session bearer material.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IAuth.IAuthorized"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "auth",
+          "user",
+          "login",
+          "execute",
+          "login"
+        ],
+        "x-samchon-controller": "AuthController"
+      }
+    },
+    "/auth/user/refresh/execute": {
+      "post": {
+        "summary": "Continue a still-live session using its refresh token",
+        "description": "Continue a still-live session using its refresh token.",
+        "tags": [],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IAuth.IRefresh"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IAuth.IAuthorized"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "auth",
+          "user",
+          "refresh",
+          "execute",
+          "refresh"
+        ],
+        "x-samchon-controller": "AuthController"
+      }
+    },
+    "/auth/user/logout/execute": {
+      "post": {
+        "summary": "Revoke only the current session",
+        "description": "Revoke only the current session.",
+        "tags": [],
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "auth",
+          "user",
+          "logout",
+          "execute",
+          "logout"
+        ],
+        "x-samchon-controller": "AuthController"
+      }
+    },
+    "/auth/user/logout-all/execute": {
+      "post": {
+        "summary": "Revoke every active session for the current account",
+        "description": "Revoke every active session for the current account.",
+        "tags": [],
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "auth",
+          "user",
+          "logout_all",
+          "execute",
+          "logoutAll"
+        ],
+        "x-samchon-controller": "AuthController"
+      }
+    },
+    "/auth/user/password/execute": {
+      "put": {
+        "summary": "Change the current password and revoke every other session",
+        "description": "Change the current password and revoke every other session.",
+        "tags": [],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IAuth.IChangePassword"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "auth",
+          "user",
+          "password",
+          "execute",
+          "changePassword"
+        ],
+        "x-samchon-controller": "AuthController"
+      }
+    },
+    "/auth/user/recovery/request/execute": {
+      "post": {
+        "summary": "Request neutral one-time recovery proof",
+        "description": "Request neutral one-time recovery proof.",
+        "tags": [],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IAuth.IRecoveryRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "auth",
+          "user",
+          "recovery",
+          "request",
+          "execute",
+          "recoveryRequest"
+        ],
+        "x-samchon-controller": "AuthController"
+      }
+    },
+    "/auth/user/recovery/complete/execute": {
+      "post": {
+        "summary": "Complete password recovery with the latest proof",
+        "description": "Complete password recovery with the latest proof.",
+        "tags": [],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IAuth.IRecoveryComplete"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "auth",
+          "user",
+          "recovery",
+          "complete",
+          "execute",
+          "recoveryComplete"
+        ],
+        "x-samchon-controller": "AuthController"
+      }
+    },
+    "/auth/user/erase/execute": {
+      "post": {
+        "summary": "Permanently delete the current account and dependent state",
+        "description": "Permanently delete the current account and dependent state.",
+        "tags": [],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IAuth.IDelete"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "auth",
+          "user",
+          "erase",
+          "execute",
+          "erase"
+        ],
+        "x-samchon-controller": "AuthController"
+      }
+    },
+    "/health": {
+      "get": {
+        "summary": "Returns the process health marker",
+        "description": "Returns the process health marker.",
+        "tags": [],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Literal marker used by local and deployed health probes.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "health",
+          "get"
+        ],
+        "x-samchon-controller": "HealthController"
+      }
+    },
+    "/profile/view/{username}": {
+      "get": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IProfile"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "profile",
+          "view",
+          "profile"
+        ],
+        "x-samchon-controller": "RedditController"
+      }
+    },
+    "/profile/edit": {
+      "put": {
+        "tags": [],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IProfile.IUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IProfile"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "profile",
+          "edit",
+          "profileUpdate"
+        ],
+        "x-samchon-controller": "RedditController"
+      }
+    },
+    "/community/create": {
+      "post": {
+        "tags": [],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ICommunity.ICreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ICommunity"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "community",
+          "create",
+          "communityCreate"
+        ],
+        "x-samchon-controller": "RedditController"
+      }
+    },
+    "/community/list": {
+      "patch": {
+        "tags": [],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ICommunity.IRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IPageICommunity"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "community",
+          "list",
+          "communityIndex"
+        ],
+        "x-samchon-controller": "RedditController"
+      }
+    },
+    "/community/detail/{communityId}": {
+      "get": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "communityId",
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ICommunity"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "community",
+          "detail",
+          "communityAt"
+        ],
+        "x-samchon-controller": "RedditController"
+      }
+    },
+    "/community/subscribe/{communityId}/execute": {
+      "post": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "communityId",
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ICommunity"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "community",
+          "subscribe",
+          "execute",
+          "subscribe"
+        ],
+        "x-samchon-controller": "RedditController"
+      }
+    },
+    "/community/unsubscribe/{communityId}/execute": {
+      "post": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "communityId",
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "community",
+          "unsubscribe",
+          "execute",
+          "unsubscribe"
+        ],
+        "x-samchon-controller": "RedditController"
+      }
+    },
+    "/subscription/list": {
+      "patch": {
+        "tags": [],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IPage.IRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IPageISubscription"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "subscription",
+          "list",
+          "subscriptions"
+        ],
+        "x-samchon-controller": "RedditController"
+      }
+    },
+    "/post/create/{communityId}": {
+      "post": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "communityId",
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IPost.ICreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IPost"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "post",
+          "create",
+          "postCreate"
+        ],
+        "x-samchon-controller": "RedditController"
+      }
+    },
+    "/post/detail/{id}": {
+      "get": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IPost"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "post",
+          "detail",
+          "postAt"
+        ],
+        "x-samchon-controller": "RedditController"
+      }
+    },
+    "/post/update/{id}": {
+      "put": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IPost.IUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IPost"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "post",
+          "update",
+          "postUpdate"
+        ],
+        "x-samchon-controller": "RedditController"
+      }
+    },
+    "/post/{id}/erase": {
+      "post": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "post",
+          "erase",
+          "postErase"
+        ],
+        "x-samchon-controller": "RedditController"
+      }
+    },
+    "/community/{communityId}/post/{id}/erase": {
+      "post": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "communityId",
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "community",
+          "post",
+          "erase",
+          "postModerateErase"
+        ],
+        "x-samchon-controller": "RedditController"
+      }
+    },
+    "/feed/popular": {
+      "patch": {
+        "tags": [],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IPost.IRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IPageIPost.ISummary"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "feed",
+          "popular",
+          "feedPopular"
+        ],
+        "x-samchon-controller": "RedditController"
+      }
+    },
+    "/user/feed/home": {
+      "patch": {
+        "tags": [],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IPost.IRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IPageIPost.ISummary"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "user",
+          "feed",
+          "home",
+          "feedHome"
+        ],
+        "x-samchon-controller": "RedditController"
+      }
+    },
+    "/community/{communityId}/feed": {
+      "patch": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "communityId",
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IPost.IRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IPageIPost.ISummary"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "community",
+          "feed",
+          "feedCommunity"
+        ],
+        "x-samchon-controller": "RedditController"
+      }
+    },
+    "/post/{id}/vote": {
+      "post": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IVote.IRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IVote"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "post",
+          "vote",
+          "postVote"
+        ],
+        "x-samchon-controller": "RedditController"
+      }
+    },
+    "/post/{id}/vote/remove": {
+      "post": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IVote"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "post",
+          "vote",
+          "remove",
+          "postVoteRemove"
+        ],
+        "x-samchon-controller": "RedditController"
+      }
+    },
+    "/comment/{id}/vote": {
+      "post": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IVote.IRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IVote"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "comment",
+          "vote",
+          "commentVote"
+        ],
+        "x-samchon-controller": "RedditController"
+      }
+    },
+    "/comment/{id}/vote/remove": {
+      "post": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IVote"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "comment",
+          "vote",
+          "remove",
+          "commentVoteRemove"
+        ],
+        "x-samchon-controller": "RedditController"
+      }
+    },
+    "/post/{postId}/comment": {
+      "post": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "postId",
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IComment.ICreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IComment"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "post",
+          "comment",
+          "commentCreate"
+        ],
+        "x-samchon-controller": "RedditController"
+      }
+    },
+    "/comment/{commentId}/reply": {
+      "post": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "commentId",
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IComment.ICreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IComment"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "comment",
+          "reply",
+          "commentReply"
+        ],
+        "x-samchon-controller": "RedditController"
+      }
+    },
+    "/post/{postId}/comments": {
+      "patch": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "postId",
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IComment.IRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IPageIComment"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "post",
+          "comments",
+          "commentIndex"
+        ],
+        "x-samchon-controller": "RedditController"
+      }
+    },
+    "/comment/{id}": {
+      "put": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IComment.IUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IComment"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "comment",
+          "commentUpdate"
+        ],
+        "x-samchon-controller": "RedditController"
+      }
+    },
+    "/comment/{id}/erase": {
+      "post": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "comment",
+          "erase",
+          "commentErase"
+        ],
+        "x-samchon-controller": "RedditController"
+      }
+    },
+    "/community/{communityId}/comment/{id}/erase": {
+      "post": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "communityId",
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "community",
+          "comment",
+          "erase",
+          "commentModerateErase"
+        ],
+        "x-samchon-controller": "RedditController"
+      }
+    },
+    "/moderator/add/{communityId}/{userId}": {
+      "post": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "communityId",
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "name": "userId",
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "moderator",
+          "add",
+          "moderatorAdd"
+        ],
+        "x-samchon-controller": "RedditController"
+      }
+    },
+    "/moderator/remove/{communityId}/{userId}": {
+      "post": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "communityId",
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "name": "userId",
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "moderator",
+          "remove",
+          "moderatorRemove"
+        ],
+        "x-samchon-controller": "RedditController"
+      }
+    },
+    "/ban/create/{communityId}/{userId}": {
+      "post": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "communityId",
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "name": "userId",
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "ban",
+          "create",
+          "ban"
+        ],
+        "x-samchon-controller": "RedditController"
+      }
+    },
+    "/ban/remove/{communityId}/{userId}": {
+      "post": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "communityId",
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "name": "userId",
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "ban",
+          "remove",
+          "unban"
+        ],
+        "x-samchon-controller": "RedditController"
+      }
+    },
+    "/ban/list/{communityId}": {
+      "patch": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "communityId",
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IPage.IRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IPageIBan"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "ban",
+          "list",
+          "bans"
+        ],
+        "x-samchon-controller": "RedditController"
+      }
+    },
+    "/post/{postId}/report": {
+      "post": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "postId",
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IReport.ICreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IReport"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "post",
+          "report",
+          "postReport"
+        ],
+        "x-samchon-controller": "RedditController"
+      }
+    },
+    "/comment/{commentId}/report": {
+      "post": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "commentId",
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IReport.ICreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IReport"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "comment",
+          "report",
+          "commentReport"
+        ],
+        "x-samchon-controller": "RedditController"
+      }
+    },
+    "/report/list/{communityId}": {
+      "patch": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "communityId",
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IPage.IRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IPageIReport"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "report",
+          "list",
+          "reports"
+        ],
+        "x-samchon-controller": "RedditController"
+      }
+    },
+    "/report/{id}/approve": {
+      "post": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "report",
+          "approve",
+          "reportApprove"
+        ],
+        "x-samchon-controller": "RedditController"
+      }
+    },
+    "/report/{id}/dismiss": {
+      "post": {
+        "tags": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "report",
+          "dismiss",
+          "reportDismiss"
+        ],
+        "x-samchon-controller": "RedditController"
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "IAuth.IAuthorized": {
+        "additionalProperties": false,
+        "description": "Authenticated identity and issued bearer material.",
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "username": {
+            "type": "string"
+          },
+          "token": {
+            "additionalProperties": false,
+            "properties": {
+              "access": {
+                "type": "string"
+              },
+              "refresh": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "access",
+              "refresh"
+            ],
+            "type": "object"
+          }
+        },
+        "required": [
+          "id",
+          "username",
+          "token"
+        ],
+        "type": "object"
+      },
+      "IAuth.IJoin": {
+        "additionalProperties": false,
+        "description": "Creates an account and starts a session.",
+        "properties": {
+          "email": {
+            "format": "email",
+            "type": "string"
+          },
+          "password": {
+            "minLength": 8,
+            "type": "string"
+          },
+          "username": {
+            "maxLength": 30,
+            "minLength": 3,
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "password",
+          "username"
+        ],
+        "type": "object"
+      },
+      "IAuth.ILogin": {
+        "additionalProperties": false,
+        "description": "Starts a session for an existing account.",
+        "properties": {
+          "email": {
+            "format": "email",
+            "type": "string"
+          },
+          "password": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ],
+        "type": "object"
+      },
+      "IAuth.IRefresh": {
+        "additionalProperties": false,
+        "description": "Continues one existing session.",
+        "properties": {
+          "refreshToken": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "refreshToken"
+        ],
+        "type": "object"
+      },
+      "IAuth.IChangePassword": {
+        "additionalProperties": false,
+        "description": "Replaces the current password.",
+        "properties": {
+          "currentPassword": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "newPassword": {
+            "minLength": 8,
+            "type": "string"
+          }
+        },
+        "required": [
+          "currentPassword",
+          "newPassword"
+        ],
+        "type": "object"
+      },
+      "IAuth.IRecoveryRequest": {
+        "additionalProperties": false,
+        "description": "Requests one-time recovery proof by email.",
+        "properties": {
+          "email": {
+            "format": "email",
+            "type": "string"
+          }
+        },
+        "required": [
+          "email"
+        ],
+        "type": "object"
+      },
+      "IAuth.IRecoveryComplete": {
+        "additionalProperties": false,
+        "description": "Completes recovery with the latest proof.",
+        "properties": {
+          "email": {
+            "format": "email",
+            "type": "string"
+          },
+          "proof": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "newPassword": {
+            "minLength": 8,
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "proof",
+          "newPassword"
+        ],
+        "type": "object"
+      },
+      "IAuth.IDelete": {
+        "additionalProperties": false,
+        "description": "Confirms permanent account deletion.",
+        "properties": {
+          "password": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "password"
+        ],
+        "type": "object"
+      },
+      "IComment.ISummary": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "text": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "deleted": {
+            "type": "boolean"
+          },
+          "score": {
+            "type": "number"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "text",
+          "deleted",
+          "score",
+          "createdAt"
+        ],
+        "type": "object"
+      },
+      "IPage.IPagination": {
+        "additionalProperties": false,
+        "description": "Position and size of one page within the complete result set.",
+        "properties": {
+          "current": {
+            "description": "One-indexed page represented by this response.",
+            "minimum": 1,
+            "type": "integer"
+          },
+          "limit": {
+            "description": "Maximum records requested for this page.",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "records": {
+            "description": "Total records matching the request.",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "pages": {
+            "description": "Total pages matching the request.",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "continuation": {
+            "description": "Continuation for the next page, or null when this is the final page.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "reset": {
+            "description": "Whether an invalid or stale continuation caused a fresh first page.",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "current",
+          "limit",
+          "records",
+          "pages",
+          "continuation"
+        ],
+        "type": "object"
+      },
+      "IPageIComment.ISummary": {
+        "additionalProperties": false,
+        "description": "One page of a larger result set.",
+        "properties": {
+          "pagination": {
+            "$ref": "#/components/schemas/IPage.IPagination",
+            "description": "Position and size of this page within the complete result set."
+          },
+          "data": {
+            "description": "Records returned for the current page.",
+            "items": {
+              "$ref": "#/components/schemas/IComment.ISummary"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "pagination",
+          "data"
+        ],
+        "type": "object"
+      },
+      "IPageIPost.ISummary": {
+        "additionalProperties": false,
+        "description": "One page of a larger result set.",
+        "properties": {
+          "pagination": {
+            "$ref": "#/components/schemas/IPage.IPagination",
+            "description": "Position and size of this page within the complete result set."
+          },
+          "data": {
+            "description": "Records returned for the current page.",
+            "items": {
+              "$ref": "#/components/schemas/IPost.ISummary"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "pagination",
+          "data"
+        ],
+        "type": "object"
+      },
+      "IPost.ICommunity": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ],
+        "type": "object"
+      },
+      "IPost.ISummary": {
+        "additionalProperties": false,
+        "description": "Compact post card used by feeds and authored lists.",
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "type": {
+            "oneOf": [
+              {
+                "const": "image",
+                "description": null,
+                "title": null
+              },
+              {
+                "const": "link",
+                "description": null,
+                "title": null
+              },
+              {
+                "const": "text",
+                "description": null,
+                "title": null
+              }
+            ]
+          },
+          "preview": {
+            "type": "string"
+          },
+          "author": {
+            "$ref": "#/components/schemas/IPost.IUser"
+          },
+          "community": {
+            "$ref": "#/components/schemas/IPost.ICommunity"
+          },
+          "score": {
+            "type": "number"
+          },
+          "commentCount": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "type",
+          "preview",
+          "author",
+          "community",
+          "score",
+          "commentCount",
+          "createdAt"
+        ],
+        "type": "object"
+      },
+      "IPost.IUser": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "username": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "username"
+        ],
+        "type": "object"
+      },
+      "IProfile": {
+        "additionalProperties": false,
+        "description": "Public profile and editable profile fields.",
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "username": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "bio": {
+            "type": "string"
+          },
+          "avatarUrl": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "karma": {
+            "type": "number"
+          },
+          "posts": {
+            "$ref": "#/components/schemas/IPageIPost.ISummary"
+          },
+          "comments": {
+            "$ref": "#/components/schemas/IPageIComment.ISummary"
+          }
+        },
+        "required": [
+          "id",
+          "username",
+          "displayName",
+          "bio",
+          "avatarUrl",
+          "karma",
+          "posts",
+          "comments"
+        ],
+        "type": "object"
+      },
+      "IProfile.IUpdate": {
+        "additionalProperties": false,
+        "description": "Partial update of the current user's public profile.",
+        "properties": {
+          "displayName": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "maxLength": 80,
+                "minLength": 1,
+                "type": "string"
+              }
+            ]
+          },
+          "bio": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "maxLength": 5000,
+                "type": "string"
+              }
+            ]
+          },
+          "avatarUrl": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
+      "ICommunity": {
+        "additionalProperties": false,
+        "description": "Public community descriptor and lifecycle state.",
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "iconUrl": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "status": {
+            "oneOf": [
+              {
+                "const": "active",
+                "description": null,
+                "title": null
+              },
+              {
+                "const": "archived",
+                "description": null,
+                "title": null
+              }
+            ]
+          },
+          "subscriberCount": {
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "description",
+          "iconUrl",
+          "status",
+          "subscriberCount"
+        ],
+        "type": "object"
+      },
+      "ICommunity.ICreate": {
+        "additionalProperties": false,
+        "description": "Creates a community and bootstraps owner subscription.",
+        "properties": {
+          "name": {
+            "maxLength": 80,
+            "minLength": 3,
+            "type": "string"
+          },
+          "description": {
+            "maxLength": 5000,
+            "minLength": 1,
+            "type": "string"
+          },
+          "iconUrl": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          }
+        },
+        "required": [
+          "name",
+          "description"
+        ],
+        "type": "object"
+      },
+      "IPageICommunity": {
+        "additionalProperties": false,
+        "description": "One page of a larger result set.",
+        "properties": {
+          "pagination": {
+            "$ref": "#/components/schemas/IPage.IPagination",
+            "description": "Position and size of this page within the complete result set."
+          },
+          "data": {
+            "description": "Records returned for the current page.",
+            "items": {
+              "$ref": "#/components/schemas/ICommunity"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "pagination",
+          "data"
+        ],
+        "type": "object"
+      },
+      "ICommunity.IRequest": {
+        "additionalProperties": false,
+        "description": "Name-filtered public community listing.",
+        "properties": {
+          "page": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "minimum": 1,
+                "type": "integer"
+              }
+            ]
+          },
+          "continuation": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "limit": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "maximum": 100,
+                "minimum": 0,
+                "type": "integer"
+              }
+            ]
+          },
+          "search": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
+      "IPageISubscription": {
+        "additionalProperties": false,
+        "description": "One page of a larger result set.",
+        "properties": {
+          "pagination": {
+            "$ref": "#/components/schemas/IPage.IPagination",
+            "description": "Position and size of this page within the complete result set."
+          },
+          "data": {
+            "description": "Records returned for the current page.",
+            "items": {
+              "$ref": "#/components/schemas/ISubscription"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "pagination",
+          "data"
+        ],
+        "type": "object"
+      },
+      "ISubscription": {
+        "additionalProperties": false,
+        "description": "Current user subscription projection.",
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "community": {
+            "$ref": "#/components/schemas/ICommunity"
+          }
+        },
+        "required": [
+          "id",
+          "createdAt",
+          "community"
+        ],
+        "type": "object"
+      },
+      "IPage.IRequest": {
+        "additionalProperties": false,
+        "description": "Pagination controls accepted by list operations.",
+        "properties": {
+          "page": {
+            "description": "One-indexed page to read.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "minimum": 1,
+                "type": "integer"
+              }
+            ]
+          },
+          "continuation": {
+            "description": "Opaque continuation returned by the previous page. It binds the\ntraversal scope, ordering, page size, and snapshot.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "limit": {
+            "description": "Maximum number of records returned per page.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "maximum": 100,
+                "minimum": 1,
+                "type": "integer"
+              }
+            ]
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
+      "IPost": {
+        "additionalProperties": false,
+        "description": "Public post with one type-specific payload and live aggregates.",
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "type": {
+            "oneOf": [
+              {
+                "const": "image",
+                "description": null,
+                "title": null
+              },
+              {
+                "const": "link",
+                "description": null,
+                "title": null
+              },
+              {
+                "const": "text",
+                "description": null,
+                "title": null
+              }
+            ]
+          },
+          "text": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "url": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "format": "uri",
+                "type": "string"
+              }
+            ]
+          },
+          "imageUrl": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "author": {
+            "$ref": "#/components/schemas/IPost.IUser"
+          },
+          "community": {
+            "$ref": "#/components/schemas/IPost.ICommunity"
+          },
+          "score": {
+            "type": "number"
+          },
+          "commentCount": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "format": "date-time",
+                "type": "string"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "type",
+          "text",
+          "url",
+          "imageUrl",
+          "author",
+          "community",
+          "score",
+          "commentCount",
+          "createdAt",
+          "updatedAt"
+        ],
+        "type": "object"
+      },
+      "IPost.ICreate": {
+        "additionalProperties": false,
+        "description": "Creation payload with exactly one payload variant.",
+        "properties": {
+          "title": {
+            "maxLength": 300,
+            "minLength": 1,
+            "type": "string"
+          },
+          "type": {
+            "oneOf": [
+              {
+                "const": "image",
+                "description": null,
+                "title": null
+              },
+              {
+                "const": "link",
+                "description": null,
+                "title": null
+              },
+              {
+                "const": "text",
+                "description": null,
+                "title": null
+              }
+            ]
+          },
+          "text": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "url": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "format": "uri",
+                "type": "string"
+              }
+            ]
+          },
+          "imageUrl": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          }
+        },
+        "required": [
+          "title",
+          "type"
+        ],
+        "type": "object"
+      },
+      "IPost.IUpdate": {
+        "additionalProperties": false,
+        "description": "Partial update preserving the existing payload type.",
+        "properties": {
+          "title": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "maxLength": 300,
+                "minLength": 1,
+                "type": "string"
+              }
+            ]
+          },
+          "text": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "url": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "format": "uri",
+                "type": "string"
+              }
+            ]
+          },
+          "imageUrl": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
+      "IPost.IRequest": {
+        "additionalProperties": false,
+        "description": "Feed sort and page controls.",
+        "properties": {
+          "page": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "minimum": 1,
+                "type": "integer"
+              }
+            ]
+          },
+          "continuation": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "limit": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "maximum": 100,
+                "minimum": 0,
+                "type": "integer"
+              }
+            ]
+          },
+          "sort": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "const": "controversial",
+                "description": null,
+                "title": null
+              },
+              {
+                "const": "hot",
+                "description": null,
+                "title": null
+              },
+              {
+                "const": "new",
+                "description": null,
+                "title": null
+              },
+              {
+                "const": "top",
+                "description": null,
+                "title": null
+              }
+            ]
+          },
+          "range": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "const": "all",
+                "description": null,
+                "title": null
+              },
+              {
+                "const": "month",
+                "description": null,
+                "title": null
+              },
+              {
+                "const": "today",
+                "description": null,
+                "title": null
+              },
+              {
+                "const": "week",
+                "description": null,
+                "title": null
+              },
+              {
+                "const": "year",
+                "description": null,
+                "title": null
+              }
+            ]
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
+      "IVote": {
+        "additionalProperties": false,
+        "description": "Result of a post or comment vote transition.",
+        "properties": {
+          "value": {
+            "oneOf": [
+              {
+                "const": -1,
+                "description": null,
+                "title": null
+              },
+              {
+                "const": 0,
+                "description": null,
+                "title": null
+              },
+              {
+                "const": 1,
+                "description": null,
+                "title": null
+              }
+            ]
+          },
+          "score": {
+            "type": "number"
+          },
+          "karma": {
+            "type": "number"
+          },
+          "targetId": {
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "value",
+          "score",
+          "karma",
+          "targetId"
+        ],
+        "type": "object"
+      },
+      "IVote.IRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "value": {
+            "oneOf": [
+              {
+                "const": -1,
+                "description": null,
+                "title": null
+              },
+              {
+                "const": 1,
+                "description": null,
+                "title": null
+              }
+            ]
+          }
+        },
+        "required": [
+          "value"
+        ],
+        "type": "object"
+      },
+      "IComment": {
+        "additionalProperties": false,
+        "description": "Public nested comment node and its descendants.",
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "author": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/IComment.IUser"
+              }
+            ]
+          },
+          "text": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "deleted": {
+            "type": "boolean"
+          },
+          "score": {
+            "type": "number"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "format": "date-time",
+                "type": "string"
+              }
+            ]
+          },
+          "children": {
+            "items": {
+              "$ref": "#/components/schemas/IComment"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "author",
+          "text",
+          "deleted",
+          "score",
+          "createdAt",
+          "updatedAt",
+          "children"
+        ],
+        "type": "object"
+      },
+      "IComment.IUser": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "username": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "username"
+        ],
+        "type": "object"
+      },
+      "IComment.ICreate": {
+        "additionalProperties": false,
+        "properties": {
+          "text": {
+            "maxLength": 10000,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "type": "object"
+      },
+      "IPageIComment": {
+        "additionalProperties": false,
+        "description": "One page of a larger result set.",
+        "properties": {
+          "pagination": {
+            "$ref": "#/components/schemas/IPage.IPagination",
+            "description": "Position and size of this page within the complete result set."
+          },
+          "data": {
+            "description": "Records returned for the current page.",
+            "items": {
+              "$ref": "#/components/schemas/IComment"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "pagination",
+          "data"
+        ],
+        "type": "object"
+      },
+      "IComment.IRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "page": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "minimum": 1,
+                "type": "integer"
+              }
+            ]
+          },
+          "continuation": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "limit": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "maximum": 100,
+                "minimum": 0,
+                "type": "integer"
+              }
+            ]
+          },
+          "sort": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "const": "best",
+                "description": null,
+                "title": null
+              },
+              {
+                "const": "controversial",
+                "description": null,
+                "title": null
+              },
+              {
+                "const": "new",
+                "description": null,
+                "title": null
+              }
+            ]
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
+      "IComment.IUpdate": {
+        "additionalProperties": false,
+        "properties": {
+          "text": {
+            "maxLength": 10000,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "type": "object"
+      },
+      "IBan": {
+        "additionalProperties": false,
+        "description": "Private active community-ban projection.",
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "user": {
+            "$ref": "#/components/schemas/IBan.IUser"
+          },
+          "actor": {
+            "$ref": "#/components/schemas/IBan.IUser"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "user",
+          "actor",
+          "createdAt"
+        ],
+        "type": "object"
+      },
+      "IBan.IUser": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "username": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "username"
+        ],
+        "type": "object"
+      },
+      "IPageIBan": {
+        "additionalProperties": false,
+        "description": "One page of a larger result set.",
+        "properties": {
+          "pagination": {
+            "$ref": "#/components/schemas/IPage.IPagination",
+            "description": "Position and size of this page within the complete result set."
+          },
+          "data": {
+            "description": "Records returned for the current page.",
+            "items": {
+              "$ref": "#/components/schemas/IBan"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "pagination",
+          "data"
+        ],
+        "type": "object"
+      },
+      "IReport": {
+        "additionalProperties": false,
+        "description": "Private moderation report projection.",
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "targetId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "targetType": {
+            "oneOf": [
+              {
+                "const": "comment",
+                "description": null,
+                "title": null
+              },
+              {
+                "const": "post",
+                "description": null,
+                "title": null
+              }
+            ]
+          },
+          "reason": {
+            "type": "string"
+          },
+          "status": {
+            "oneOf": [
+              {
+                "const": "approved",
+                "description": null,
+                "title": null
+              },
+              {
+                "const": "dismissed",
+                "description": null,
+                "title": null
+              },
+              {
+                "const": "unresolved",
+                "description": null,
+                "title": null
+              }
+            ]
+          },
+          "reporter": {
+            "$ref": "#/components/schemas/IReport.IUser"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "targetId",
+          "targetType",
+          "reason",
+          "status",
+          "reporter",
+          "createdAt"
+        ],
+        "type": "object"
+      },
+      "IReport.IUser": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "username": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "username"
+        ],
+        "type": "object"
+      },
+      "IReport.ICreate": {
+        "additionalProperties": false,
+        "properties": {
+          "reason": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "reason"
+        ],
+        "type": "object"
+      },
+      "IPageIReport": {
+        "additionalProperties": false,
+        "description": "One page of a larger result set.",
+        "properties": {
+          "pagination": {
+            "$ref": "#/components/schemas/IPage.IPagination",
+            "description": "Position and size of this page within the complete result set."
+          },
+          "data": {
+            "description": "Records returned for the current page.",
+            "items": {
+              "$ref": "#/components/schemas/IReport"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "pagination",
+          "data"
+        ],
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "bearer": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    }
+  },
+  "tags": [],
+  "x-typia-emended-v12": true
+}

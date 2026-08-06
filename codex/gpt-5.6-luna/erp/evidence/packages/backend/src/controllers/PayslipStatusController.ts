@@ -1,0 +1,2 @@
+import * as core from "@nestia/core"; import { Controller } from "@nestjs/common"; import type { IAuth, IPayslip } from "@benchmark/erp-api"; import { PayrollProvider } from "../providers/PayrollProvider";
+/** Issues, pays, or voids a payslip. */ @Controller("payslip-status") export class PayslipStatusController { @core.TypedRoute.Post(":id") public async status(@core.TypedHeaders() h: IAuth.IHeaders, @core.TypedParam("id") id: string, @core.TypedBody() input: IPayslip.IStatus): Promise<IPayslip> { return PayrollProvider.payslipStatus(h, id, input); } }

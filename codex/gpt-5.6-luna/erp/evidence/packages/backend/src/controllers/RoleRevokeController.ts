@@ -1,0 +1,2 @@
+import * as core from "@nestia/core"; import { Controller } from "@nestjs/common"; import type { IAuth, IRole, IMembership } from "@benchmark/erp-api"; import { RoleProvider } from "../providers/RoleProvider";
+/** Revokes a named role from an active organization member. */ @Controller("role-revoke") export class RoleRevokeController { @core.TypedRoute.Post() public async revoke(@core.TypedHeaders() headers: IAuth.IHeaders, @core.TypedBody() input: IRole.IRevoke): Promise<IMembership> { return RoleProvider.revoke(headers, input); } }

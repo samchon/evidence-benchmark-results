@@ -1,0 +1,2 @@
+import * as core from "@nestia/core"; import { Controller } from "@nestjs/common"; import type { IAuth, IPage, IPurchaseOrder } from "@benchmark/erp-api"; import { ProcurementProvider } from "../providers/ProcurementProvider";
+/** Lists purchase orders. */ @Controller("purchase-order-search") export class PurchaseOrderIndexController { @core.TypedRoute.Patch() public async index(@core.TypedHeaders() h: IAuth.IHeaders, @core.TypedBody() input: IPurchaseOrder.IRequest): Promise<IPage<IPurchaseOrder>> { return ProcurementProvider.orderIndex(h, input); } }

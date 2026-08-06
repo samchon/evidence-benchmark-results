@@ -1,0 +1,2 @@
+import * as core from "@nestia/core"; import { Controller } from "@nestjs/common"; import type { IAuth, IPage, IServiceCase } from "@benchmark/erp-api"; import { QualityServiceProvider } from "../providers/QualityServiceProvider";
+/** Lists service-case records. */ @Controller("service-case-search") export class ServiceCaseIndexController { @core.TypedRoute.Patch() public async index(@core.TypedHeaders() h: IAuth.IHeaders, @core.TypedBody() input: IServiceCase.IRequest): Promise<IPage<IServiceCase>> { return QualityServiceProvider.serviceCaseIndex(h, input); } }

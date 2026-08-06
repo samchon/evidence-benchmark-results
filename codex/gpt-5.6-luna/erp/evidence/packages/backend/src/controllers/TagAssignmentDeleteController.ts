@@ -1,0 +1,2 @@
+import * as core from "@nestia/core"; import { Controller } from "@nestjs/common"; import type { IAuth } from "@benchmark/erp-api"; import { TagAssignmentProvider as P } from "../providers/TagAssignmentProvider";
+/** Removes a tag assignment without changing the tag definition. */ @Controller("tag-assignment-delete") export class TagAssignmentDeleteController { @core.TypedRoute.Delete(":id") public async remove(@core.TypedHeaders() h:IAuth.IHeaders,@core.TypedParam("id") id:string):Promise<{success:true}>{return P.remove(h,id);} }

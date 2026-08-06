@@ -1,0 +1,12 @@
+import * as core from "@nestia/core"; import type { IPage, ITimelog, ITimesheet } from "@benchmark/erp-api"; import { Controller, Headers } from "@nestjs/common"; import { AuthProvider } from "../providers/AuthProvider"; import { TimeProvider as P } from "../providers/TimeProvider";
+@Controller("organization") export class TimeController {
+ @core.TypedRoute.Post("timelog") async create(@Headers("authorization") a:string|undefined,@core.TypedBody() b:ITimelog.ICreate):Promise<ITimelog>{return P.createTimelog({session:await AuthProvider.authenticate(a),body:b});}
+ @core.TypedRoute.Patch("timelog") async list(@Headers("authorization") a:string|undefined,@core.TypedBody() b:ITimelog.IRequest):Promise<IPage<ITimelog>>{return P.listTimelogs({session:await AuthProvider.authenticate(a),input:b});}
+ @core.TypedRoute.Put("timelog/:id") async update(@Headers("authorization") a:string|undefined,@core.TypedParam("id") id:string,@core.TypedBody() b:ITimelog.IUpdate):Promise<ITimelog>{return P.updateTimelog({session:await AuthProvider.authenticate(a),id,body:b});}
+ @core.TypedRoute.Delete("timelog/:id") async erase(@Headers("authorization") a:string|undefined,@core.TypedParam("id") id:string):Promise<{success:true}>{return P.eraseTimelog({session:await AuthProvider.authenticate(a),id});}
+ @core.TypedRoute.Post("timesheet") async createSheet(@Headers("authorization") a:string|undefined,@core.TypedBody() b:ITimesheet.ICreate):Promise<ITimesheet>{return P.createTimesheet({session:await AuthProvider.authenticate(a),body:b});}
+ @core.TypedRoute.Patch("timesheet") async listSheets(@Headers("authorization") a:string|undefined,@core.TypedBody() b:ITimesheet.IRequest):Promise<IPage<ITimesheet>>{return P.listTimesheets({session:await AuthProvider.authenticate(a),input:b});}
+ @core.TypedRoute.Post("timesheet/:id/submit") async submit(@Headers("authorization") a:string|undefined,@core.TypedParam("id") id:string):Promise<ITimesheet>{return P.submitTimesheet({session:await AuthProvider.authenticate(a),id});}
+ @core.TypedRoute.Post("timesheet/:id/approve") async approve(@Headers("authorization") a:string|undefined,@core.TypedParam("id") id:string):Promise<ITimesheet>{return P.approveTimesheet({session:await AuthProvider.authenticate(a),id});}
+ @core.TypedRoute.Post("timesheet/:id/reject") async reject(@Headers("authorization") a:string|undefined,@core.TypedParam("id") id:string,@core.TypedBody() b:ITimesheet.IReason):Promise<ITimesheet>{return P.rejectTimesheet({session:await AuthProvider.authenticate(a),id,body:b});}
+}

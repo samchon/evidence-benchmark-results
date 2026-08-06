@@ -1,0 +1,1110 @@
+
+/// @evidence docs/analysis/01-actors-and-auth.md#req-customer-identity-customer-identity-and-credential-lifecycle The shopping_customers persistence supports req-customer-identity customer identity and credential lifecycle.
+/// @evidence docs/analysis/04-business-rules.md#req-credential-policies-registration-and-credential-policies The shopping_customers persistence supports req-credential-policies registration and credential policies.
+/// @evidence docs/analysis/04-business-rules.md#req-credential-policies-1-keep-one-identity-per-canonical-email-and-account-type The shopping_customers persistence supports req-credential-policies-1 keep one identity per canonical email and account type.
+/// @evidence docs/analysis/04-business-rules.md#req-credential-policies-2-refuse-duplicate-registration The shopping_customers persistence supports req-credential-policies-2 refuse duplicate registration.
+/// @evidence docs/analysis/04-business-rules.md#req-credential-policies-3-require-current-password-proof-for-password-change The shopping_customers persistence supports req-credential-policies-3 require current-password proof for password change.
+/// @evidence docs/analysis/04-business-rules.md#req-credential-policies-4-block-unavailable-identities The shopping_customers persistence supports req-credential-policies-4 block unavailable identities.
+/// @evidence docs/analysis/05-non-functional.md#req-nfr-history-continuity-3-remove-former-customer-identity-from-live-presentation The shopping_customers persistence supports req-nfr-history-continuity-3 remove former-customer identity from live presentation.
+model shopping_customers {
+  /// UUID primary key.
+  id            String                        @id
+  /// Canonical login email.
+  email         String                        @unique
+  /// Password hash retained only for authentication.
+  password_hash String
+  /// Active, banned, or deleted lifecycle state.
+  status        String
+  /// Creation instant.
+  created_at    DateTime
+  /// Closure instant, when permanently deleted.
+  deleted_at    DateTime?
+  /// Optional one-to-one profile.
+  profile       shopping_customer_profiles?
+  /// Saved destinations.
+  addresses     shopping_shipping_addresses[]
+  /// Authenticated sessions.
+  sessions      shopping_customer_sessions[]
+  /// Wishlist aggregate.
+  wishlist      shopping_wishlists?
+  /// Shopping cart aggregate.
+  cart          shopping_carts?
+  /// Orders placed by this customer.
+  orders        shopping_orders[]
+  /// Reviews authored by this customer.
+  reviews       shopping_reviews[]
+}
+
+/// @evidence docs/analysis/02-domain-model.md#req-customer-profile-domain-customer-profile-model The shopping_customer_profiles persistence supports req-customer-profile-domain customer profile model.
+/// @evidence docs/analysis/02-domain-model.md#req-customer-profile-domain-1-define-customer-profile-information The shopping_customer_profiles persistence supports req-customer-profile-domain-1 define customer profile information.
+/// @evidence docs/analysis/03-functional-requirements.md#req-customer-profile-functions-customer-profile-operations The shopping_customer_profiles persistence supports req-customer-profile-functions customer profile operations.
+/// @evidence docs/analysis/03-functional-requirements.md#req-customer-profile-functions-1-view-the-customer-profile The shopping_customer_profiles persistence supports req-customer-profile-functions-1 view the customer profile.
+/// @evidence docs/analysis/03-functional-requirements.md#req-customer-profile-functions-2-edit-the-customer-profile The shopping_customer_profiles persistence supports req-customer-profile-functions-2 edit the customer profile.
+model shopping_customer_profiles {
+  /// UUID primary key.
+  id                   String             @id
+  /// Owning customer identifier.
+  shopping_customer_id String             @unique
+  /// Display name while the account is active.
+  display_name         String
+  /// Editable contact phone number.
+  phone_number         String
+  /// Creation instant.
+  created_at           DateTime
+  /// Last profile edit instant.
+  updated_at           DateTime
+  /// Owning customer.
+  customer             shopping_customers @relation(fields: [shopping_customer_id], references: [id], onDelete: Cascade)
+}
+
+/// @evidence docs/analysis/01-actors-and-auth.md#req-customer-identity-3-continue-a-customer-session The shopping_customer_sessions persistence supports req-customer-identity-3 continue a customer session.
+/// @evidence docs/analysis/01-actors-and-auth.md#req-customer-identity-4-log-out-the-current-customer-session The shopping_customer_sessions persistence supports req-customer-identity-4 log out the current customer session.
+/// @evidence docs/analysis/01-actors-and-auth.md#req-customer-identity-5-log-out-every-customer-session The shopping_customer_sessions persistence supports req-customer-identity-5 log out every customer session.
+model shopping_customer_sessions {
+  /// UUID primary key.
+  id                   String             @id
+  /// Owning customer identifier.
+  shopping_customer_id String
+  /// Hashed session token.
+  token_hash           String             @unique
+  /// Expiration instant.
+  expired_at           DateTime
+  /// Revocation instant.
+  revoked_at           DateTime?
+  /// Creation instant.
+  created_at           DateTime
+  /// Owning customer.
+  customer             shopping_customers @relation(fields: [shopping_customer_id], references: [id], onDelete: Cascade)
+
+  @@index([shopping_customer_id])
+}
+
+/// @evidence docs/analysis/01-actors-and-auth.md#req-seller-identity-seller-identity-and-credential-lifecycle The shopping_sellers persistence supports req-seller-identity seller identity and credential lifecycle.
+/// @evidence docs/analysis/01-actors-and-auth.md#req-seller-identity-1-register-a-seller-account The shopping_sellers persistence supports req-seller-identity-1 register a seller account.
+/// @evidence docs/analysis/01-actors-and-auth.md#req-seller-identity-8-delete-a-seller-account The shopping_sellers persistence supports req-seller-identity-8 delete a seller account.
+/// @evidence docs/analysis/02-domain-model.md#req-seller-account-lifecycle-seller-account-states The shopping_sellers persistence supports req-seller-account-lifecycle seller account states.
+/// @evidence docs/analysis/02-domain-model.md#req-seller-account-lifecycle-1-begin-seller-approval-as-pending The shopping_sellers persistence supports req-seller-account-lifecycle-1 begin seller approval as pending.
+/// @evidence docs/analysis/03-functional-requirements.md#req-seller-account-functions-seller-approval-and-restriction-operations The shopping_sellers persistence supports req-seller-account-functions seller approval and restriction operations.
+/// @evidence docs/analysis/03-functional-requirements.md#req-seller-account-functions-1-view-seller-approval-status The shopping_sellers persistence supports req-seller-account-functions-1 view seller approval status.
+/// @evidence docs/analysis/03-functional-requirements.md#req-seller-account-functions-2-resubmit-seller-approval The shopping_sellers persistence supports req-seller-account-functions-2 resubmit seller approval.
+/// @evidence docs/analysis/03-functional-requirements.md#req-seller-account-functions-3-list-pending-seller-approvals The shopping_sellers persistence supports req-seller-account-functions-3 list pending seller approvals.
+/// @evidence docs/analysis/03-functional-requirements.md#req-user-oversight-customer-and-seller-account-oversight The shopping_sellers persistence supports req-user-oversight customer and seller account oversight.
+/// @evidence docs/analysis/03-functional-requirements.md#req-user-oversight-4-list-seller-accounts The shopping_sellers persistence supports req-user-oversight-4 list seller accounts.
+/// @evidence docs/analysis/04-business-rules.md#req-seller-account-policies-seller-approval-restriction-and-deletion-policies The shopping_sellers persistence supports req-seller-account-policies seller approval, restriction, and deletion policies.
+model shopping_sellers {
+  /// UUID primary key.
+  id               String                              @id
+  /// Canonical login email.
+  email            String                              @unique
+  /// Password hash retained only for authentication.
+  password_hash    String
+  /// pending, approved, rejected, suspended, banned, or deleted.
+  status           String
+  /// Rejection explanation, when applicable.
+  rejection_reason String?
+  /// Creation instant.
+  created_at       DateTime
+  /// Closure instant, when permanently deleted.
+  deleted_at       DateTime?
+  /// Optional live profile.
+  profile          shopping_seller_profiles?
+  /// Sessions.
+  sessions         shopping_seller_sessions[]
+  /// Owned products.
+  products         shopping_products[]
+  /// Seller approval requests.
+  approvals        shopping_seller_approval_requests[]
+  /// Seller shipments.
+  shipments        shopping_shipments[]
+  /// Order items retaining purchase-time seller evidence.
+  order_items      shopping_order_items[]
+}
+
+/// @evidence docs/analysis/02-domain-model.md#req-seller-profile-domain-seller-profile-model The shopping_seller_profiles persistence supports req-seller-profile-domain seller profile model.
+/// @evidence docs/analysis/02-domain-model.md#req-seller-profile-domain-1-define-seller-profile-information The shopping_seller_profiles persistence supports req-seller-profile-domain-1 define seller profile information.
+/// @evidence docs/analysis/03-functional-requirements.md#req-seller-profile-functions-seller-profile-operations The shopping_seller_profiles persistence supports req-seller-profile-functions seller profile operations.
+/// @evidence docs/analysis/03-functional-requirements.md#req-seller-profile-functions-1-view-the-own-seller-profile The shopping_seller_profiles persistence supports req-seller-profile-functions-1 view the own seller profile.
+/// @evidence docs/analysis/03-functional-requirements.md#req-seller-profile-functions-2-edit-the-seller-profile The shopping_seller_profiles persistence supports req-seller-profile-functions-2 edit the seller profile.
+/// @evidence docs/analysis/03-functional-requirements.md#req-seller-profile-functions-3-view-a-public-seller-profile The shopping_seller_profiles persistence supports req-seller-profile-functions-3 view a public seller profile.
+model shopping_seller_profiles {
+  /// UUID primary key.
+  id                 String                              @id
+  /// Owning seller identifier.
+  shopping_seller_id String                              @unique
+  /// Customer-facing shop name.
+  shop_name          String
+  /// Customer-facing description.
+  shop_description   String
+  /// Logo image URL.
+  logo_image         String
+  /// Creation instant.
+  created_at         DateTime
+  /// Last edit instant.
+  updated_at         DateTime
+  /// Owning seller.
+  seller             shopping_sellers                    @relation(fields: [shopping_seller_id], references: [id], onDelete: Cascade)
+  /// Immutable profile revisions.
+  snapshots          shopping_seller_profile_snapshots[]
+}
+
+model shopping_seller_sessions {
+  /// UUID primary key.
+  id                 String           @id
+  /// Owning seller identifier.
+  shopping_seller_id String
+  /// Hashed session token.
+  token_hash         String           @unique
+  /// Expiration instant.
+  expired_at         DateTime
+  /// Revocation instant.
+  revoked_at         DateTime?
+  /// Creation instant.
+  created_at         DateTime
+  /// Owning seller.
+  seller             shopping_sellers @relation(fields: [shopping_seller_id], references: [id], onDelete: Cascade)
+
+  @@index([shopping_seller_id])
+}
+
+model shopping_seller_approval_requests {
+  /// UUID primary key.
+  id                 String           @id
+  /// Applicant seller identifier.
+  shopping_seller_id String
+  /// pending, approved, or rejected.
+  status             String
+  /// Decision explanation for rejection.
+  reason             String?
+  /// Decision actor identifier.
+  decided_by         String?
+  /// Decision instant.
+  decided_at         DateTime?
+  /// Submission instant.
+  created_at         DateTime
+  /// Applicant seller.
+  seller             shopping_sellers @relation(fields: [shopping_seller_id], references: [id], onDelete: Cascade)
+
+  @@index([shopping_seller_id, status])
+}
+
+/// @evidence docs/analysis/02-domain-model.md#req-shipping-address-domain-shipping-address-model The shopping_shipping_addresses persistence supports req-shipping-address-domain shipping address model.
+/// @evidence docs/analysis/02-domain-model.md#req-shipping-address-domain-1-define-shipping-address-information The shopping_shipping_addresses persistence supports req-shipping-address-domain-1 define shipping address information.
+/// @evidence docs/analysis/03-functional-requirements.md#req-shipping-address-functions-shipping-address-operations The shopping_shipping_addresses persistence supports req-shipping-address-functions shipping address operations.
+/// @evidence docs/analysis/03-functional-requirements.md#req-shipping-address-functions-2-add-a-shipping-address The shopping_shipping_addresses persistence supports req-shipping-address-functions-2 add a shipping address.
+/// @evidence docs/analysis/04-business-rules.md#req-address-policies-shipping-address-policies The shopping_shipping_addresses persistence supports req-address-policies shipping address policies.
+/// @evidence docs/analysis/04-business-rules.md#req-address-policies-1-require-a-complete-shipping-address The shopping_shipping_addresses persistence supports req-address-policies-1 require a complete shipping address.
+/// @evidence docs/analysis/04-business-rules.md#req-checkout-policies-3-fix-the-purchase-shipping-address The shopping_shipping_addresses persistence supports req-checkout-policies-3 fix the purchase shipping address.
+model shopping_shipping_addresses {
+  /// UUID primary key.
+  id                   String             @id
+  /// Owning customer identifier.
+  shopping_customer_id String
+  /// Recipient name.
+  recipient_name       String
+  /// Recipient phone number.
+  recipient_phone      String
+  /// Street address.
+  street_address       String
+  /// City.
+  city                 String
+  /// State or province.
+  state                String
+  /// Postal code.
+  postal_code          String
+  /// Country code or name.
+  country              String
+  /// Whether this is the one customer default.
+  is_default           Boolean
+  /// Creation instant.
+  created_at           DateTime
+  /// Last edit instant.
+  updated_at           DateTime
+  /// Owning customer.
+  customer             shopping_customers @relation(fields: [shopping_customer_id], references: [id], onDelete: Cascade)
+
+  @@index([shopping_customer_id, is_default])
+}
+
+/// @evidence docs/analysis/02-domain-model.md#req-category-domain-category-model The shopping_categories persistence supports req-category-domain category model.
+/// @evidence docs/analysis/02-domain-model.md#req-category-domain-1-define-category-information The shopping_categories persistence supports req-category-domain-1 define category information.
+/// @evidence docs/analysis/02-domain-model.md#req-category-domain-2-limit-the-category-hierarchy The shopping_categories persistence supports req-category-domain-2 limit the category hierarchy.
+/// @evidence docs/analysis/02-domain-model.md#req-category-domain-3-classify-a-product The shopping_categories persistence supports req-category-domain-3 classify a product.
+/// @evidence docs/analysis/02-domain-model.md#req-category-domain-4-uncategorize-products-after-category-deletion The shopping_categories persistence supports req-category-domain-4 uncategorize products after category deletion.
+/// @evidence docs/analysis/03-functional-requirements.md#req-category-functions-category-operations The shopping_categories persistence supports req-category-functions category operations.
+/// @evidence docs/analysis/03-functional-requirements.md#req-category-functions-1-create-a-category The shopping_categories persistence supports req-category-functions-1 create a category.
+/// @evidence docs/analysis/03-functional-requirements.md#req-category-functions-2-edit-a-category The shopping_categories persistence supports req-category-functions-2 edit a category.
+/// @evidence docs/analysis/03-functional-requirements.md#req-category-functions-3-delete-a-category The shopping_categories persistence supports req-category-functions-3 delete a category.
+/// @evidence docs/analysis/03-functional-requirements.md#req-category-functions-4-browse-categories The shopping_categories persistence supports req-category-functions-4 browse categories.
+/// @evidence docs/analysis/03-functional-requirements.md#req-category-functions-5-view-products-in-a-category The shopping_categories persistence supports req-category-functions-5 view products in a category.
+/// @evidence docs/analysis/04-business-rules.md#req-category-policies-category-hierarchy-and-curation-policies The shopping_categories persistence supports req-category-policies category hierarchy and curation policies.
+/// @evidence docs/analysis/04-business-rules.md#req-category-policies-2-limit-category-depth-to-two-levels The shopping_categories persistence supports req-category-policies-2 limit category depth to two levels.
+/// @evidence docs/analysis/04-business-rules.md#req-category-policies-3-assign-products-only-to-live-categories The shopping_categories persistence supports req-category-policies-3 assign products only to live categories.
+/// @evidence docs/analysis/04-business-rules.md#req-category-policies-4-uncategorize-products-when-taxonomy-is-retired The shopping_categories persistence supports req-category-policies-4 uncategorize products when taxonomy is retired.
+model shopping_categories {
+  /// UUID primary key.
+  id          String                @id
+  /// Category name.
+  name        String
+  /// Category description.
+  description String
+  /// Optional top-level parent identifier.
+  parent_id   String?
+  /// Live or retired state.
+  status      String
+  /// Creation instant.
+  created_at  DateTime
+  /// Last edit instant.
+  updated_at  DateTime
+  /// Parent category.
+  parent      shopping_categories?  @relation("CategoryChildren", fields: [parent_id], references: [id], onDelete: SetNull)
+  /// Direct subcategories.
+  children    shopping_categories[] @relation("CategoryChildren")
+  /// Products directly assigned to this category.
+  products    shopping_products[]
+
+  @@index([parent_id])
+}
+
+/// @evidence docs/analysis/02-domain-model.md#req-product-domain-product-model The shopping_products persistence supports req-product-domain product model.
+/// @evidence docs/analysis/02-domain-model.md#req-product-domain-1-define-product-catalog-information The shopping_products persistence supports req-product-domain-1 define product catalog information.
+/// @evidence docs/analysis/02-domain-model.md#req-product-domain-2-relate-a-product-to-its-seller The shopping_products persistence supports req-product-domain-2 relate a product to its seller.
+/// @evidence docs/analysis/02-domain-model.md#req-product-domain-5-relate-products-to-discovery-and-history The shopping_products persistence supports req-product-domain-5 relate products to discovery and history.
+/// @evidence docs/analysis/02-domain-model.md#req-product-lifecycle-product-availability-and-retirement-states The shopping_products persistence supports req-product-lifecycle product availability and retirement states.
+/// @evidence docs/analysis/02-domain-model.md#req-product-lifecycle-1-show-a-newly-created-product The shopping_products persistence supports req-product-lifecycle-1 show a newly created product.
+/// @evidence docs/analysis/02-domain-model.md#req-product-lifecycle-3-hide-products-during-seller-suspension The shopping_products persistence supports req-product-lifecycle-3 hide products during seller suspension.
+/// @evidence docs/analysis/02-domain-model.md#req-product-lifecycle-4-remove-live-product-relationships The shopping_products persistence supports req-product-lifecycle-4 remove live product relationships.
+/// @evidence docs/analysis/02-domain-model.md#req-product-lifecycle-5-retain-history-after-product-deletion The shopping_products persistence supports req-product-lifecycle-5 retain history after product deletion.
+/// @evidence docs/analysis/03-functional-requirements.md#req-product-functions-product-operations The shopping_products persistence supports req-product-functions product operations.
+/// @evidence docs/analysis/03-functional-requirements.md#req-product-functions-1-create-a-product The shopping_products persistence supports req-product-functions-1 create a product.
+/// @evidence docs/analysis/03-functional-requirements.md#req-product-functions-2-edit-a-product The shopping_products persistence supports req-product-functions-2 edit a product.
+/// @evidence docs/analysis/03-functional-requirements.md#req-product-functions-3-delete-an-owned-product The shopping_products persistence supports req-product-functions-3 delete an owned product.
+/// @evidence docs/analysis/03-functional-requirements.md#req-product-functions-5-list-and-view-all-products The shopping_products persistence supports req-product-functions-5 list and view all products.
+/// @evidence docs/analysis/03-functional-requirements.md#req-product-functions-7-delete-a-policy-violating-product The shopping_products persistence supports req-product-functions-7 delete a policy-violating product.
+/// @evidence docs/analysis/03-functional-requirements.md#req-product-discovery-product-discovery-journey The shopping_products persistence supports req-product-discovery product discovery journey.
+/// @evidence docs/analysis/03-functional-requirements.md#req-product-discovery-1-search-the-product-catalog The shopping_products persistence supports req-product-discovery-1 search the product catalog.
+/// @evidence docs/analysis/03-functional-requirements.md#req-product-discovery-2-compare-product-cards The shopping_products persistence supports req-product-discovery-2 compare product cards.
+/// @evidence docs/analysis/03-functional-requirements.md#req-product-discovery-3-view-product-details The shopping_products persistence supports req-product-discovery-3 view product details.
+/// @evidence docs/analysis/04-business-rules.md#req-product-policies-product-validation-and-retirement-policies The shopping_products persistence supports req-product-policies product validation and retirement policies.
+/// @evidence docs/analysis/04-business-rules.md#req-product-policies-1-require-valid-product-catalog-data The shopping_products persistence supports req-product-policies-1 require valid product catalog data.
+/// @evidence docs/analysis/04-business-rules.md#req-product-policies-2-enforce-product-ownership The shopping_products persistence supports req-product-policies-2 enforce product ownership.
+/// @evidence docs/analysis/04-business-rules.md#req-product-policies-4-block-seller-product-deletion-during-fulfillment The shopping_products persistence supports req-product-policies-4 block seller product deletion during fulfillment.
+/// @evidence docs/analysis/04-business-rules.md#req-product-policies-5-block-seller-product-deletion-during-unresolved-requests The shopping_products persistence supports req-product-policies-5 block seller product deletion during unresolved requests.
+/// @evidence docs/analysis/04-business-rules.md#req-product-policies-6-retire-violating-merchandise-without-stranding-obligations The shopping_products persistence supports req-product-policies-6 retire violating merchandise without stranding obligations.
+/// @evidence docs/analysis/04-business-rules.md#req-search-policies-product-search-and-listing-policies The shopping_products persistence supports req-search-policies product search and listing policies.
+/// @evidence docs/analysis/04-business-rules.md#req-search-policies-1-search-the-eligible-cross-seller-catalog The shopping_products persistence supports req-search-policies-1 search the eligible cross-seller catalog.
+/// @evidence docs/analysis/04-business-rules.md#req-search-policies-2-combine-product-search-constraints The shopping_products persistence supports req-search-policies-2 combine product search constraints.
+/// @evidence docs/analysis/04-business-rules.md#req-search-policies-4-render-the-standard-product-card The shopping_products persistence supports req-search-policies-4 render the standard product card.
+/// @evidence docs/analysis/04-business-rules.md#req-seller-dashboard-policies-1-count-the-sellers-current-products The shopping_products persistence supports req-seller-dashboard-policies-1 count the seller's current products.
+/// @evidence docs/analysis/05-non-functional.md#req-nfr-audit-integrity-3-preserve-a-complete-product-time-point The shopping_products persistence supports req-nfr-audit-integrity-3 preserve a complete product time point.
+model shopping_products {
+  /// UUID primary key.
+  id                   String                       @id
+  /// Owning seller identifier.
+  shopping_seller_id   String
+  /// Optional live category identifier.
+  shopping_category_id String?
+  /// Product name.
+  name                 String
+  /// Product description.
+  description          String
+  /// Base price used by variants without an override.
+  base_price           Float
+  /// Live or deleted lifecycle state.
+  status               String
+  /// Creation instant.
+  created_at           DateTime
+  /// Last edit instant.
+  updated_at           DateTime
+  /// Deletion instant.
+  deleted_at           DateTime?
+  /// Owning seller.
+  seller               shopping_sellers             @relation(fields: [shopping_seller_id], references: [id], onDelete: Cascade)
+  /// Optional category.
+  category             shopping_categories?         @relation(fields: [shopping_category_id], references: [id], onDelete: SetNull)
+  /// Ordered product images.
+  images               shopping_product_images[]
+  /// Concrete commerce variants.
+  variants             shopping_product_variants[]
+  /// Immutable product snapshots.
+  snapshots            shopping_product_snapshots[]
+  /// Wishlist entries.
+  wishlist_entries     shopping_wishlist_entries[]
+
+  @@index([shopping_seller_id, status])
+  @@index([shopping_category_id, status])
+}
+
+/// @evidence docs/analysis/02-domain-model.md#req-product-domain-3-order-product-images The shopping_product_images persistence supports req-product-domain-3 order product images.
+/// @evidence docs/analysis/03-functional-requirements.md#req-product-image-functions-product-image-operations The shopping_product_images persistence supports req-product-image-functions product image operations.
+/// @evidence docs/analysis/03-functional-requirements.md#req-product-image-functions-1-upload-product-images The shopping_product_images persistence supports req-product-image-functions-1 upload product images.
+/// @evidence docs/analysis/03-functional-requirements.md#req-product-image-functions-2-reorder-product-images The shopping_product_images persistence supports req-product-image-functions-2 reorder product images.
+/// @evidence docs/analysis/03-functional-requirements.md#req-product-image-functions-3-delete-a-product-image The shopping_product_images persistence supports req-product-image-functions-3 delete a product image.
+model shopping_product_images {
+  /// UUID primary key.
+  id                  String            @id
+  /// Owning product identifier.
+  shopping_product_id String
+  /// Image URL.
+  url                 String
+  /// Zero-based display order.
+  sort_order          Int
+  /// Creation instant.
+  created_at          DateTime
+  /// Product relation.
+  product             shopping_products @relation(fields: [shopping_product_id], references: [id], onDelete: Cascade)
+
+  @@unique([shopping_product_id, sort_order])
+  @@index([shopping_product_id])
+}
+
+/// @evidence docs/analysis/02-domain-model.md#req-product-domain-4-relate-variants-to-a-product The shopping_product_variants persistence supports req-product-domain-4 relate variants to a product.
+/// @evidence docs/analysis/02-domain-model.md#req-product-lifecycle-2-mark-a-product-unavailable-without-variants The shopping_product_variants persistence supports req-product-lifecycle-2 mark a product unavailable without variants.
+/// @evidence docs/analysis/02-domain-model.md#req-product-variant-domain-product-variant-model The shopping_product_variants persistence supports req-product-variant-domain product variant model.
+/// @evidence docs/analysis/02-domain-model.md#req-product-variant-domain-1-define-variant-information The shopping_product_variants persistence supports req-product-variant-domain-1 define variant information.
+/// @evidence docs/analysis/02-domain-model.md#req-product-variant-domain-2-relate-a-variant-to-its-product The shopping_product_variants persistence supports req-product-variant-domain-2 relate a variant to its product.
+/// @evidence docs/analysis/02-domain-model.md#req-product-variant-domain-3-resolve-the-effective-variant-price The shopping_product_variants persistence supports req-product-variant-domain-3 resolve the effective variant price.
+/// @evidence docs/analysis/02-domain-model.md#req-product-variant-domain-4-calculate-variant-stock The shopping_product_variants persistence supports req-product-variant-domain-4 calculate variant stock.
+/// @evidence docs/analysis/02-domain-model.md#req-product-variant-domain-5-use-variants-as-commerce-units The shopping_product_variants persistence supports req-product-variant-domain-5 use variants as commerce units.
+/// @evidence docs/analysis/02-domain-model.md#req-variant-lifecycle-variant-availability-and-retirement The shopping_product_variants persistence supports req-variant-lifecycle variant availability and retirement.
+/// @evidence docs/analysis/02-domain-model.md#req-variant-lifecycle-1-make-an-in-stock-variant-available The shopping_product_variants persistence supports req-variant-lifecycle-1 make an in-stock variant available.
+/// @evidence docs/analysis/02-domain-model.md#req-variant-lifecycle-2-expose-the-out-of-stock-state The shopping_product_variants persistence supports req-variant-lifecycle-2 expose the out-of-stock state.
+/// @evidence docs/analysis/02-domain-model.md#req-variant-lifecycle-3-retire-a-deletable-variant The shopping_product_variants persistence supports req-variant-lifecycle-3 retire a deletable variant.
+/// @evidence docs/analysis/02-domain-model.md#req-variant-lifecycle-4-preserve-retired-variant-evidence The shopping_product_variants persistence supports req-variant-lifecycle-4 preserve retired-variant evidence.
+/// @evidence docs/analysis/02-domain-model.md#req-inventory-domain-2-attach-movements-to-one-variant The shopping_product_variants persistence supports req-inventory-domain-2 attach movements to one variant.
+/// @evidence docs/analysis/02-domain-model.md#req-cart-domain-1-relate-a-cart-to-its-customer-and-variants The shopping_product_variants persistence supports req-cart-domain-1 relate a cart to its customer and variants.
+/// @evidence docs/analysis/02-domain-model.md#req-cart-domain-2-keep-one-line-per-variant The shopping_product_variants persistence supports req-cart-domain-2 keep one line per variant.
+/// @evidence docs/analysis/02-domain-model.md#req-order-domain-3-combine-purchased-quantity-by-variant The shopping_product_variants persistence supports req-order-domain-3 combine purchased quantity by variant.
+/// @evidence docs/analysis/03-functional-requirements.md#req-variant-functions-product-variant-operations The shopping_product_variants persistence supports req-variant-functions product variant operations.
+/// @evidence docs/analysis/03-functional-requirements.md#req-variant-functions-1-add-a-product-variant The shopping_product_variants persistence supports req-variant-functions-1 add a product variant.
+/// @evidence docs/analysis/03-functional-requirements.md#req-variant-functions-2-edit-a-product-variant The shopping_product_variants persistence supports req-variant-functions-2 edit a product variant.
+/// @evidence docs/analysis/03-functional-requirements.md#req-variant-functions-3-delete-a-product-variant The shopping_product_variants persistence supports req-variant-functions-3 delete a product variant.
+/// @evidence docs/analysis/03-functional-requirements.md#req-inventory-functions-1-restock-a-variant The shopping_product_variants persistence supports req-inventory-functions-1 restock a variant.
+/// @evidence docs/analysis/03-functional-requirements.md#req-inventory-functions-3-view-variant-inventory-history The shopping_product_variants persistence supports req-inventory-functions-3 view variant inventory history.
+/// @evidence docs/analysis/03-functional-requirements.md#req-cart-functions-1-add-a-variant-to-the-cart The shopping_product_variants persistence supports req-cart-functions-1 add a variant to the cart.
+/// @evidence docs/analysis/04-business-rules.md#req-variant-policies-variant-identity-price-availability-and-retirement-policies The shopping_product_variants persistence supports req-variant-policies variant identity, price, availability, and retirement policies.
+/// @evidence docs/analysis/04-business-rules.md#req-variant-policies-1-require-a-unique-sku-and-concrete-option-combination The shopping_product_variants persistence supports req-variant-policies-1 require a unique sku and concrete option combination.
+/// @evidence docs/analysis/04-business-rules.md#req-variant-policies-2-validate-the-optional-price-override The shopping_product_variants persistence supports req-variant-policies-2 validate the optional price override.
+/// @evidence docs/analysis/04-business-rules.md#req-variant-policies-3-require-an-available-variant-for-purchase The shopping_product_variants persistence supports req-variant-policies-3 require an available variant for purchase.
+/// @evidence docs/analysis/04-business-rules.md#req-variant-policies-4-block-variant-deletion-during-fulfillment The shopping_product_variants persistence supports req-variant-policies-4 block variant deletion during fulfillment.
+/// @evidence docs/analysis/04-business-rules.md#req-variant-policies-5-block-variant-deletion-during-unresolved-requests The shopping_product_variants persistence supports req-variant-policies-5 block variant deletion during unresolved requests.
+/// @evidence docs/analysis/04-business-rules.md#req-cart-policies-2-merge-repeated-variant-additions The shopping_product_variants persistence supports req-cart-policies-2 merge repeated variant additions.
+/// @evidence docs/analysis/04-business-rules.md#req-cart-policies-3-admit-only-a-purchasable-live-variant The shopping_product_variants persistence supports req-cart-policies-3 admit only a purchasable live variant.
+/// @evidence docs/analysis/04-business-rules.md#req-order-policies-2-consolidate-purchased-units-by-variant The shopping_product_variants persistence supports req-order-policies-2 consolidate purchased units by variant.
+model shopping_product_variants {
+  /// UUID primary key.
+  id                  String                         @id
+  /// Owning product identifier.
+  shopping_product_id String
+  /// Unique seller SKU.
+  sku                 String
+  /// JSON option values.
+  options_json        String
+  /// Optional price override.
+  price_override      Float?
+  /// Live or deleted lifecycle state.
+  status              String
+  /// Creation instant.
+  created_at          DateTime
+  /// Last edit instant.
+  updated_at          DateTime
+  /// Deletion instant.
+  deleted_at          DateTime?
+  /// Product relation.
+  product             shopping_products              @relation(fields: [shopping_product_id], references: [id], onDelete: Cascade)
+  /// Inventory movements.
+  inventory           shopping_inventory_movements[]
+  /// Cart lines.
+  cart_lines          shopping_cart_lines[]
+  /// Order items.
+  order_items         shopping_order_items[]
+
+  @@unique([sku])
+  @@index([shopping_product_id, status])
+}
+
+/// @evidence docs/analysis/02-domain-model.md#req-inventory-domain-inventory-history-model The shopping_inventory_movements persistence supports req-inventory-domain inventory history model.
+/// @evidence docs/analysis/02-domain-model.md#req-inventory-domain-1-define-an-inventory-movement The shopping_inventory_movements persistence supports req-inventory-domain-1 define an inventory movement.
+/// @evidence docs/analysis/02-domain-model.md#req-inventory-domain-3-derive-current-stock-from-history The shopping_inventory_movements persistence supports req-inventory-domain-3 derive current stock from history.
+/// @evidence docs/analysis/02-domain-model.md#req-inventory-domain-4-distinguish-automatic-commerce-movements The shopping_inventory_movements persistence supports req-inventory-domain-4 distinguish automatic commerce movements.
+/// @evidence docs/analysis/02-domain-model.md#req-inventory-domain-5-present-complete-inventory-history The shopping_inventory_movements persistence supports req-inventory-domain-5 present complete inventory history.
+/// @evidence docs/analysis/03-functional-requirements.md#req-inventory-functions-inventory-operations The shopping_inventory_movements persistence supports req-inventory-functions inventory operations.
+/// @evidence docs/analysis/03-functional-requirements.md#req-inventory-functions-2-subtract-inventory The shopping_inventory_movements persistence supports req-inventory-functions-2 subtract inventory.
+/// @evidence docs/analysis/03-functional-requirements.md#req-checkout-journey-6-commit-stock-and-cart-effects The shopping_inventory_movements persistence supports req-checkout-journey-6 commit stock and cart effects.
+/// @evidence docs/analysis/04-business-rules.md#req-inventory-policies-inventory-movement-and-stock-policies The shopping_inventory_movements persistence supports req-inventory-policies inventory movement and stock policies.
+/// @evidence docs/analysis/04-business-rules.md#req-inventory-policies-1-require-attributable-nonzero-inventory-movements The shopping_inventory_movements persistence supports req-inventory-policies-1 require attributable nonzero inventory movements.
+/// @evidence docs/analysis/04-business-rules.md#req-inventory-policies-2-apply-seller-movement-signs The shopping_inventory_movements persistence supports req-inventory-policies-2 apply seller movement signs.
+/// @evidence docs/analysis/04-business-rules.md#req-inventory-policies-3-prevent-negative-or-reserved-stock-depletion The shopping_inventory_movements persistence supports req-inventory-policies-3 prevent negative or reserved-stock depletion.
+/// @evidence docs/analysis/04-business-rules.md#req-inventory-policies-4-deduct-purchased-quantity-at-order-creation The shopping_inventory_movements persistence supports req-inventory-policies-4 deduct purchased quantity at order creation.
+/// @evidence docs/analysis/04-business-rules.md#req-inventory-policies-5-restore-returned-item-quantity-exactly-once The shopping_inventory_movements persistence supports req-inventory-policies-5 restore returned item quantity exactly once.
+/// @evidence docs/analysis/04-business-rules.md#req-snapshot-policies-3-use-inventory-history-for-stock-changes The shopping_inventory_movements persistence supports req-snapshot-policies-3 use inventory history for stock changes.
+/// @evidence docs/analysis/05-non-functional.md#req-nfr-audit-integrity-4-trace-stock-and-purchase-evidence-end-to-end The shopping_inventory_movements persistence supports req-nfr-audit-integrity-4 trace stock and purchase evidence end to end.
+model shopping_inventory_movements {
+  /// UUID primary key.
+  id                          String                    @id
+  /// Variant identifier.
+  shopping_product_variant_id String
+  /// Signed quantity delta.
+  quantity                    Int
+  /// Human or commerce actor identifier.
+  actor_id                    String?
+  /// Movement reason.
+  reason                      String
+  /// Creation instant.
+  created_at                  DateTime
+  /// Variant relation.
+  variant                     shopping_product_variants @relation(fields: [shopping_product_variant_id], references: [id], onDelete: Cascade)
+
+  @@index([shopping_product_variant_id, created_at])
+}
+
+/// @evidence docs/analysis/02-domain-model.md#req-wishlist-domain-wishlist-model The shopping_wishlists persistence supports req-wishlist-domain wishlist model.
+/// @evidence docs/analysis/02-domain-model.md#req-wishlist-domain-1-relate-a-wishlist-to-its-customer-and-products The shopping_wishlists persistence supports req-wishlist-domain-1 relate a wishlist to its customer and products.
+/// @evidence docs/analysis/02-domain-model.md#req-wishlist-domain-2-keep-one-entry-per-product The shopping_wishlists persistence supports req-wishlist-domain-2 keep one entry per product.
+/// @evidence docs/analysis/02-domain-model.md#req-wishlist-domain-3-remove-deleted-products-from-wishlists The shopping_wishlists persistence supports req-wishlist-domain-3 remove deleted products from wishlists.
+/// @evidence docs/analysis/02-domain-model.md#req-wishlist-domain-4-order-wishlist-entries-for-paging The shopping_wishlists persistence supports req-wishlist-domain-4 order wishlist entries for paging.
+/// @evidence docs/analysis/03-functional-requirements.md#req-wishlist-functions-wishlist-operations The shopping_wishlists persistence supports req-wishlist-functions wishlist operations.
+/// @evidence docs/analysis/03-functional-requirements.md#req-wishlist-functions-1-add-a-product-to-the-wishlist The shopping_wishlists persistence supports req-wishlist-functions-1 add a product to the wishlist.
+/// @evidence docs/analysis/03-functional-requirements.md#req-wishlist-functions-2-view-the-wishlist The shopping_wishlists persistence supports req-wishlist-functions-2 view the wishlist.
+/// @evidence docs/analysis/03-functional-requirements.md#req-wishlist-functions-3-remove-a-wishlist-product The shopping_wishlists persistence supports req-wishlist-functions-3 remove a wishlist product.
+/// @evidence docs/analysis/04-business-rules.md#req-wishlist-policies-wishlist-membership-policies The shopping_wishlists persistence supports req-wishlist-policies wishlist membership policies.
+/// @evidence docs/analysis/04-business-rules.md#req-wishlist-policies-1-keep-wishlist-changes-within-the-owning-customer The shopping_wishlists persistence supports req-wishlist-policies-1 keep wishlist changes within the owning customer.
+/// @evidence docs/analysis/04-business-rules.md#req-wishlist-policies-2-admit-one-live-product-entry-per-customer The shopping_wishlists persistence supports req-wishlist-policies-2 admit one live product entry per customer.
+/// @evidence docs/analysis/04-business-rules.md#req-wishlist-policies-3-keep-a-wishlist-entry-product-scoped-and-nonreserving The shopping_wishlists persistence supports req-wishlist-policies-3 keep a wishlist entry product-scoped and nonreserving.
+/// @evidence docs/analysis/04-business-rules.md#req-wishlist-policies-4-page-retained-wishlist-products-consistently The shopping_wishlists persistence supports req-wishlist-policies-4 page retained wishlist products consistently.
+model shopping_wishlists {
+  /// UUID primary key.
+  id                   String                      @id
+  /// Owning customer identifier.
+  shopping_customer_id String                      @unique
+  /// Creation instant.
+  created_at           DateTime
+  /// Customer relation.
+  customer             shopping_customers          @relation(fields: [shopping_customer_id], references: [id], onDelete: Cascade)
+  /// Wishlist product entries.
+  entries              shopping_wishlist_entries[]
+}
+
+model shopping_wishlist_entries {
+  /// UUID primary key.
+  id                   String             @id
+  /// Wishlist identifier.
+  shopping_wishlist_id String
+  /// Product identifier.
+  shopping_product_id  String
+  /// Creation instant used for stable paging.
+  created_at           DateTime
+  /// Wishlist relation.
+  wishlist             shopping_wishlists @relation(fields: [shopping_wishlist_id], references: [id], onDelete: Cascade)
+  /// Product relation.
+  product              shopping_products  @relation(fields: [shopping_product_id], references: [id], onDelete: Cascade)
+
+  @@unique([shopping_wishlist_id, shopping_product_id])
+  @@index([shopping_wishlist_id, created_at])
+}
+
+/// @evidence docs/analysis/02-domain-model.md#req-cart-domain-shopping-cart-model The shopping_carts persistence supports req-cart-domain shopping cart model.
+/// @evidence docs/analysis/02-domain-model.md#req-cart-domain-3-present-cart-line-values The shopping_carts persistence supports req-cart-domain-3 present cart-line values.
+/// @evidence docs/analysis/02-domain-model.md#req-cart-domain-4-calculate-the-cart-total The shopping_carts persistence supports req-cart-domain-4 calculate the cart total.
+/// @evidence docs/analysis/02-domain-model.md#req-cart-domain-5-expose-cart-availability-problems The shopping_carts persistence supports req-cart-domain-5 expose cart availability problems.
+/// @evidence docs/analysis/03-functional-requirements.md#req-cart-functions-shopping-cart-operations The shopping_carts persistence supports req-cart-functions shopping cart operations.
+/// @evidence docs/analysis/03-functional-requirements.md#req-cart-functions-2-view-the-shopping-cart The shopping_carts persistence supports req-cart-functions-2 view the shopping cart.
+/// @evidence docs/analysis/03-functional-requirements.md#req-cart-functions-3-change-cart-quantity The shopping_carts persistence supports req-cart-functions-3 change cart quantity.
+/// @evidence docs/analysis/03-functional-requirements.md#req-cart-functions-4-remove-a-cart-line The shopping_carts persistence supports req-cart-functions-4 remove a cart line.
+/// @evidence docs/analysis/04-business-rules.md#req-cart-policies-cart-quantity-and-availability-policies The shopping_carts persistence supports req-cart-policies cart quantity and availability policies.
+/// @evidence docs/analysis/04-business-rules.md#req-cart-policies-1-require-a-positive-whole-unit-cart-quantity The shopping_carts persistence supports req-cart-policies-1 require a positive whole-unit cart quantity.
+/// @evidence docs/analysis/04-business-rules.md#req-cart-policies-4-expose-current-cart-price-and-availability The shopping_carts persistence supports req-cart-policies-4 expose current cart price and availability.
+/// @evidence docs/analysis/04-business-rules.md#req-cart-policies-5-exclude-ineligible-lines-from-checkout The shopping_carts persistence supports req-cart-policies-5 exclude ineligible lines from checkout.
+model shopping_carts {
+  /// UUID primary key.
+  id                   String                @id
+  /// Owning customer identifier.
+  shopping_customer_id String                @unique
+  /// Creation instant.
+  created_at           DateTime
+  /// Last edit instant.
+  updated_at           DateTime
+  /// Customer relation.
+  customer             shopping_customers    @relation(fields: [shopping_customer_id], references: [id], onDelete: Cascade)
+  /// Cart lines.
+  lines                shopping_cart_lines[]
+}
+
+model shopping_cart_lines {
+  /// UUID primary key.
+  id                          String                    @id
+  /// Cart identifier.
+  shopping_cart_id            String
+  /// Variant identifier.
+  shopping_product_variant_id String
+  /// Positive requested quantity.
+  quantity                    Int
+  /// Creation instant.
+  created_at                  DateTime
+  /// Last edit instant.
+  updated_at                  DateTime
+  /// Cart relation.
+  cart                        shopping_carts            @relation(fields: [shopping_cart_id], references: [id], onDelete: Cascade)
+  /// Variant relation.
+  variant                     shopping_product_variants @relation(fields: [shopping_product_variant_id], references: [id], onDelete: Cascade)
+
+  @@unique([shopping_cart_id, shopping_product_variant_id])
+}
+
+/// @evidence docs/analysis/01-actors-and-auth.md#req-customer-identity-1-register-a-customer-account The shopping_orders persistence supports req-customer-identity-1 register a customer account.
+/// @evidence docs/analysis/01-actors-and-auth.md#req-customer-identity-2-log-in-as-a-customer The shopping_orders persistence supports req-customer-identity-2 log in as a customer.
+/// @evidence docs/analysis/01-actors-and-auth.md#req-customer-identity-6-change-the-customer-password The shopping_orders persistence supports req-customer-identity-6 change the customer password.
+/// @evidence docs/analysis/01-actors-and-auth.md#req-customer-identity-7-recover-customer-access The shopping_orders persistence supports req-customer-identity-7 recover customer access.
+/// @evidence docs/analysis/01-actors-and-auth.md#req-customer-identity-8-delete-a-customer-account The shopping_orders persistence supports req-customer-identity-8 delete a customer account.
+/// @evidence docs/analysis/01-actors-and-auth.md#req-seller-identity-2-log-in-as-a-seller The shopping_orders persistence supports req-seller-identity-2 log in as a seller.
+/// @evidence docs/analysis/01-actors-and-auth.md#req-seller-identity-3-continue-a-seller-session The shopping_orders persistence supports req-seller-identity-3 continue a seller session.
+/// @evidence docs/analysis/01-actors-and-auth.md#req-seller-identity-4-log-out-the-current-seller-session The shopping_orders persistence supports req-seller-identity-4 log out the current seller session.
+/// @evidence docs/analysis/01-actors-and-auth.md#req-seller-identity-5-log-out-every-seller-session The shopping_orders persistence supports req-seller-identity-5 log out every seller session.
+/// @evidence docs/analysis/01-actors-and-auth.md#req-seller-identity-6-change-the-seller-password The shopping_orders persistence supports req-seller-identity-6 change the seller password.
+/// @evidence docs/analysis/01-actors-and-auth.md#req-seller-identity-7-recover-seller-access The shopping_orders persistence supports req-seller-identity-7 recover seller access.
+/// @evidence docs/analysis/01-actors-and-auth.md#req-admin-authority-6-prevent-self-demotion The shopping_orders persistence supports req-admin-authority-6 prevent self-demotion.
+/// @evidence docs/analysis/01-actors-and-auth.md#req-access-boundaries-identity-and-permission-boundaries The shopping_orders persistence supports req-access-boundaries identity and permission boundaries.
+/// @evidence docs/analysis/01-actors-and-auth.md#req-access-boundaries-1-require-registration-for-every-feature The shopping_orders persistence supports req-access-boundaries-1 require registration for every feature.
+/// @evidence docs/analysis/01-actors-and-auth.md#req-access-boundaries-2-limit-customer-owned-activity The shopping_orders persistence supports req-access-boundaries-2 limit customer-owned activity.
+/// @evidence docs/analysis/01-actors-and-auth.md#req-access-boundaries-3-limit-seller-owned-activity The shopping_orders persistence supports req-access-boundaries-3 limit seller-owned activity.
+/// @evidence docs/analysis/01-actors-and-auth.md#req-access-boundaries-4-preserve-duties-during-seller-suspension The shopping_orders persistence supports req-access-boundaries-4 preserve duties during seller suspension.
+/// @evidence docs/analysis/01-actors-and-auth.md#req-access-boundaries-5-block-login-for-banned-accounts The shopping_orders persistence supports req-access-boundaries-5 block login for banned accounts.
+/// @evidence docs/analysis/02-domain-model.md#req-customer-profile-domain-2-relate-a-profile-to-its-customer The shopping_orders persistence supports req-customer-profile-domain-2 relate a profile to its customer.
+/// @evidence docs/analysis/02-domain-model.md#req-customer-profile-domain-3-remove-profile-data-at-customer-closure The shopping_orders persistence supports req-customer-profile-domain-3 remove profile data at customer closure.
+/// @evidence docs/analysis/02-domain-model.md#req-shipping-address-domain-4-preserve-the-purchased-shipping-destination The shopping_orders persistence supports req-shipping-address-domain-4 preserve the purchased shipping destination.
+/// @evidence docs/analysis/02-domain-model.md#req-seller-profile-domain-2-relate-a-profile-to-its-seller The shopping_orders persistence supports req-seller-profile-domain-2 relate a profile to its seller.
+/// @evidence docs/analysis/02-domain-model.md#req-seller-account-lifecycle-2-operate-as-an-approved-seller The shopping_orders persistence supports req-seller-account-lifecycle-2 operate as an approved seller.
+/// @evidence docs/analysis/02-domain-model.md#req-seller-account-lifecycle-3-recover-from-seller-rejection The shopping_orders persistence supports req-seller-account-lifecycle-3 recover from seller rejection.
+/// @evidence docs/analysis/02-domain-model.md#req-seller-account-lifecycle-4-restrict-a-suspended-seller The shopping_orders persistence supports req-seller-account-lifecycle-4 restrict a suspended seller.
+/// @evidence docs/analysis/02-domain-model.md#req-seller-account-lifecycle-5-restore-an-unsuspended-seller The shopping_orders persistence supports req-seller-account-lifecycle-5 restore an unsuspended seller.
+/// @evidence docs/analysis/02-domain-model.md#req-seller-account-lifecycle-6-preserve-records-for-a-banned-seller The shopping_orders persistence supports req-seller-account-lifecycle-6 preserve records for a banned seller.
+/// @evidence docs/analysis/02-domain-model.md#req-seller-account-lifecycle-7-retire-a-deleted-seller The shopping_orders persistence supports req-seller-account-lifecycle-7 retire a deleted seller.
+/// @evidence docs/analysis/02-domain-model.md#req-order-domain-order-model The shopping_orders persistence supports req-order-domain order model.
+/// @evidence docs/analysis/02-domain-model.md#req-order-domain-1-define-order-information The shopping_orders persistence supports req-order-domain-1 define order information.
+/// @evidence docs/analysis/02-domain-model.md#req-order-domain-2-relate-an-order-to-its-customer-and-items The shopping_orders persistence supports req-order-domain-2 relate an order to its customer and items.
+/// @evidence docs/analysis/02-domain-model.md#req-order-domain-4-allow-multi-seller-orders The shopping_orders persistence supports req-order-domain-4 allow multi-seller orders.
+/// @evidence docs/analysis/02-domain-model.md#req-order-domain-5-relate-items-to-fulfillment-and-after-sales-records The shopping_orders persistence supports req-order-domain-5 relate items to fulfillment and after-sales records.
+/// @evidence docs/analysis/02-domain-model.md#req-order-item-lifecycle-1-begin-items-in-paid-status The shopping_orders persistence supports req-order-item-lifecycle-1 begin items in paid status.
+/// @evidence docs/analysis/02-domain-model.md#req-order-item-lifecycle-2-transition-paid-items-to-shipped The shopping_orders persistence supports req-order-item-lifecycle-2 transition paid items to shipped.
+/// @evidence docs/analysis/02-domain-model.md#req-order-item-lifecycle-3-transition-shipped-items-to-delivered The shopping_orders persistence supports req-order-item-lifecycle-3 transition shipped items to delivered.
+/// @evidence docs/analysis/02-domain-model.md#req-order-item-lifecycle-4-transition-an-item-to-cancelled The shopping_orders persistence supports req-order-item-lifecycle-4 transition an item to cancelled.
+/// @evidence docs/analysis/02-domain-model.md#req-order-item-lifecycle-5-transition-an-item-to-refunded The shopping_orders persistence supports req-order-item-lifecycle-5 transition an item to refunded.
+/// @evidence docs/analysis/02-domain-model.md#req-order-item-lifecycle-6-preserve-item-facts-across-status-changes The shopping_orders persistence supports req-order-item-lifecycle-6 preserve item facts across status changes.
+/// @evidence docs/analysis/02-domain-model.md#req-order-lifecycle-derived-order-states The shopping_orders persistence supports req-order-lifecycle derived order states.
+/// @evidence docs/analysis/02-domain-model.md#req-order-lifecycle-1-derive-paid-order-status The shopping_orders persistence supports req-order-lifecycle-1 derive paid order status.
+/// @evidence docs/analysis/02-domain-model.md#req-order-lifecycle-2-derive-shipped-order-status The shopping_orders persistence supports req-order-lifecycle-2 derive shipped order status.
+/// @evidence docs/analysis/02-domain-model.md#req-order-lifecycle-3-derive-delivered-order-status The shopping_orders persistence supports req-order-lifecycle-3 derive delivered order status.
+/// @evidence docs/analysis/02-domain-model.md#req-order-lifecycle-4-derive-cancelled-order-status The shopping_orders persistence supports req-order-lifecycle-4 derive cancelled order status.
+/// @evidence docs/analysis/02-domain-model.md#req-order-lifecycle-5-derive-refunded-order-status The shopping_orders persistence supports req-order-lifecycle-5 derive refunded order status.
+/// @evidence docs/analysis/02-domain-model.md#req-order-lifecycle-6-derive-partially-completed-status The shopping_orders persistence supports req-order-lifecycle-6 derive partially completed status.
+/// @evidence docs/analysis/02-domain-model.md#req-review-domain-2-relate-a-review-to-its-purchase The shopping_orders persistence supports req-review-domain-2 relate a review to its purchase.
+/// @evidence docs/analysis/02-domain-model.md#req-review-domain-3-limit-reviews-per-purchase The shopping_orders persistence supports req-review-domain-3 limit reviews per purchase.
+/// @evidence docs/analysis/03-functional-requirements.md#req-seller-account-functions-4-approve-a-seller-registration The shopping_orders persistence supports req-seller-account-functions-4 approve a seller registration.
+/// @evidence docs/analysis/03-functional-requirements.md#req-seller-account-functions-5-reject-a-seller-registration The shopping_orders persistence supports req-seller-account-functions-5 reject a seller registration.
+/// @evidence docs/analysis/03-functional-requirements.md#req-seller-account-functions-6-suspend-a-seller The shopping_orders persistence supports req-seller-account-functions-6 suspend a seller.
+/// @evidence docs/analysis/03-functional-requirements.md#req-seller-account-functions-7-unsuspend-a-seller The shopping_orders persistence supports req-seller-account-functions-7 unsuspend a seller.
+/// @evidence docs/analysis/03-functional-requirements.md#req-checkout-journey-checkout-and-order-placement-journey The shopping_orders persistence supports req-checkout-journey checkout and order placement journey.
+/// @evidence docs/analysis/03-functional-requirements.md#req-checkout-journey-1-start-checkout The shopping_orders persistence supports req-checkout-journey-1 start checkout.
+/// @evidence docs/analysis/03-functional-requirements.md#req-checkout-journey-2-review-the-order-summary The shopping_orders persistence supports req-checkout-journey-2 review the order summary.
+/// @evidence docs/analysis/03-functional-requirements.md#req-checkout-journey-3-confirm-and-initiate-payment The shopping_orders persistence supports req-checkout-journey-3 confirm and initiate payment.
+/// @evidence docs/analysis/03-functional-requirements.md#req-checkout-journey-4-recover-from-payment-failure The shopping_orders persistence supports req-checkout-journey-4 recover from payment failure.
+/// @evidence docs/analysis/03-functional-requirements.md#req-checkout-journey-5-create-the-paid-order The shopping_orders persistence supports req-checkout-journey-5 create the paid order.
+/// @evidence docs/analysis/03-functional-requirements.md#req-order-history-functions-customer-order-history The shopping_orders persistence supports req-order-history-functions customer order history.
+/// @evidence docs/analysis/03-functional-requirements.md#req-order-history-functions-1-list-customer-orders The shopping_orders persistence supports req-order-history-functions-1 list customer orders.
+/// @evidence docs/analysis/03-functional-requirements.md#req-order-history-functions-2-view-order-details The shopping_orders persistence supports req-order-history-functions-2 view order details.
+/// @evidence docs/analysis/03-functional-requirements.md#req-order-history-functions-3-view-order-shipments The shopping_orders persistence supports req-order-history-functions-3 view order shipments.
+/// @evidence docs/analysis/03-functional-requirements.md#req-seller-dashboard-seller-dashboard-and-order-item-reports The shopping_orders persistence supports req-seller-dashboard seller dashboard and order-item reports.
+/// @evidence docs/analysis/03-functional-requirements.md#req-seller-dashboard-1-view-the-shop-summary The shopping_orders persistence supports req-seller-dashboard-1 view the shop summary.
+/// @evidence docs/analysis/03-functional-requirements.md#req-admin-request-functions-2-view-personal-application-history The shopping_orders persistence supports req-admin-request-functions-2 view personal application history.
+/// @evidence docs/analysis/03-functional-requirements.md#req-user-oversight-1-list-customer-accounts The shopping_orders persistence supports req-user-oversight-1 list customer accounts.
+/// @evidence docs/analysis/03-functional-requirements.md#req-user-oversight-2-ban-a-customer The shopping_orders persistence supports req-user-oversight-2 ban a customer.
+/// @evidence docs/analysis/03-functional-requirements.md#req-user-oversight-3-unban-a-customer The shopping_orders persistence supports req-user-oversight-3 unban a customer.
+/// @evidence docs/analysis/03-functional-requirements.md#req-user-oversight-5-ban-a-seller The shopping_orders persistence supports req-user-oversight-5 ban a seller.
+/// @evidence docs/analysis/03-functional-requirements.md#req-user-oversight-6-unban-a-seller The shopping_orders persistence supports req-user-oversight-6 unban a seller.
+/// @evidence docs/analysis/03-functional-requirements.md#req-order-oversight-1-list-platform-orders The shopping_orders persistence supports req-order-oversight-1 list platform orders.
+/// @evidence docs/analysis/03-functional-requirements.md#req-order-oversight-2-view-a-platform-order The shopping_orders persistence supports req-order-oversight-2 view a platform order.
+/// @evidence docs/analysis/03-functional-requirements.md#req-order-oversight-4-force-cancel-an-orders-eligible-items The shopping_orders persistence supports req-order-oversight-4 force-cancel an order's eligible items.
+/// @evidence docs/analysis/03-functional-requirements.md#req-order-oversight-6-force-refund-an-orders-eligible-items The shopping_orders persistence supports req-order-oversight-6 force-refund an order's eligible items.
+/// @evidence docs/analysis/04-business-rules.md#req-address-policies-2-enforce-address-ownership The shopping_orders persistence supports req-address-policies-2 enforce address ownership.
+/// @evidence docs/analysis/04-business-rules.md#req-address-policies-3-keep-at-most-one-default-address The shopping_orders persistence supports req-address-policies-3 keep at most one default address.
+/// @evidence docs/analysis/04-business-rules.md#req-address-policies-4-clear-a-removed-default-without-automatic-replacement The shopping_orders persistence supports req-address-policies-4 clear a removed default without automatic replacement.
+/// @evidence docs/analysis/04-business-rules.md#req-address-policies-5-use-only-a-current-owned-address-at-checkout The shopping_orders persistence supports req-address-policies-5 use only a current owned address at checkout.
+/// @evidence docs/analysis/04-business-rules.md#req-seller-account-policies-1-require-approval-before-selling The shopping_orders persistence supports req-seller-account-policies-1 require approval before selling.
+/// @evidence docs/analysis/04-business-rules.md#req-seller-account-policies-2-require-and-retain-a-seller-rejection-reason The shopping_orders persistence supports req-seller-account-policies-2 require and retain a seller rejection reason.
+/// @evidence docs/analysis/04-business-rules.md#req-seller-account-policies-3-separate-suspension-from-fulfillment-duties The shopping_orders persistence supports req-seller-account-policies-3 separate suspension from fulfillment duties.
+/// @evidence docs/analysis/04-business-rules.md#req-seller-account-policies-4-block-seller-deletion-during-active-fulfillment The shopping_orders persistence supports req-seller-account-policies-4 block seller deletion during active fulfillment.
+/// @evidence docs/analysis/04-business-rules.md#req-seller-account-policies-5-block-seller-deletion-during-unresolved-requests The shopping_orders persistence supports req-seller-account-policies-5 block seller deletion during unresolved requests.
+/// @evidence docs/analysis/04-business-rules.md#req-search-policies-3-order-and-page-search-results-deterministically The shopping_orders persistence supports req-search-policies-3 order and page search results deterministically.
+/// @evidence docs/analysis/04-business-rules.md#req-checkout-policies-checkout-payment-and-order-creation-policies The shopping_orders persistence supports req-checkout-policies checkout, payment, and order-creation policies.
+/// @evidence docs/analysis/04-business-rules.md#req-checkout-policies-1-require-purchasable-lines-and-an-owned-address The shopping_orders persistence supports req-checkout-policies-1 require purchasable lines and an owned address.
+/// @evidence docs/analysis/04-business-rules.md#req-checkout-policies-2-refresh-material-purchase-facts-before-charge The shopping_orders persistence supports req-checkout-policies-2 refresh material purchase facts before charge.
+/// @evidence docs/analysis/04-business-rules.md#req-checkout-policies-4-recover-cleanly-from-unsuccessful-payment The shopping_orders persistence supports req-checkout-policies-4 recover cleanly from unsuccessful payment.
+/// @evidence docs/analysis/04-business-rules.md#req-checkout-policies-5-make-gateway-success-idempotent The shopping_orders persistence supports req-checkout-policies-5 make gateway success idempotent.
+/// @evidence docs/analysis/04-business-rules.md#req-checkout-policies-6-commit-the-successful-purchase-atomically The shopping_orders persistence supports req-checkout-policies-6 commit the successful purchase atomically.
+/// @evidence docs/analysis/04-business-rules.md#req-order-policies-order-composition-pricing-and-status-policies The shopping_orders persistence supports req-order-policies order composition, pricing, and status policies.
+/// @evidence docs/analysis/04-business-rules.md#req-order-policies-1-calculate-the-fixed-purchase-total The shopping_orders persistence supports req-order-policies-1 calculate the fixed purchase total.
+/// @evidence docs/analysis/04-business-rules.md#req-order-policies-3-keep-fulfillment-and-resolution-item-scoped The shopping_orders persistence supports req-order-policies-3 keep fulfillment and resolution item-scoped.
+/// @evidence docs/analysis/04-business-rules.md#req-order-policies-4-derive-the-complete-overall-order-status The shopping_orders persistence supports req-order-policies-4 derive the complete overall order status.
+/// @evidence docs/analysis/04-business-rules.md#req-order-policies-5-present-orders-from-purchase-time-evidence The shopping_orders persistence supports req-order-policies-5 present orders from purchase-time evidence.
+/// @evidence docs/analysis/04-business-rules.md#req-review-policies-review-eligibility-ordering-and-rating-policies The shopping_orders persistence supports req-review-policies review eligibility, ordering, and rating policies.
+/// @evidence docs/analysis/04-business-rules.md#req-review-policies-1-require-a-verified-delivered-purchase The shopping_orders persistence supports req-review-policies-1 require a verified delivered purchase.
+/// @evidence docs/analysis/04-business-rules.md#req-review-policies-3-keep-one-review-identity-per-product-and-order The shopping_orders persistence supports req-review-policies-3 keep one review identity per product and order.
+/// @evidence docs/analysis/04-business-rules.md#req-review-policies-5-order-live-reviews-by-publication-time The shopping_orders persistence supports req-review-policies-5 order live reviews by publication time.
+/// @evidence docs/analysis/04-business-rules.md#req-customer-account-policies-customer-closure-and-retention-policies The shopping_orders persistence supports req-customer-account-policies customer closure and retention policies.
+/// @evidence docs/analysis/04-business-rules.md#req-customer-account-policies-1-authenticate-irreversible-customer-closure The shopping_orders persistence supports req-customer-account-policies-1 authenticate irreversible customer closure.
+/// @evidence docs/analysis/04-business-rules.md#req-customer-account-policies-2-remove-working-personal-customer-state The shopping_orders persistence supports req-customer-account-policies-2 remove working personal customer state.
+/// @evidence docs/analysis/04-business-rules.md#req-customer-account-policies-3-retain-the-commercial-order-graph The shopping_orders persistence supports req-customer-account-policies-3 retain the commercial order graph.
+/// @evidence docs/analysis/04-business-rules.md#req-customer-account-policies-5-keep-customer-closure-permanent The shopping_orders persistence supports req-customer-account-policies-5 keep customer closure permanent.
+/// @evidence docs/analysis/04-business-rules.md#req-admin-governance-policies-2-keep-one-pending-application-per-identity The shopping_orders persistence supports req-admin-governance-policies-2 keep one pending application per identity.
+/// @evidence docs/analysis/04-business-rules.md#req-admin-oversight-policies-1-inspect-the-complete-platform-record The shopping_orders persistence supports req-admin-oversight-policies-1 inspect the complete platform record.
+/// @evidence docs/analysis/04-business-rules.md#req-admin-oversight-policies-2-suspend-account-access-without-deleting-history The shopping_orders persistence supports req-admin-oversight-policies-2 suspend account access without deleting history.
+/// @evidence docs/analysis/04-business-rules.md#req-admin-oversight-policies-3-compose-seller-suspension-and-ban-independently The shopping_orders persistence supports req-admin-oversight-policies-3 compose seller suspension and ban independently.
+/// @evidence docs/analysis/04-business-rules.md#req-admin-oversight-policies-4-retire-a-policy-violating-product-without-rewriting-orders The shopping_orders persistence supports req-admin-oversight-policies-4 retire a policy-violating product without rewriting orders.
+/// @evidence docs/analysis/04-business-rules.md#req-admin-oversight-policies-7-apply-a-force-action-across-an-orders-eligible-items The shopping_orders persistence supports req-admin-oversight-policies-7 apply a force action across an order's eligible items.
+/// @evidence docs/analysis/04-business-rules.md#req-seller-dashboard-policies-seller-dashboard-calculation-policies The shopping_orders persistence supports req-seller-dashboard-policies seller dashboard calculation policies.
+/// @evidence docs/analysis/04-business-rules.md#req-seller-dashboard-policies-3-count-unresolved-seller-requests The shopping_orders persistence supports req-seller-dashboard-policies-3 count unresolved seller requests.
+/// @evidence docs/analysis/05-non-functional.md#req-nfr-audit-integrity-commercial-change-evidence-integrity The shopping_orders persistence supports req-nfr-audit-integrity commercial change evidence integrity.
+/// @evidence docs/analysis/05-non-functional.md#req-nfr-audit-integrity-1-keep-commercial-change-evidence-immutable The shopping_orders persistence supports req-nfr-audit-integrity-1 keep commercial change evidence immutable.
+/// @evidence docs/analysis/05-non-functional.md#req-nfr-audit-integrity-2-reconstruct-each-recorded-modification The shopping_orders persistence supports req-nfr-audit-integrity-2 reconstruct each recorded modification.
+/// @evidence docs/analysis/05-non-functional.md#req-nfr-purchase-consistency-purchase-and-resolution-consistency The shopping_orders persistence supports req-nfr-purchase-consistency purchase and resolution consistency.
+/// @evidence docs/analysis/05-non-functional.md#req-nfr-purchase-consistency-1-expose-one-complete-successful-purchase-outcome The shopping_orders persistence supports req-nfr-purchase-consistency-1 expose one complete successful purchase outcome.
+/// @evidence docs/analysis/05-non-functional.md#req-nfr-purchase-consistency-2-preserve-a-clean-state-after-payment-failure The shopping_orders persistence supports req-nfr-purchase-consistency-2 preserve a clean state after payment failure.
+/// @evidence docs/analysis/05-non-functional.md#req-nfr-purchase-consistency-3-keep-each-commercial-reversal-synchronized The shopping_orders persistence supports req-nfr-purchase-consistency-3 keep each commercial reversal synchronized.
+/// @evidence docs/analysis/05-non-functional.md#req-nfr-purchase-consistency-4-preserve-independent-item-progress The shopping_orders persistence supports req-nfr-purchase-consistency-4 preserve independent item progress.
+/// @evidence docs/analysis/05-non-functional.md#req-nfr-history-continuity-commercial-history-and-privacy-continuity The shopping_orders persistence supports req-nfr-history-continuity commercial history and privacy continuity.
+/// @evidence docs/analysis/05-non-functional.md#req-nfr-history-continuity-1-keep-commercial-history-through-retirement The shopping_orders persistence supports req-nfr-history-continuity-1 keep commercial history through retirement.
+/// @evidence docs/analysis/05-non-functional.md#req-nfr-history-continuity-2-keep-past-order-presentation-stable The shopping_orders persistence supports req-nfr-history-continuity-2 keep past-order presentation stable.
+/// @evidence docs/analysis/05-non-functional.md#req-nfr-history-continuity-4-limit-retained-history-to-relevant-parties The shopping_orders persistence supports req-nfr-history-continuity-4 limit retained history to relevant parties.
+model shopping_orders {
+  /// UUID primary key.
+  id                       String                 @id
+  /// Owning customer identifier.
+  shopping_customer_id     String
+  /// Fixed purchase total.
+  total_price              Float
+  /// Purchase-time shipping values.
+  shipping_recipient_name  String
+  /// Purchase-time shipping phone.
+  shipping_recipient_phone String
+  /// Purchase-time street address.
+  shipping_street_address  String
+  /// Purchase-time city.
+  shipping_city            String
+  /// Purchase-time state or province.
+  shipping_state           String
+  /// Purchase-time postal code.
+  shipping_postal_code     String
+  /// Purchase-time country.
+  shipping_country         String
+  /// Creation instant.
+  created_at               DateTime
+  /// Customer relation.
+  customer                 shopping_customers     @relation(fields: [shopping_customer_id], references: [id], onDelete: Restrict)
+  /// Purchased items.
+  items                    shopping_order_items[]
+
+  @@index([shopping_customer_id, created_at])
+}
+
+/// @evidence docs/analysis/02-domain-model.md#req-order-item-lifecycle-order-item-states The shopping_order_items persistence supports req-order-item-lifecycle order item states.
+/// @evidence docs/analysis/03-functional-requirements.md#req-cancellation-functions-order-item-cancellation-journey The shopping_order_items persistence supports req-cancellation-functions order item cancellation journey.
+/// @evidence docs/analysis/03-functional-requirements.md#req-seller-dashboard-2-list-shop-order-items The shopping_order_items persistence supports req-seller-dashboard-2 list shop order items.
+/// @evidence docs/analysis/03-functional-requirements.md#req-order-oversight-3-force-cancel-one-order-item The shopping_order_items persistence supports req-order-oversight-3 force-cancel one order item.
+/// @evidence docs/analysis/03-functional-requirements.md#req-order-oversight-5-force-refund-one-order-item The shopping_order_items persistence supports req-order-oversight-5 force-refund one order item.
+/// @evidence docs/analysis/04-business-rules.md#req-admin-oversight-policies-5-force-cancel-an-eligible-order-item The shopping_order_items persistence supports req-admin-oversight-policies-5 force-cancel an eligible order item.
+/// @evidence docs/analysis/04-business-rules.md#req-admin-oversight-policies-6-force-refund-an-eligible-order-item The shopping_order_items persistence supports req-admin-oversight-policies-6 force-refund an eligible order item.
+/// @evidence docs/analysis/04-business-rules.md#req-seller-dashboard-policies-2-count-all-retained-seller-order-items The shopping_order_items persistence supports req-seller-dashboard-policies-2 count all retained seller order items.
+/// @evidence docs/analysis/04-business-rules.md#req-seller-dashboard-policies-4-filter-seller-order-items-by-one-exact-status The shopping_order_items persistence supports req-seller-dashboard-policies-4 filter seller order items by one exact status.
+model shopping_order_items {
+  /// UUID primary key.
+  id                          String                           @id
+  /// Order identifier.
+  shopping_order_id           String
+  /// Variant identifier retained for correlation.
+  shopping_product_variant_id String
+  /// Seller identifier retained for fulfillment.
+  shopping_seller_id          String
+  /// Purchase-time product name.
+  product_name                String
+  /// Purchase-time SKU.
+  sku                         String
+  /// Purchase-time shop name.
+  shop_name                   String
+  /// Purchase-time shop logo.
+  shop_logo                   String
+  /// Unit price fixed at purchase.
+  unit_price                  Float
+  /// Purchased quantity.
+  quantity                    Int
+  /// paid, shipped, delivered, cancelled, or refunded.
+  status                      String
+  /// Creation instant.
+  created_at                  DateTime
+  /// Order relation.
+  order                       shopping_orders                  @relation(fields: [shopping_order_id], references: [id], onDelete: Restrict)
+  /// Variant relation.
+  variant                     shopping_product_variants        @relation(fields: [shopping_product_variant_id], references: [id], onDelete: Restrict)
+  /// Seller relation.
+  seller                      shopping_sellers                 @relation(fields: [shopping_seller_id], references: [id], onDelete: Restrict)
+  /// Shipment memberships.
+  shipment_items              shopping_shipment_items[]
+  /// Cancellation requests.
+  cancellations               shopping_cancellation_requests[]
+  /// Refund requests.
+  refunds                     shopping_refund_requests[]
+  /// Reviews.
+  reviews                     shopping_reviews[]
+
+  @@index([shopping_order_id])
+  @@index([shopping_seller_id, status])
+}
+
+/// @evidence docs/analysis/02-domain-model.md#req-shipping-address-domain-2-relate-addresses-to-a-customer The shopping_shipments persistence supports req-shipping-address-domain-2 relate addresses to a customer.
+/// @evidence docs/analysis/02-domain-model.md#req-shipping-address-domain-3-designate-one-default-address The shopping_shipments persistence supports req-shipping-address-domain-3 designate one default address.
+/// @evidence docs/analysis/02-domain-model.md#req-shipment-domain-shipment-model The shopping_shipments persistence supports req-shipment-domain shipment model.
+/// @evidence docs/analysis/02-domain-model.md#req-shipment-domain-1-define-shipment-information The shopping_shipments persistence supports req-shipment-domain-1 define shipment information.
+/// @evidence docs/analysis/02-domain-model.md#req-shipment-domain-2-relate-a-shipment-to-its-seller-and-items The shopping_shipments persistence supports req-shipment-domain-2 relate a shipment to its seller and items.
+/// @evidence docs/analysis/02-domain-model.md#req-shipment-domain-3-permit-split-and-bundled-fulfillment The shopping_shipments persistence supports req-shipment-domain-3 permit split and bundled fulfillment.
+/// @evidence docs/analysis/02-domain-model.md#req-shipment-domain-4-separate-shipments-by-seller The shopping_shipments persistence supports req-shipment-domain-4 separate shipments by seller.
+/// @evidence docs/analysis/02-domain-model.md#req-shipment-domain-5-share-tracking-and-delivery-by-package The shopping_shipments persistence supports req-shipment-domain-5 share tracking and delivery by package.
+/// @evidence docs/analysis/03-functional-requirements.md#req-shipping-address-functions-1-list-saved-addresses The shopping_shipments persistence supports req-shipping-address-functions-1 list saved addresses.
+/// @evidence docs/analysis/03-functional-requirements.md#req-shipping-address-functions-3-edit-a-saved-address The shopping_shipments persistence supports req-shipping-address-functions-3 edit a saved address.
+/// @evidence docs/analysis/03-functional-requirements.md#req-shipping-address-functions-4-delete-a-saved-address The shopping_shipments persistence supports req-shipping-address-functions-4 delete a saved address.
+/// @evidence docs/analysis/03-functional-requirements.md#req-shipping-address-functions-5-set-the-default-address The shopping_shipments persistence supports req-shipping-address-functions-5 set the default address.
+/// @evidence docs/analysis/03-functional-requirements.md#req-shipping-functions-shipping-and-delivery-operations The shopping_shipments persistence supports req-shipping-functions shipping and delivery operations.
+/// @evidence docs/analysis/03-functional-requirements.md#req-shipping-functions-1-list-items-awaiting-shipment The shopping_shipments persistence supports req-shipping-functions-1 list items awaiting shipment.
+/// @evidence docs/analysis/03-functional-requirements.md#req-shipping-functions-2-create-a-shipment The shopping_shipments persistence supports req-shipping-functions-2 create a shipment.
+/// @evidence docs/analysis/03-functional-requirements.md#req-shipping-functions-3-view-shipment-tracking The shopping_shipments persistence supports req-shipping-functions-3 view shipment tracking.
+/// @evidence docs/analysis/03-functional-requirements.md#req-shipping-functions-4-confirm-shipment-delivery The shopping_shipments persistence supports req-shipping-functions-4 confirm shipment delivery.
+/// @evidence docs/analysis/03-functional-requirements.md#req-shipping-functions-5-auto-confirm-shipment-delivery The shopping_shipments persistence supports req-shipping-functions-5 auto-confirm shipment delivery.
+/// @evidence docs/analysis/04-business-rules.md#req-shipment-policies-shipment-eligibility-and-delivery-policies The shopping_shipments persistence supports req-shipment-policies shipment eligibility and delivery policies.
+/// @evidence docs/analysis/04-business-rules.md#req-shipment-policies-1-select-eligible-paid-items-for-shipment The shopping_shipments persistence supports req-shipment-policies-1 select eligible paid items for shipment.
+/// @evidence docs/analysis/04-business-rules.md#req-shipment-policies-2-keep-one-seller-and-destination-per-shipment The shopping_shipments persistence supports req-shipment-policies-2 keep one seller and destination per shipment.
+/// @evidence docs/analysis/04-business-rules.md#req-shipment-policies-3-require-complete-shared-tracking-information The shopping_shipments persistence supports req-shipment-policies-3 require complete shared tracking information.
+/// @evidence docs/analysis/04-business-rules.md#req-shipment-policies-4-ship-all-package-items-together The shopping_shipments persistence supports req-shipment-policies-4 ship all package items together.
+/// @evidence docs/analysis/04-business-rules.md#req-shipment-policies-5-confirm-delivery-for-the-whole-shipment The shopping_shipments persistence supports req-shipment-policies-5 confirm delivery for the whole shipment.
+/// @evidence docs/analysis/04-business-rules.md#req-shipment-policies-6-complete-unconfirmed-shipments-after-fourteen-days The shopping_shipments persistence supports req-shipment-policies-6 complete unconfirmed shipments after fourteen days.
+model shopping_shipments {
+  /// UUID primary key.
+  id                  String                    @id
+  /// Seller fulfilling the package.
+  shopping_seller_id  String
+  /// Shared tracking number.
+  tracking_number     String
+  /// Carrier name.
+  carrier             String
+  /// Delivery destination summary.
+  destination_summary String
+  /// Creation instant.
+  created_at          DateTime
+  /// Shipment time.
+  shipped_at          DateTime?
+  /// Delivery confirmation time.
+  delivered_at        DateTime?
+  /// Seller relation.
+  seller              shopping_sellers          @relation(fields: [shopping_seller_id], references: [id], onDelete: Restrict)
+  /// Package item joins.
+  items               shopping_shipment_items[]
+}
+
+model shopping_shipment_items {
+  /// UUID primary key.
+  id                     String               @id
+  /// Shipment identifier.
+  shopping_shipment_id   String
+  /// Order item identifier.
+  shopping_order_item_id String
+  /// Creation instant.
+  created_at             DateTime
+  /// Shipment relation.
+  shipment               shopping_shipments   @relation(fields: [shopping_shipment_id], references: [id], onDelete: Cascade)
+  /// Order item relation.
+  item                   shopping_order_items @relation(fields: [shopping_order_item_id], references: [id], onDelete: Restrict)
+
+  @@unique([shopping_shipment_id, shopping_order_item_id])
+}
+
+/// @evidence docs/analysis/02-domain-model.md#req-cancellation-domain-cancellation-request-lifecycle The shopping_cancellation_requests persistence supports req-cancellation-domain cancellation request lifecycle.
+/// @evidence docs/analysis/02-domain-model.md#req-cancellation-domain-1-open-a-cancellation-request The shopping_cancellation_requests persistence supports req-cancellation-domain-1 open a cancellation request.
+/// @evidence docs/analysis/02-domain-model.md#req-cancellation-domain-2-approve-a-cancellation-request The shopping_cancellation_requests persistence supports req-cancellation-domain-2 approve a cancellation request.
+/// @evidence docs/analysis/02-domain-model.md#req-cancellation-domain-3-reject-a-cancellation-request The shopping_cancellation_requests persistence supports req-cancellation-domain-3 reject a cancellation request.
+/// @evidence docs/analysis/02-domain-model.md#req-cancellation-domain-4-preserve-cancellation-decision-history The shopping_cancellation_requests persistence supports req-cancellation-domain-4 preserve cancellation decision history.
+/// @evidence docs/analysis/02-domain-model.md#req-cancellation-domain-5-relate-cancellation-participants-and-target The shopping_cancellation_requests persistence supports req-cancellation-domain-5 relate cancellation participants and target.
+/// @evidence docs/analysis/03-functional-requirements.md#req-cancellation-functions-1-request-item-cancellation The shopping_cancellation_requests persistence supports req-cancellation-functions-1 request item cancellation.
+/// @evidence docs/analysis/03-functional-requirements.md#req-cancellation-functions-2-list-pending-cancellations The shopping_cancellation_requests persistence supports req-cancellation-functions-2 list pending cancellations.
+/// @evidence docs/analysis/03-functional-requirements.md#req-cancellation-functions-3-approve-item-cancellation The shopping_cancellation_requests persistence supports req-cancellation-functions-3 approve item cancellation.
+/// @evidence docs/analysis/03-functional-requirements.md#req-cancellation-functions-4-reject-item-cancellation The shopping_cancellation_requests persistence supports req-cancellation-functions-4 reject item cancellation.
+/// @evidence docs/analysis/03-functional-requirements.md#req-cancellation-functions-5-commit-approved-cancellation-effects The shopping_cancellation_requests persistence supports req-cancellation-functions-5 commit approved cancellation effects.
+/// @evidence docs/analysis/04-business-rules.md#req-cancellation-policies-cancellation-eligibility-and-resolution-policies The shopping_cancellation_requests persistence supports req-cancellation-policies cancellation eligibility and resolution policies.
+/// @evidence docs/analysis/04-business-rules.md#req-cancellation-policies-1-admit-a-cancellation-request-for-a-paid-item The shopping_cancellation_requests persistence supports req-cancellation-policies-1 admit a cancellation request for a paid item.
+/// @evidence docs/analysis/04-business-rules.md#req-cancellation-policies-2-keep-one-pending-cancellation-decision-per-item The shopping_cancellation_requests persistence supports req-cancellation-policies-2 keep one pending cancellation decision per item.
+/// @evidence docs/analysis/04-business-rules.md#req-cancellation-policies-3-limit-ordinary-cancellation-response-to-the-item-seller The shopping_cancellation_requests persistence supports req-cancellation-policies-3 limit ordinary cancellation response to the item seller.
+/// @evidence docs/analysis/04-business-rules.md#req-cancellation-policies-4-decide-a-pending-cancellation-once The shopping_cancellation_requests persistence supports req-cancellation-policies-4 decide a pending cancellation once.
+/// @evidence docs/analysis/04-business-rules.md#req-cancellation-policies-5-apply-an-approved-cancellation-atomically The shopping_cancellation_requests persistence supports req-cancellation-policies-5 apply an approved cancellation atomically.
+model shopping_cancellation_requests {
+  /// UUID primary key.
+  id                     String               @id
+  /// Target order item.
+  shopping_order_item_id String
+  /// Requesting customer identifier.
+  customer_id            String
+  /// pending, approved, or rejected.
+  status                 String
+  /// Request reason.
+  reason                 String
+  /// Decision actor identifier.
+  decided_by             String?
+  /// Decision explanation.
+  decision_reason        String?
+  /// Creation instant.
+  created_at             DateTime
+  /// Decision instant.
+  decided_at             DateTime?
+  /// Order item relation.
+  item                   shopping_order_items @relation(fields: [shopping_order_item_id], references: [id], onDelete: Restrict)
+
+  @@index([shopping_order_item_id, status])
+}
+
+/// @evidence docs/analysis/02-domain-model.md#req-refund-domain-refund-request-lifecycle The shopping_refund_requests persistence supports req-refund-domain refund request lifecycle.
+/// @evidence docs/analysis/02-domain-model.md#req-refund-domain-1-open-a-refund-request The shopping_refund_requests persistence supports req-refund-domain-1 open a refund request.
+/// @evidence docs/analysis/02-domain-model.md#req-refund-domain-2-approve-a-refund-request The shopping_refund_requests persistence supports req-refund-domain-2 approve a refund request.
+/// @evidence docs/analysis/02-domain-model.md#req-refund-domain-3-reject-a-refund-request The shopping_refund_requests persistence supports req-refund-domain-3 reject a refund request.
+/// @evidence docs/analysis/02-domain-model.md#req-refund-domain-4-preserve-refund-decision-history The shopping_refund_requests persistence supports req-refund-domain-4 preserve refund decision history.
+/// @evidence docs/analysis/02-domain-model.md#req-refund-domain-5-relate-refund-participants-and-target The shopping_refund_requests persistence supports req-refund-domain-5 relate refund participants and target.
+/// @evidence docs/analysis/03-functional-requirements.md#req-refund-functions-delivered-item-refund-journey The shopping_refund_requests persistence supports req-refund-functions delivered-item refund journey.
+/// @evidence docs/analysis/03-functional-requirements.md#req-refund-functions-1-request-an-item-refund The shopping_refund_requests persistence supports req-refund-functions-1 request an item refund.
+/// @evidence docs/analysis/03-functional-requirements.md#req-refund-functions-2-list-pending-refunds The shopping_refund_requests persistence supports req-refund-functions-2 list pending refunds.
+/// @evidence docs/analysis/03-functional-requirements.md#req-refund-functions-3-approve-an-item-refund The shopping_refund_requests persistence supports req-refund-functions-3 approve an item refund.
+/// @evidence docs/analysis/03-functional-requirements.md#req-refund-functions-4-reject-an-item-refund The shopping_refund_requests persistence supports req-refund-functions-4 reject an item refund.
+/// @evidence docs/analysis/03-functional-requirements.md#req-refund-functions-5-commit-approved-refund-effects The shopping_refund_requests persistence supports req-refund-functions-5 commit approved refund effects.
+/// @evidence docs/analysis/04-business-rules.md#req-refund-policies-refund-eligibility-and-resolution-policies The shopping_refund_requests persistence supports req-refund-policies refund eligibility and resolution policies.
+/// @evidence docs/analysis/04-business-rules.md#req-refund-policies-1-admit-a-timely-refund-request-for-a-delivered-item The shopping_refund_requests persistence supports req-refund-policies-1 admit a timely refund request for a delivered item.
+/// @evidence docs/analysis/04-business-rules.md#req-refund-policies-2-close-the-refund-window-after-seven-days The shopping_refund_requests persistence supports req-refund-policies-2 close the refund window after seven days.
+/// @evidence docs/analysis/04-business-rules.md#req-refund-policies-3-keep-one-pending-refund-decision-per-item The shopping_refund_requests persistence supports req-refund-policies-3 keep one pending refund decision per item.
+/// @evidence docs/analysis/04-business-rules.md#req-refund-policies-4-limit-ordinary-refund-response-to-the-item-seller The shopping_refund_requests persistence supports req-refund-policies-4 limit ordinary refund response to the item seller.
+/// @evidence docs/analysis/04-business-rules.md#req-refund-policies-5-decide-a-pending-refund-once The shopping_refund_requests persistence supports req-refund-policies-5 decide a pending refund once.
+/// @evidence docs/analysis/04-business-rules.md#req-refund-policies-6-apply-an-approved-refund-atomically The shopping_refund_requests persistence supports req-refund-policies-6 apply an approved refund atomically.
+model shopping_refund_requests {
+  /// UUID primary key.
+  id                     String               @id
+  /// Target order item.
+  shopping_order_item_id String
+  /// Requesting customer identifier.
+  customer_id            String
+  /// pending, approved, or rejected.
+  status                 String
+  /// Request reason.
+  reason                 String
+  /// Decision actor identifier.
+  decided_by             String?
+  /// Decision explanation.
+  decision_reason        String?
+  /// Creation instant.
+  created_at             DateTime
+  /// Decision instant.
+  decided_at             DateTime?
+  /// Order item relation.
+  item                   shopping_order_items @relation(fields: [shopping_order_item_id], references: [id], onDelete: Restrict)
+
+  @@index([shopping_order_item_id, status])
+}
+
+/// @evidence docs/analysis/02-domain-model.md#req-review-domain-review-model The shopping_reviews persistence supports req-review-domain review model.
+/// @evidence docs/analysis/02-domain-model.md#req-review-domain-1-define-review-information The shopping_reviews persistence supports req-review-domain-1 define review information.
+/// @evidence docs/analysis/02-domain-model.md#req-review-domain-4-retire-a-review-from-ratings The shopping_reviews persistence supports req-review-domain-4 retire a review from ratings.
+/// @evidence docs/analysis/02-domain-model.md#req-review-domain-5-anonymize-reviews-after-customer-deletion The shopping_reviews persistence supports req-review-domain-5 anonymize reviews after customer deletion.
+/// @evidence docs/analysis/02-domain-model.md#req-review-lifecycle-review-publication-and-retirement The shopping_reviews persistence supports req-review-lifecycle review publication and retirement.
+/// @evidence docs/analysis/02-domain-model.md#req-review-lifecycle-1-publish-an-eligible-review The shopping_reviews persistence supports req-review-lifecycle-1 publish an eligible review.
+/// @evidence docs/analysis/02-domain-model.md#req-review-lifecycle-2-edit-a-published-review The shopping_reviews persistence supports req-review-lifecycle-2 edit a published review.
+/// @evidence docs/analysis/02-domain-model.md#req-review-lifecycle-3-delete-a-published-review The shopping_reviews persistence supports req-review-lifecycle-3 delete a published review.
+/// @evidence docs/analysis/02-domain-model.md#req-review-lifecycle-4-anonymize-reviews-on-account-closure The shopping_reviews persistence supports req-review-lifecycle-4 anonymize reviews on account closure.
+/// @evidence docs/analysis/03-functional-requirements.md#req-review-functions-review-operations The shopping_reviews persistence supports req-review-functions review operations.
+/// @evidence docs/analysis/03-functional-requirements.md#req-review-functions-1-publish-a-product-review The shopping_reviews persistence supports req-review-functions-1 publish a product review.
+/// @evidence docs/analysis/03-functional-requirements.md#req-review-functions-2-edit-an-authored-review The shopping_reviews persistence supports req-review-functions-2 edit an authored review.
+/// @evidence docs/analysis/03-functional-requirements.md#req-review-functions-3-delete-an-authored-review The shopping_reviews persistence supports req-review-functions-3 delete an authored review.
+/// @evidence docs/analysis/04-business-rules.md#req-review-policies-2-validate-review-rating-and-optional-text The shopping_reviews persistence supports req-review-policies-2 validate review rating and optional text.
+/// @evidence docs/analysis/04-business-rules.md#req-review-policies-4-keep-review-mutation-with-the-author The shopping_reviews persistence supports req-review-policies-4 keep review mutation with the author.
+/// @evidence docs/analysis/04-business-rules.md#req-review-policies-6-calculate-the-live-product-rating The shopping_reviews persistence supports req-review-policies-6 calculate the live product rating.
+/// @evidence docs/analysis/04-business-rules.md#req-review-policies-7-anonymize-retained-reviews-after-account-deletion The shopping_reviews persistence supports req-review-policies-7 anonymize retained reviews after account deletion.
+/// @evidence docs/analysis/04-business-rules.md#req-customer-account-policies-4-anonymize-retained-customer-reviews The shopping_reviews persistence supports req-customer-account-policies-4 anonymize retained customer reviews.
+model shopping_reviews {
+  /// UUID primary key.
+  id                     String               @id
+  /// Authored customer identifier, nullable after closure.
+  shopping_customer_id   String?
+  /// Purchased order item identifier.
+  shopping_order_item_id String
+  /// Product identifier retained for listing.
+  product_id             String
+  /// Rating from one through five.
+  rating                 Int
+  /// Optional review text.
+  text                   String?
+  /// Display author name or deleted user marker.
+  author_name            String
+  /// Live or retired publication state.
+  status                 String
+  /// Creation instant.
+  created_at             DateTime
+  /// Last edit instant.
+  updated_at             DateTime
+  /// Optional customer relation.
+  customer               shopping_customers?  @relation(fields: [shopping_customer_id], references: [id], onDelete: SetNull)
+  /// Order item relation.
+  item                   shopping_order_items @relation(fields: [shopping_order_item_id], references: [id], onDelete: Restrict)
+
+  @@unique([shopping_customer_id, shopping_order_item_id])
+  @@index([product_id, status, created_at])
+}
+
+/// @evidence docs/analysis/02-domain-model.md#req-seller-profile-domain-3-preserve-seller-profile-revisions The shopping_seller_profile_snapshots persistence supports req-seller-profile-domain-3 preserve seller profile revisions.
+/// @evidence docs/analysis/02-domain-model.md#req-seller-profile-domain-4-preserve-the-purchase-time-shop-identity The shopping_seller_profile_snapshots persistence supports req-seller-profile-domain-4 preserve the purchase-time shop identity.
+model shopping_seller_profile_snapshots {
+  /// UUID primary key.
+  id                         String                   @id
+  /// Seller profile identifier.
+  shopping_seller_profile_id String
+  /// Snapshot shop name.
+  shop_name                  String
+  /// Snapshot description.
+  shop_description           String
+  /// Snapshot logo.
+  logo_image                 String
+  /// Changed-field description.
+  changed_fields             String
+  /// Creation instant.
+  created_at                 DateTime
+  /// Profile relation.
+  profile                    shopping_seller_profiles @relation(fields: [shopping_seller_profile_id], references: [id], onDelete: Cascade)
+
+  @@index([shopping_seller_profile_id, created_at])
+}
+
+/// @evidence docs/analysis/02-domain-model.md#req-snapshot-domain-immutable-change-snapshots The shopping_product_snapshots persistence supports req-snapshot-domain immutable change snapshots.
+/// @evidence docs/analysis/02-domain-model.md#req-snapshot-domain-1-define-change-snapshots The shopping_product_snapshots persistence supports req-snapshot-domain-1 define change snapshots.
+/// @evidence docs/analysis/02-domain-model.md#req-snapshot-domain-2-keep-snapshots-immutable The shopping_product_snapshots persistence supports req-snapshot-domain-2 keep snapshots immutable.
+/// @evidence docs/analysis/02-domain-model.md#req-snapshot-domain-3-capture-complete-product-state The shopping_product_snapshots persistence supports req-snapshot-domain-3 capture complete product state.
+/// @evidence docs/analysis/02-domain-model.md#req-snapshot-domain-4-capture-other-mutable-evidence The shopping_product_snapshots persistence supports req-snapshot-domain-4 capture other mutable evidence.
+/// @evidence docs/analysis/02-domain-model.md#req-snapshot-domain-5-capture-purchase-time-item-state The shopping_product_snapshots persistence supports req-snapshot-domain-5 capture purchase-time item state.
+/// @evidence docs/analysis/02-domain-model.md#req-snapshot-domain-6-retain-evidence-after-live-deletion The shopping_product_snapshots persistence supports req-snapshot-domain-6 retain evidence after live deletion.
+/// @evidence docs/analysis/02-domain-model.md#req-snapshot-domain-7-limit-snapshot-visibility The shopping_product_snapshots persistence supports req-snapshot-domain-7 limit snapshot visibility.
+/// @evidence docs/analysis/03-functional-requirements.md#req-product-functions-4-view-own-product-snapshots The shopping_product_snapshots persistence supports req-product-functions-4 view own product snapshots.
+/// @evidence docs/analysis/03-functional-requirements.md#req-product-functions-6-view-any-product-snapshots The shopping_product_snapshots persistence supports req-product-functions-6 view any product snapshots.
+/// @evidence docs/analysis/04-business-rules.md#req-product-policies-3-snapshot-the-complete-aggregate-on-catalog-edit The shopping_product_snapshots persistence supports req-product-policies-3 snapshot the complete aggregate on catalog edit.
+/// @evidence docs/analysis/04-business-rules.md#req-snapshot-policies-snapshot-integrity-and-visibility-policies The shopping_product_snapshots persistence supports req-snapshot-policies snapshot integrity and visibility policies.
+/// @evidence docs/analysis/04-business-rules.md#req-snapshot-policies-1-create-evidence-for-covered-commercial-changes The shopping_product_snapshots persistence supports req-snapshot-policies-1 create evidence for covered commercial changes.
+/// @evidence docs/analysis/04-business-rules.md#req-snapshot-policies-2-capture-the-complete-product-aggregate The shopping_product_snapshots persistence supports req-snapshot-policies-2 capture the complete product aggregate.
+/// @evidence docs/analysis/04-business-rules.md#req-snapshot-policies-4-keep-snapshots-immutable-and-undeletable The shopping_product_snapshots persistence supports req-snapshot-policies-4 keep snapshots immutable and undeletable.
+/// @evidence docs/analysis/04-business-rules.md#req-snapshot-policies-5-limit-snapshot-evidence-to-relevant-parties The shopping_product_snapshots persistence supports req-snapshot-policies-5 limit snapshot evidence to relevant parties.
+model shopping_product_snapshots {
+  /// UUID primary key.
+  id                  String            @id
+  /// Product identifier retained even after deletion.
+  shopping_product_id String
+  /// Snapshot product name.
+  name                String
+  /// Snapshot description.
+  description         String
+  /// Snapshot category identifier.
+  category_id         String?
+  /// Snapshot base price.
+  base_price          Float
+  /// Ordered image and variant evidence encoded as immutable JSON.
+  aggregate_json      String
+  /// Changed-field description.
+  changed_fields      String
+  /// Creation instant.
+  created_at          DateTime
+  /// Product relation retained while the product exists.
+  product             shopping_products @relation(fields: [shopping_product_id], references: [id], onDelete: Restrict)
+
+  @@index([shopping_product_id, created_at])
+}
+
+/// @evidence docs/analysis/01-actors-and-auth.md#req-admin-authority-administrator-grade-authority The shopping_administrators persistence supports req-admin-authority administrator grade authority.
+/// @evidence docs/analysis/01-actors-and-auth.md#req-admin-authority-1-regular-administrator-authority The shopping_administrators persistence supports req-admin-authority-1 regular administrator authority.
+/// @evidence docs/analysis/01-actors-and-auth.md#req-admin-authority-2-super-administrator-authority The shopping_administrators persistence supports req-admin-authority-2 super administrator authority.
+/// @evidence docs/analysis/01-actors-and-auth.md#req-admin-authority-3-grant-regular-administrator-authority The shopping_administrators persistence supports req-admin-authority-3 grant regular administrator authority.
+/// @evidence docs/analysis/01-actors-and-auth.md#req-admin-authority-4-promote-an-administrator The shopping_administrators persistence supports req-admin-authority-4 promote an administrator.
+/// @evidence docs/analysis/01-actors-and-auth.md#req-admin-authority-5-demote-another-super-administrator The shopping_administrators persistence supports req-admin-authority-5 demote another super administrator.
+/// @evidence docs/analysis/01-actors-and-auth.md#req-access-boundaries-6-apply-platform-wide-administrator-oversight The shopping_administrators persistence supports req-access-boundaries-6 apply platform-wide administrator oversight.
+/// @evidence docs/analysis/03-functional-requirements.md#req-admin-grade-functions-administrator-grade-change-operations The shopping_administrators persistence supports req-admin-grade-functions administrator grade change operations.
+/// @evidence docs/analysis/03-functional-requirements.md#req-admin-grade-functions-1-promote-a-regular-administrator The shopping_administrators persistence supports req-admin-grade-functions-1 promote a regular administrator.
+/// @evidence docs/analysis/03-functional-requirements.md#req-admin-grade-functions-2-demote-another-super-administrator The shopping_administrators persistence supports req-admin-grade-functions-2 demote another super administrator.
+/// @evidence docs/analysis/03-functional-requirements.md#req-order-oversight-administrator-order-oversight The shopping_administrators persistence supports req-order-oversight administrator order oversight.
+/// @evidence docs/analysis/04-business-rules.md#req-category-policies-1-reserve-category-curation-for-administrators The shopping_administrators persistence supports req-category-policies-1 reserve category curation for administrators.
+/// @evidence docs/analysis/04-business-rules.md#req-admin-governance-policies-3-reserve-application-decisions-for-super-administrators The shopping_administrators persistence supports req-admin-governance-policies-3 reserve application decisions for super administrators.
+/// @evidence docs/analysis/04-business-rules.md#req-admin-governance-policies-4-grant-the-regular-administrator-grade-on-approval The shopping_administrators persistence supports req-admin-governance-policies-4 grant the regular administrator grade on approval.
+/// @evidence docs/analysis/04-business-rules.md#req-admin-governance-policies-5-provision-the-initial-super-administrator The shopping_administrators persistence supports req-admin-governance-policies-5 provision the initial super administrator.
+/// @evidence docs/analysis/04-business-rules.md#req-admin-governance-policies-6-reserve-super-grade-changes-for-super-administrators The shopping_administrators persistence supports req-admin-governance-policies-6 reserve super-grade changes for super administrators.
+/// @evidence docs/analysis/04-business-rules.md#req-admin-governance-policies-7-refuse-super-administrator-self-demotion The shopping_administrators persistence supports req-admin-governance-policies-7 refuse super-administrator self-demotion.
+/// @evidence docs/analysis/04-business-rules.md#req-admin-governance-policies-8-preserve-one-active-super-administrator-through-closure The shopping_administrators persistence supports req-admin-governance-policies-8 preserve one active super administrator through closure.
+/// @evidence docs/analysis/04-business-rules.md#req-admin-oversight-policies-administrator-moderation-and-force-resolution-policies The shopping_administrators persistence supports req-admin-oversight-policies administrator moderation and force-resolution policies.
+model shopping_administrators {
+  /// UUID primary key.
+  id            String                            @id
+  /// Canonical login email.
+  email         String                            @unique
+  /// Password hash.
+  password_hash String
+  /// regular or super grade.
+  grade         String
+  /// Active or banned lifecycle state.
+  status        String
+  /// Creation instant.
+  created_at    DateTime
+  /// Administrator sessions.
+  sessions      shopping_administrator_sessions[]
+  /// Grade applications.
+  requests      shopping_administrator_requests[]
+}
+
+model shopping_administrator_sessions {
+  /// UUID primary key.
+  id                        String                  @id
+  /// Owning administrator identifier.
+  shopping_administrator_id String
+  /// Hashed session token.
+  token_hash                String                  @unique
+  /// Expiration instant.
+  expired_at                DateTime
+  /// Revocation instant.
+  revoked_at                DateTime?
+  /// Creation instant.
+  created_at                DateTime
+  /// Administrator relation.
+  administrator             shopping_administrators @relation(fields: [shopping_administrator_id], references: [id], onDelete: Cascade)
+}
+/// @evidence docs/analysis/02-domain-model.md#req-admin-request-domain-administrator-request-lifecycle The shopping_administrator_requests persistence supports req-admin-request-domain administrator request lifecycle.
+/// @evidence docs/analysis/02-domain-model.md#req-admin-request-domain-1-open-an-administrator-request The shopping_administrator_requests persistence supports req-admin-request-domain-1 open an administrator request.
+/// @evidence docs/analysis/02-domain-model.md#req-admin-request-domain-2-approve-an-administrator-request The shopping_administrator_requests persistence supports req-admin-request-domain-2 approve an administrator request.
+/// @evidence docs/analysis/02-domain-model.md#req-admin-request-domain-3-reject-an-administrator-request The shopping_administrator_requests persistence supports req-admin-request-domain-3 reject an administrator request.
+/// @evidence docs/analysis/02-domain-model.md#req-admin-request-domain-4-retain-administrator-request-history The shopping_administrator_requests persistence supports req-admin-request-domain-4 retain administrator request history.
+/// @evidence docs/analysis/03-functional-requirements.md#req-admin-request-functions-administrator-application-operations The shopping_administrator_requests persistence supports req-admin-request-functions administrator application operations.
+/// @evidence docs/analysis/03-functional-requirements.md#req-admin-request-functions-1-submit-an-administrator-application The shopping_administrator_requests persistence supports req-admin-request-functions-1 submit an administrator application.
+/// @evidence docs/analysis/03-functional-requirements.md#req-admin-request-functions-3-list-pending-administrator-applications The shopping_administrator_requests persistence supports req-admin-request-functions-3 list pending administrator applications.
+/// @evidence docs/analysis/03-functional-requirements.md#req-admin-request-functions-4-approve-an-administrator-application The shopping_administrator_requests persistence supports req-admin-request-functions-4 approve an administrator application.
+/// @evidence docs/analysis/03-functional-requirements.md#req-admin-request-functions-5-reject-an-administrator-application The shopping_administrator_requests persistence supports req-admin-request-functions-5 reject an administrator application.
+/// @evidence docs/analysis/04-business-rules.md#req-admin-governance-policies-administrator-application-and-grade-policies The shopping_administrator_requests persistence supports req-admin-governance-policies administrator application and grade policies.
+/// @evidence docs/analysis/04-business-rules.md#req-admin-governance-policies-1-admit-an-administrator-application The shopping_administrator_requests persistence supports req-admin-governance-policies-1 admit an administrator application.
+model shopping_administrator_requests {
+  /// UUID primary key.
+  id                        String                  @id
+  /// Applicant administrator identity.
+  shopping_administrator_id String
+  /// pending, approved, or rejected.
+  status                    String
+  /// Decision reason.
+  reason                    String?
+  /// Decision actor.
+  decided_by                String?
+  /// Creation instant.
+  created_at                DateTime
+  /// Decision instant.
+  decided_at                DateTime?
+  /// Administrator relation.
+  administrator             shopping_administrators @relation(fields: [shopping_administrator_id], references: [id], onDelete: Cascade)
+
+  @@index([shopping_administrator_id, status])
+}
+

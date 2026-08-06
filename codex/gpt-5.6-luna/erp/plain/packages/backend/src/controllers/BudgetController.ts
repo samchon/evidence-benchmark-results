@@ -1,0 +1,11 @@
+import * as core from "@nestia/core"; import type { IBudget, IPage } from "@benchmark/erp-api"; import { Controller, Headers } from "@nestjs/common"; import { AuthProvider } from "../providers/AuthProvider"; import { BudgetProvider as P } from "../providers/BudgetProvider";
+@Controller("organization") export class BudgetController {
+ @core.TypedRoute.Post("budget") async create(@Headers("authorization") a:string|undefined,@core.TypedBody() b:IBudget.ICreate):Promise<IBudget>{return P.create({session:await AuthProvider.authenticate(a),body:b});}
+ @core.TypedRoute.Patch("budget") async list(@Headers("authorization") a:string|undefined,@core.TypedBody() b:IBudget.IRequest):Promise<IPage<IBudget>>{return P.list({session:await AuthProvider.authenticate(a),input:b});}
+ @core.TypedRoute.Put("budget/:id") async update(@Headers("authorization") a:string|undefined,@core.TypedParam("id") id:string,@core.TypedBody() b:IBudget.IUpdate):Promise<IBudget>{return P.update({session:await AuthProvider.authenticate(a),id,body:b});}
+ @core.TypedRoute.Post("budget/:id/submit") async submit(@Headers("authorization") a:string|undefined,@core.TypedParam("id") id:string):Promise<IBudget>{return P.submit({session:await AuthProvider.authenticate(a),id});}
+ @core.TypedRoute.Post("budget/:id/approve") async approve(@Headers("authorization") a:string|undefined,@core.TypedParam("id") id:string):Promise<IBudget>{return P.approve({session:await AuthProvider.authenticate(a),id});}
+ @core.TypedRoute.Post("budget/:id/reject") async reject(@Headers("authorization") a:string|undefined,@core.TypedParam("id") id:string,@core.TypedBody() b:IBudget.IReason):Promise<IBudget>{return P.reject({session:await AuthProvider.authenticate(a),id,body:b});}
+ @core.TypedRoute.Post("budget/:id/revise") async revise(@Headers("authorization") a:string|undefined,@core.TypedParam("id") id:string,@core.TypedBody() b:IBudget.IReason):Promise<IBudget>{return P.revise({session:await AuthProvider.authenticate(a),id,body:b});}
+ @core.TypedRoute.Post("budget/:id/archive") async archive(@Headers("authorization") a:string|undefined,@core.TypedParam("id") id:string):Promise<IBudget>{return P.archive({session:await AuthProvider.authenticate(a),id});}
+}

@@ -1,0 +1,74 @@
+/// Draft and approval lifecycle for a procurement request.
+model purchase_requests {
+  id String @id
+  organization_id String
+  requester_user_id String
+  vendor_id String?
+  number String
+  status String
+  currency_code String
+  total Decimal
+  lines_json String
+  reason String?
+  created_at DateTime
+  updated_at DateTime
+  organization organizations @relation(fields:[organization_id], references:[id])
+  @@unique([organization_id, number])
+  @@index([organization_id, status])
+}
+
+/// Purchase order commitment to an external vendor.
+model purchase_orders {
+  id String @id
+  organization_id String
+  vendor_id String
+  source_request_id String?
+  number String
+  status String
+  currency_code String
+  total Decimal
+  lines_json String
+  notes String?
+  created_at DateTime
+  updated_at DateTime
+  organization organizations @relation(fields:[organization_id], references:[id])
+  @@unique([organization_id, number])
+  @@index([organization_id, status, vendor_id])
+}
+
+/// Vendor payable evidence matched to procurement documents.
+model vendor_bills {
+  id String @id
+  organization_id String
+  vendor_id String
+  source_order_id String?
+  number String
+  status String
+  currency_code String
+  total Decimal
+  lines_json String
+  match_status String
+  dispute_reason String?
+  created_at DateTime
+  updated_at DateTime
+  organization organizations @relation(fields:[organization_id], references:[id])
+  @@unique([organization_id, number])
+  @@index([organization_id, status, vendor_id])
+}
+
+/// Cash or bank settlement allocated to vendor bills.
+model vendor_payments {
+  id String @id
+  organization_id String
+  vendor_id String
+  number String
+  status String
+  currency_code String
+  amount Decimal
+  allocations_json String
+  created_at DateTime
+  updated_at DateTime
+  organization organizations @relation(fields:[organization_id], references:[id])
+  @@unique([organization_id, number])
+  @@index([organization_id, status, vendor_id])
+}

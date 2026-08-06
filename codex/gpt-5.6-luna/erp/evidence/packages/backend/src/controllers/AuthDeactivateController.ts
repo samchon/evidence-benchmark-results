@@ -1,0 +1,2 @@
+import * as core from "@nestia/core"; import { Controller } from "@nestjs/common"; import type { IAuth } from "@benchmark/erp-api"; import { UserProvider } from "../providers/UserProvider";
+/** Deactivates the authenticated global account. */ @Controller("auth-deactivate") export class AuthDeactivateController { @core.TypedRoute.Post() public async deactivate(@core.TypedHeaders() headers: IAuth.IHeaders): Promise<{ success: true }> { return UserProvider.deactivate(headers); } }

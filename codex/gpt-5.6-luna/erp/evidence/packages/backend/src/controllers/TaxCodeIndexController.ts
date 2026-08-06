@@ -1,0 +1,2 @@
+import * as core from "@nestia/core"; import { Controller } from "@nestjs/common"; import type { IAuth, IPage, ITaxCode } from "@benchmark/erp-api"; import { TaxProvider } from "../providers/TaxProvider";
+/** Lists tax codes visible in the selected organization. */ @Controller("tax-code-search") export class TaxCodeIndexController { @core.TypedRoute.Patch() public async index(@core.TypedHeaders() headers: IAuth.IHeaders, @core.TypedBody() input: ITaxCode.IRequest): Promise<IPage<ITaxCode>> { return TaxProvider.codeIndex(headers, input); } }

@@ -1,0 +1,171 @@
+/// Organization-scoped procurement party.
+model vendors {
+  id String @id
+  organization_id String
+  name String
+  tax_identity String?
+  status String
+  currency_code String?
+  payment_term_id String?
+  country_code String?
+  default_address_id String?
+  contact_id String?
+  risk_level String?
+  created_at DateTime
+  updated_at DateTime
+  organization organizations @relation(fields:[organization_id],references:[id])
+  @@unique([organization_id,name])
+  @@index([organization_id,status,tax_identity])
+}
+
+/// Organization-scoped sales party.
+model customers {
+  id String @id
+  organization_id String
+  name String
+  tax_identity String?
+  status String
+  currency_code String?
+  payment_term_id String?
+  country_code String?
+  default_address_id String?
+  contact_id String?
+  credit_limit Decimal?
+  created_at DateTime
+  updated_at DateTime
+  organization organizations @relation(fields:[organization_id],references:[id])
+  @@unique([organization_id,name])
+  @@index([organization_id,status,tax_identity])
+}
+
+/// Item master identity shared by purchasing, stock, sales, and service.
+model items {
+  id String @id
+  organization_id String
+  sku String
+  name String
+  description String?
+  item_type String
+  unit_id String
+  purchase_price Decimal?
+  sales_price Decimal?
+  tax_code_id String?
+  status String
+  tracking_mode String
+  costing_method String
+  planning_json String?
+  preferred_vendor_id String?
+  created_at DateTime
+  updated_at DateTime
+  organization organizations @relation(fields:[organization_id],references:[id])
+  @@unique([organization_id,sku])
+  @@index([organization_id,status,item_type,tracking_mode])
+}
+
+/// Physical warehouse boundary for stock and locations.
+model warehouses {
+  id String @id
+  organization_id String
+  code String
+  name String
+  address_id String?
+  manager_user_id String?
+  status String
+  valuation_policy String
+  created_at DateTime
+  updated_at DateTime
+  organization organizations @relation(fields:[organization_id],references:[id])
+  locations storage_locations[]
+  @@unique([organization_id,code])
+}
+
+/// Hierarchical storage location within a warehouse.
+model storage_locations {
+  id String @id
+  organization_id String
+  warehouse_id String
+  parent_id String?
+  code String
+  name String
+  status String
+  created_at DateTime
+  updated_at DateTime
+  organization organizations @relation(fields:[organization_id],references:[id])
+  warehouse warehouses @relation(fields:[warehouse_id],references:[id])
+  parent storage_locations? @relation("location_tree",fields:[parent_id],references:[id])
+  children storage_locations[] @relation("location_tree")
+  @@unique([warehouse_id,code])
+}
+
+/// Employee organizational placement.
+model employees {
+  id String @id
+  organization_id String
+  user_id String?
+  employee_number String
+  first_name String
+  last_name String
+  department_id String?
+  manager_id String?
+  position String?
+  cost_center_code String?
+  employment_type String
+  status String
+  hire_date DateTime
+  termination_date DateTime?
+  visibility_scope String
+  created_at DateTime
+  updated_at DateTime
+  organization organizations @relation(fields:[organization_id],references:[id])
+  @@unique([organization_id,employee_number])
+  @@index([organization_id,status,department_id])
+}
+
+/// Organization department.
+model departments {
+  id String @id
+  organization_id String
+  code String
+  name String
+  manager_employee_id String?
+  active Boolean
+  created_at DateTime
+  updated_at DateTime
+  organization organizations @relation(fields:[organization_id],references:[id])
+  @@unique([organization_id,code])
+}
+
+/// Project identity used by time, cost, and task capture.
+model projects {
+  id String @id
+  organization_id String
+  code String
+  name String
+  status String
+  start_date DateTime?
+  end_date DateTime?
+  manager_employee_id String?
+  created_at DateTime
+  updated_at DateTime
+  organization organizations @relation(fields:[organization_id],references:[id])
+  tasks tasks[]
+  @@unique([organization_id,code])
+}
+
+/// Project task and assignment identity.
+model tasks {
+  id String @id
+  organization_id String
+  project_id String
+  parent_id String?
+  title String
+  status String
+  assignee_employee_id String?
+  due_date DateTime?
+  created_at DateTime
+  updated_at DateTime
+  organization organizations @relation(fields:[organization_id],references:[id])
+  project projects @relation(fields:[project_id],references:[id])
+  parent tasks? @relation("task_tree",fields:[parent_id],references:[id])
+  children tasks[] @relation("task_tree")
+}

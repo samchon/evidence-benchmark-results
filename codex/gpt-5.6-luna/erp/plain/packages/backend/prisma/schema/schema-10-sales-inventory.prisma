@@ -1,0 +1,48 @@
+/// Customer order lifecycle and fulfillment quantities.
+model sales_orders {
+  id String @id
+  organization_id String
+  customer_id String
+  number String
+  status String
+  currency_code String
+  total Decimal
+  lines_json String
+  created_at DateTime
+  updated_at DateTime
+  organization organizations @relation(fields:[organization_id], references:[id])
+  @@unique([organization_id, number])
+  @@index([organization_id, status, customer_id])
+}
+/// Receivable invoice linked to a customer order.
+model sales_invoices {
+  id String @id
+  organization_id String
+  customer_id String
+  order_id String?
+  number String
+  status String
+  currency_code String
+  total Decimal
+  lines_json String
+  created_at DateTime
+  updated_at DateTime
+  organization organizations @relation(fields:[organization_id], references:[id])
+  @@unique([organization_id, number])
+  @@index([organization_id, status, customer_id])
+}
+/// Immutable quantity movement for inventory traceability.
+model stock_movements {
+  id String @id
+  organization_id String
+  item_id String
+  warehouse_id String
+  location_id String?
+  quantity Decimal
+  movement_type String
+  source_document_id String?
+  posted_at DateTime
+  created_at DateTime
+  organization organizations @relation(fields:[organization_id], references:[id])
+  @@index([organization_id, item_id, warehouse_id, posted_at])
+}

@@ -1,0 +1,46 @@
+/// Organization bank account linked to a ledger account.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-bank-account-bank-accounts Retains institution, account, currency, opening balance, and state.
+/// @evidence docs/analysis/03-functional-requirements.md#req-fun-bank-account-bank-account-operations Owns bank account lifecycle and reconciliation state.
+model bank_accounts {
+  id String @id
+  organization_id String
+  institution_name String
+  account_reference String
+  currency_code String
+  opening_balance Decimal
+  ledger_account_id String
+  reconciliation_state String
+  active Boolean
+  created_at DateTime
+  updated_at DateTime
+  organization organizations @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  transactions bank_transactions[]
+  reconciliations reconciliations[]
+  @@unique([organization_id, account_reference])
+  @@index([organization_id, active])
+}
+
+/// Statement activity inside one organization bank account.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-bank-transaction-bank-transaction-lifecycle Retains imported evidence and matching lifecycle.
+/// @evidence docs/analysis/03-functional-requirements.md#req-fun-bank-transaction-bank-transaction-operations Owns imported, matched, ignored, and reconciled transactions.
+/// @evidence docs/analysis/04-business-rules.md#req-rule-bank-bank-reconciliation-rules Preserves bank transaction evidence and reconciliation state.
+model bank_transactions {
+  id String @id
+  organization_id String
+  bank_account_id String
+  statement_date DateTime
+  amount Decimal
+  currency_code String
+  description String
+  reference String?
+  origin String
+  status String
+  match_type String?
+  match_id String?
+  created_at DateTime
+  updated_at DateTime
+  organization organizations @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  bank_account bank_accounts @relation(fields: [bank_account_id], references: [id], onDelete: Cascade)
+  @@index([organization_id, bank_account_id, statement_date])
+  @@index([organization_id, status])
+}

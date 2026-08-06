@@ -1,0 +1,18 @@
+/// Organization budget version with approval and archive state.
+model budgets {
+  id String @id
+  organization_id String
+  number String
+  name String
+  fiscal_year Int
+  version Int
+  status String
+  total Decimal
+  lines_json String
+  revision_reason String?
+  created_at DateTime
+  updated_at DateTime
+  organization organizations @relation(fields:[organization_id], references:[id])
+  @@unique([organization_id,number,version])
+  @@index([organization_id,fiscal_year,status])
+}

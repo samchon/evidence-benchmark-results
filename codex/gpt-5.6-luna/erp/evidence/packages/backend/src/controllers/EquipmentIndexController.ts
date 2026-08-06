@@ -1,0 +1,2 @@
+import * as core from "@nestia/core"; import { Controller } from "@nestjs/common"; import type { IAuth, IPage, IEquipment } from "@benchmark/erp-api"; import { QualityServiceProvider } from "../providers/QualityServiceProvider";
+/** Lists equipment records. */ @Controller("equipment-search") export class EquipmentIndexController { @core.TypedRoute.Patch() public async index(@core.TypedHeaders() h: IAuth.IHeaders, @core.TypedBody() input: IEquipment.IRequest): Promise<IPage<IEquipment>> { return QualityServiceProvider.equipmentIndex(h, input); } }

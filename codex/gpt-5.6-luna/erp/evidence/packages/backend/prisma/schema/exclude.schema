@@ -1,0 +1,28 @@
+/// Lint-only carrier for schema evidence exclusions.
+///
+/// Prisma generation, migration, and ERD inputs do not include this `.schema`
+/// file. Keep real `@evidence` directly above its owning model. Add
+/// reviewed exclusions here in the form shown below without the `Example:`
+/// prefix.
+///
+/// Example: @evidenceExclude docs/analysis/example.md#section Frontend owns this presentation-only requirement; reject this exclusion if it gains persisted state.
+/// @evidenceExclude docs/analysis/03-functional-requirements.md#req-fun-report-fin-financial-reports ReportProvider owns report generation and export over authoritative journal records; reject if financial reports gain a persisted schema artifact.
+/// @evidenceExclude docs/analysis/03-functional-requirements.md#req-fun-report-proc-procurement-reports ReportProvider owns procurement report generation and export over purchase records; reject if procurement reports gain persisted schema state.
+/// @evidenceExclude docs/analysis/03-functional-requirements.md#req-fun-report-inv-inventory-reports ReportProvider owns inventory report generation and export over movement records; reject if inventory reports gain persisted schema state.
+/// @evidenceExclude docs/analysis/03-functional-requirements.md#req-fun-report-sales-sales-reports ReportProvider owns sales report generation and export over sales records; reject if sales reports gain persisted schema state.
+/// @evidenceExclude docs/analysis/03-functional-requirements.md#req-fun-report-hr-hr-and-payroll-reports ReportProvider owns HR and payroll report generation and export over employee records; reject if reports gain persisted schema state.
+/// @evidenceExclude docs/analysis/03-functional-requirements.md#req-fun-report-mfg-manufacturing-reports ReportProvider owns manufacturing report generation and export over production records; reject if reports gain persisted schema state.
+/// @evidenceExclude docs/analysis/03-functional-requirements.md#req-fun-report-qms-quality-maintenance-and-service-reports ReportProvider owns quality, maintenance, and service report generation and export; reject if reports gain persisted schema state.
+/// @evidenceExclude docs/analysis/03-functional-requirements.md#req-jrn-p2p-procure-to-pay-journey Procurement and settlement providers own the cross-module journey; reject if the journey requires a persisted orchestration snapshot.
+/// @evidenceExclude docs/analysis/03-functional-requirements.md#req-jrn-o2c-order-to-cash-journey Sales and settlement providers own the cross-module journey; reject if the journey requires a persisted orchestration snapshot.
+/// @evidenceExclude docs/analysis/03-functional-requirements.md#req-jrn-p2prod-plan-to-produce-journey Manufacturing and MRP providers own the cross-module journey; reject if the journey requires a persisted orchestration snapshot.
+/// @evidenceExclude docs/analysis/03-functional-requirements.md#req-jrn-h2r-hire-to-retire-and-payroll-journey HR and payroll providers own the cross-module journey; reject if the journey requires a persisted orchestration snapshot.
+/// @evidenceExclude docs/analysis/03-functional-requirements.md#req-jrn-a2r-acquire-to-retire-journey Asset providers own the cross-module journey; reject if the journey requires a persisted orchestration snapshot.
+/// @evidenceExclude docs/analysis/03-functional-requirements.md#req-jrn-close-period-close-journey Fiscal-period providers own the cross-module journey; reject if the journey requires a persisted orchestration snapshot.
+/// @evidenceExclude docs/analysis/03-functional-requirements.md#req-jrn-quality-service-quality-and-service-journey Quality and service providers own the cross-module journey; reject if the journey requires a persisted orchestration snapshot.
+/// @evidenceExclude docs/analysis/05-non-functional.md#req-nfr-tenant-tenant-privacy-and-authority Tenant-scoped providers and controllers enforce privacy and authority; reject if a distinct persisted tenant-policy fact is introduced.
+/// @evidenceExclude docs/analysis/05-non-functional.md#req-nfr-atomic-cross-module-outcome-consistency Transactional providers enforce cross-module atomicity; reject if a persistent consistency ledger is introduced.
+/// @evidenceExclude docs/analysis/05-non-functional.md#req-nfr-history-immutable-and-recoverable-history Immutable domain records and audit providers own history behavior; reject if a separate history store is required.
+/// @evidenceExclude docs/analysis/05-non-functional.md#req-nfr-report-reproducible-and-reconciled-reporting ReportProvider and closing snapshots own reporting reproducibility; reject if a report artifact model is introduced.
+/// @evidenceExclude docs/analysis/05-non-functional.md#req-nfr-automation-attributable-operational-automation System-principal providers and audit events own automation attribution; reject if an automation-run model is introduced.
+/// @evidenceExclude docs/analysis/05-non-functional.md#req-nfr-delivery-production-backend-delivery Build, SDK, and runtime gates own delivery verification; reject if delivery metadata becomes persisted business state.

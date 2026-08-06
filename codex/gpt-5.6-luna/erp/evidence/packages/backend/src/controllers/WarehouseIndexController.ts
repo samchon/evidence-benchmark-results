@@ -1,0 +1,2 @@
+import * as core from "@nestia/core"; import { Controller } from "@nestjs/common"; import type { IAuth, IPage, IWarehouse } from "@benchmark/erp-api"; import { InventoryMasterProvider } from "../providers/InventoryMasterProvider";
+/** Searches warehouses. */ @Controller("warehouse-search") export class WarehouseIndexController { @core.TypedRoute.Patch() public async index(@core.TypedHeaders() headers: IAuth.IHeaders, @core.TypedBody() input: IWarehouse.IRequest): Promise<IPage<IWarehouse>> { return InventoryMasterProvider.warehouseIndex(headers, input); } }

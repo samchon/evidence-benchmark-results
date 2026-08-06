@@ -1,0 +1,3 @@
+import type { tags } from "typia"; import type { IPage } from "../typings";
+export interface IAttachment { id: string & tags.Format<"uuid">; targetType: string; targetId: string & tags.Format<"uuid">; fileName: string; storageKey: string; mimeType: string; sizeBytes: number; uploaderId: string & tags.Format<"uuid">; createdAt: string & tags.Format<"date-time">; deletedAt: string | null; }
+export namespace IAttachment { export interface ICreate { targetType: string; targetId: string & tags.Format<"uuid">; fileName: string; storageKey: string; mimeType: string; sizeBytes: number; } export interface IRequest extends IPage.IRequest { targetType: string; targetId: string & tags.Format<"uuid">; includeDeleted?: boolean | null; } }

@@ -1,0 +1,2 @@
+import * as core from "@nestia/core"; import { Controller } from "@nestjs/common"; import type { IAuth, IPage, IRole } from "@benchmark/erp-api"; import { RoleProvider } from "../providers/RoleProvider";
+/** Lists built-in and custom roles in the selected organization. */ @Controller("role-search") export class RoleIndexController { @core.TypedRoute.Patch() public async index(@core.TypedHeaders() headers: IAuth.IHeaders): Promise<IPage<IRole>> { return RoleProvider.index(headers); } }

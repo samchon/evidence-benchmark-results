@@ -1,0 +1,53 @@
+/// Manual or source-module journal entry.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-journal-journal-entry-lifecycle Retains source context, lifecycle, attribution, and lines.
+/// @evidence docs/analysis/03-functional-requirements.md#req-fun-journal-journal-entry-operations Owns draft, approval, posting, reversal, and void history.
+/// @evidence docs/analysis/04-business-rules.md#req-rule-journal-journal-entry-rules Preserves balanced journal lifecycle and immutable posting history.
+/// @evidence docs/analysis/04-business-rules.md#req-rule-fin-post-financial-posting-integrity Retains posted financial attribution.
+/// @evidence docs/analysis/04-business-rules.md#req-rule-doc-link-006-financial-and-stock-postings-reference-the-source-document-that-generated-them Retains source module and document attribution for postings.
+/// @evidence docs/analysis/04-business-rules.md#req-rule-concurrency-005-posting-payment-approval-close-and-reversal-commands-cannot-apply-the-same-terminal-effect-twice Preserves terminal journal lifecycle state.
+/// @evidence docs/analysis/04-business-rules.md#req-rule-concurrency-006-a-concurrent-business-command-for-conflict-response-returns Retains current journal state for conflict refresh.
+/// @evidence docs/analysis/04-business-rules.md#req-rule-concurrency-concurrent-command-rules Preserves current lifecycle state for concurrent command decisions.
+model journal_entries {
+  id String @id
+  organization_id String
+  source_module String
+  source_document_id String?
+  memo String?
+  entry_date DateTime
+  currency_code String
+  status String
+  created_by_user_id String
+  approved_at DateTime?
+  posted_at DateTime?
+  reversed_at DateTime?
+  created_at DateTime
+  updated_at DateTime
+  organization organizations @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  creator users @relation(fields: [created_by_user_id], references: [id])
+  lines journal_lines[]
+  @@index([organization_id, status, entry_date])
+}
+
+/// Debit or credit line belonging to one journal entry.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-journal-journal-entry-lifecycle Retains account, debit, credit, currency, and exchange context.
+model journal_lines {
+  id String @id
+  journal_entry_id String
+  account_id String
+  description String?
+  debit Decimal
+  credit Decimal
+  currency_code String
+  exchange_rate Decimal?
+  department_id String?
+  project_id String?
+  cost_center_id String?
+  customer_id String?
+  vendor_id String?
+  item_id String?
+  warehouse_id String?
+  tax_code_id String?
+  journal_entry journal_entries @relation(fields: [journal_entry_id], references: [id], onDelete: Cascade)
+  @@index([journal_entry_id])
+  @@index([account_id])
+}

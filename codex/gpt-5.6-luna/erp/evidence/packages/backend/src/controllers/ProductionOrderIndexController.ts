@@ -1,0 +1,2 @@
+import * as core from "@nestia/core"; import { Controller } from "@nestjs/common"; import type { IAuth, IPage, IProductionOrder } from "@benchmark/erp-api"; import { ManufacturingProvider } from "../providers/ManufacturingProvider";
+/** Lists production orders. */ @Controller("production-order-search") export class ProductionOrderIndexController { @core.TypedRoute.Patch() public async index(@core.TypedHeaders() h: IAuth.IHeaders, @core.TypedBody() input: IProductionOrder.IRequest): Promise<IPage<IProductionOrder>> { return ManufacturingProvider.productionIndex(h, input); } }

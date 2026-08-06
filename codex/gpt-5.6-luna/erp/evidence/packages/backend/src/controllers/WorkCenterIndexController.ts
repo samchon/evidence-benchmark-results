@@ -1,0 +1,2 @@
+import * as core from "@nestia/core"; import { Controller } from "@nestjs/common"; import type { IAuth, IPage, IWorkCenter } from "@benchmark/erp-api"; import { ManufacturingProvider } from "../providers/ManufacturingProvider";
+/** Lists work centers. */ @Controller("work-center-search") export class WorkCenterIndexController { @core.TypedRoute.Patch() public async index(@core.TypedHeaders() h: IAuth.IHeaders, @core.TypedBody() input: IWorkCenter.IRequest): Promise<IPage<IWorkCenter>> { return ManufacturingProvider.workCenterIndex(h, input); } }

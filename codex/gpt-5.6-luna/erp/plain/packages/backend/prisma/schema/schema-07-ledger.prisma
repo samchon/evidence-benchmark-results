@@ -1,0 +1,116 @@
+/// Organization ledger account used by journal lines and reporting.
+model ledger_accounts {
+  /// UUID primary key.
+  id String @id
+  /// Organization scope.
+  organization_id String
+  /// Stable account code.
+  code String
+  /// Account display name.
+  name String
+  /// Asset, liability, equity, revenue, or expense.
+  account_type String
+  /// Optional transaction currency restriction.
+  currency_code String?
+  /// Optional parent account.
+  parent_id String?
+  /// Whether selectable for new postings.
+  active Boolean
+  /// Creation instant.
+  created_at DateTime
+  /// Last update instant.
+  updated_at DateTime
+  /// Organization relation.
+  organization organizations @relation(fields:[organization_id], references:[id])
+  /// Parent relation.
+  parent ledger_accounts? @relation("account_tree", fields:[parent_id], references:[id])
+  /// Child accounts.
+  children ledger_accounts[] @relation("account_tree")
+  /// Journal lines.
+  lines journal_lines[]
+  @@unique([organization_id,code])
+  @@index([organization_id,account_type,active])
+}
+
+/// Manual or source-linked journal entry with retained posting state.
+model journal_entries {
+  /// UUID primary key.
+  id String @id
+  /// Organization scope.
+  organization_id String
+  /// Source document kind.
+  source_type String
+  /// Source document identity.
+  source_id String?
+  /// Journal memo.
+  memo String
+  /// Business date.
+  entry_date DateTime
+  /// Transaction currency.
+  currency_code String
+  /// Draft, pending_approval, approved, posted, rejected, voided, or reversed.
+  status String
+  /// Creating user.
+  created_by_user_id String
+  /// Posting instant.
+  posted_at DateTime?
+  /// Correction parent journal.
+  reversal_of_id String?
+  /// Creation instant.
+  created_at DateTime
+  /// Last update instant.
+  updated_at DateTime
+  /// Organization relation.
+  organization organizations @relation(fields:[organization_id], references:[id])
+  /// Creator relation.
+  creator users @relation("journal_creator", fields:[created_by_user_id], references:[id])
+  /// Lines.
+  lines journal_lines[]
+  @@index([organization_id,status,entry_date])
+}
+
+/// Debit or credit line in an entry.
+model journal_lines {
+  /// UUID primary key.
+  id String @id
+  /// Journal identity.
+  journal_id String
+  /// Account identity.
+  account_id String
+  /// Optional line description.
+  description String?
+  /// Debit amount.
+  debit Decimal
+  /// Credit amount.
+  credit Decimal
+  /// Journal relation.
+  journal journal_entries @relation(fields:[journal_id], references:[id])
+  /// Account relation.
+  account ledger_accounts @relation(fields:[account_id], references:[id])
+  @@index([journal_id])
+}
+
+/// Audit-bearing event for fiscal-period close and reopen workflows.
+model period_close_events {
+  /// UUID primary key.
+  id String @id
+  /// Organization scope.
+  organization_id String
+  /// Fiscal period identity.
+  fiscal_period_id String
+  /// Initiating actor.
+  actor_user_id String
+  /// Action such as soft_close, hard_close, reopen_request, or reopen.
+  action String
+  /// Optional reason.
+  reason String?
+  /// Workflow status.
+  status String
+  /// Creation instant.
+  created_at DateTime
+  /// Organization relation.
+  organization organizations @relation(fields:[organization_id], references:[id])
+  /// Actor relation.
+  actor users @relation("close_actor", fields:[actor_user_id], references:[id])
+  @@index([organization_id,fiscal_period_id,created_at])
+}

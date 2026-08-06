@@ -1,0 +1,64 @@
+/// Calculated payroll run for one organization pay period.
+model payroll_runs {
+  id String @id
+  organization_id String
+  number String
+  period_start DateTime
+  period_end DateTime
+  status String
+  total_gross Decimal
+  total_net Decimal
+  created_at DateTime
+  updated_at DateTime
+  organization organizations @relation(fields:[organization_id], references:[id])
+  @@unique([organization_id,number])
+  @@index([organization_id,status,period_start])
+}
+/// Employee payroll result retaining gross, deductions, and net values.
+model payslips {
+  id String @id
+  organization_id String
+  payroll_run_id String
+  employee_id String
+  status String
+  gross Decimal
+  deductions Decimal
+  net Decimal
+  data_json String
+  created_at DateTime
+  updated_at DateTime
+  organization organizations @relation(fields:[organization_id], references:[id])
+  @@index([organization_id,payroll_run_id,employee_id])
+}
+/// Fixed asset acquisition and lifecycle record.
+model fixed_assets {
+  id String @id
+  organization_id String
+  number String
+  name String
+  status String
+  cost Decimal
+  in_service_date DateTime?
+  depreciation_method String
+  accumulated_depreciation Decimal
+  created_at DateTime
+  updated_at DateTime
+  organization organizations @relation(fields:[organization_id], references:[id])
+  @@unique([organization_id,number])
+  @@index([organization_id,status])
+}
+/// Maintenance work order for an asset or equipment identity.
+model maintenance_orders {
+  id String @id
+  organization_id String
+  asset_id String
+  title String
+  status String
+  priority String
+  scheduled_for DateTime?
+  notes String?
+  created_at DateTime
+  updated_at DateTime
+  organization organizations @relation(fields:[organization_id], references:[id])
+  @@index([organization_id,status,asset_id])
+}

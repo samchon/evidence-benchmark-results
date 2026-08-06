@@ -1,0 +1,2 @@
+import type { IExchangeRate } from "@benchmark/erp-api";
+export function rateDto(r: { id: string; effective_date: Date; rate: unknown; origin: string; created_at: Date; source_currency: { code: string }; target_currency: { code: string } }): IExchangeRate { return { id: r.id, sourceCode: r.source_currency.code, targetCode: r.target_currency.code, effectiveDate: r.effective_date.toISOString(), rate: Number(r.rate), origin: r.origin as IExchangeRate["origin"], createdAt: r.created_at.toISOString() }; }

@@ -1,0 +1,2 @@
+import * as core from "@nestia/core"; import { Controller } from "@nestjs/common"; import type { IAuth, ITaxCode } from "@benchmark/erp-api"; import { TaxProvider } from "../providers/TaxProvider";
+/** Updates a tax code. */ @Controller("tax-code-update") export class TaxCodeUpdateController { @core.TypedRoute.Put(":id") public async update(@core.TypedHeaders() headers: IAuth.IHeaders, @core.TypedParam("id") id: string, @core.TypedBody() input: ITaxCode.IUpdate): Promise<ITaxCode> { return TaxProvider.codeUpdate(headers, id, input); } }

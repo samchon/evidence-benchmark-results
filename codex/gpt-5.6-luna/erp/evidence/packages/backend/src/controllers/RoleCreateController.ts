@@ -1,0 +1,2 @@
+import * as core from "@nestia/core"; import { Controller } from "@nestjs/common"; import type { IAuth, IRole } from "@benchmark/erp-api"; import { RoleProvider } from "../providers/RoleProvider";
+/** Creates an Owner-defined custom role. */ @Controller("role-create") export class RoleCreateController { @core.TypedRoute.Post() public async create(@core.TypedHeaders() headers: IAuth.IHeaders, @core.TypedBody() input: IRole.ICreate): Promise<IRole> { return RoleProvider.create(headers, input); } }

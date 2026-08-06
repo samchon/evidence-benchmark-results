@@ -1,0 +1,2 @@
+import * as core from "@nestia/core"; import { Controller } from "@nestjs/common"; import type { IAuth, IPage, IProject } from "@benchmark/erp-api"; import { ProjectWorkProvider } from "../providers/ProjectWorkProvider";
+/** Lists projects. */ @Controller("project-search") export class ProjectIndexController { @core.TypedRoute.Patch() public async index(@core.TypedHeaders() h: IAuth.IHeaders, @core.TypedBody() input: IProject.IRequest): Promise<IPage<IProject>> { return ProjectWorkProvider.projectIndex(h, input); } }

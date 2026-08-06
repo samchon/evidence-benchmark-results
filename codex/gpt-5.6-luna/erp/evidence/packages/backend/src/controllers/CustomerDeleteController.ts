@@ -1,0 +1,2 @@
+import * as core from "@nestia/core"; import { Controller } from "@nestjs/common"; import type { IAuth } from "@benchmark/erp-api"; import { PartyProvider } from "../providers/PartyProvider";
+/** Deletes a customer with no retained sales history. */ @Controller("customer-delete") export class CustomerDeleteController { @core.TypedRoute.Delete(":id") public async remove(@core.TypedHeaders() headers: IAuth.IHeaders, @core.TypedParam("id") id: string): Promise<{ success: true }> { return PartyProvider.customerDelete(headers, id); } }

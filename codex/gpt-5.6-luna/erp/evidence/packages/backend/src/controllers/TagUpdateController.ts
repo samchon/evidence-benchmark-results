@@ -1,0 +1,2 @@
+import * as core from "@nestia/core"; import { Controller } from "@nestjs/common"; import type { IAuth, ITag } from "@benchmark/erp-api"; import { TagProvider } from "../providers/TagProvider";
+/** Revises an organization tag. */ @Controller("tag-update") export class TagUpdateController { @core.TypedRoute.Put(":id") public async update(@core.TypedHeaders() headers: IAuth.IHeaders, @core.TypedParam("id") id: string, @core.TypedBody() input: ITag.IUpdate): Promise<ITag> { return TagProvider.update({ headers, id, input }); } }

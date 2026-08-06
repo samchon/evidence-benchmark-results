@@ -9,3 +9,12 @@
 **/playwright-report/
 **/.DS_Store
 
+**/*.log
+**/*.err
+**/*.out
+**/*.sqlite
+**/*.sqlite-*
+**/*.tsbuildinfo
+**/*manifest*.txt
+**/*.manifest
+**/*.tmp

@@ -1,0 +1,55 @@
+model addresses {
+ id String @id
+ organization_id String
+ label String
+ line1 String
+ line2 String?
+ city String
+ region String?
+ postal_code String
+ country_code String
+ active Boolean
+ created_at DateTime
+ updated_at DateTime
+ organization organizations @relation(fields:[organization_id],references:[id])
+ links address_links[]
+}
+model address_links {
+ id String @id
+ organization_id String
+ address_id String
+ target_type String
+ target_id String
+ purpose String
+ organization organizations @relation(fields:[organization_id],references:[id])
+ address addresses @relation(fields:[address_id],references:[id])
+ @@unique([organization_id,address_id,target_type,target_id,purpose])
+}
+model contacts {
+ id String @id
+ organization_id String
+ created_by_user_id String
+ first_name String
+ last_name String
+ title String?
+ email String?
+ phone String?
+ active Boolean
+ created_at DateTime
+ updated_at DateTime
+ organization organizations @relation(fields:[organization_id],references:[id])
+ creator users @relation(fields:[created_by_user_id],references:[id])
+ assignments contact_assignments[]
+}
+model contact_assignments {
+ id String @id
+ organization_id String
+ contact_id String
+ party_type String
+ party_id String
+ primary Boolean
+ created_at DateTime
+ organization organizations @relation(fields:[organization_id],references:[id])
+ contact contacts @relation(fields:[contact_id],references:[id])
+ @@unique([organization_id,contact_id,party_type,party_id])
+}

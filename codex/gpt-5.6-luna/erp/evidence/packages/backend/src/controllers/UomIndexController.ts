@@ -1,0 +1,2 @@
+import * as core from "@nestia/core"; import { Controller } from "@nestjs/common"; import type { IAuth, IUom, IPage } from "@benchmark/erp-api"; import { ReferenceDataProvider } from "../providers/ReferenceDataProvider";
+/** Lists units of measure. */ @Controller("uom-search") export class UomIndexController { @core.TypedRoute.Patch() public async index(@core.TypedHeaders() headers: IAuth.IHeaders, @core.TypedBody() input: IUom.IRequest): Promise<IPage<IUom>> { return ReferenceDataProvider.uomIndex({ headers, input }); } }

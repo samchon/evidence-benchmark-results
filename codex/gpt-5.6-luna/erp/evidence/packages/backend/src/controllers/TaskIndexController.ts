@@ -1,0 +1,2 @@
+import * as core from "@nestia/core"; import { Controller } from "@nestjs/common"; import type { IAuth, IPage, ITask } from "@benchmark/erp-api"; import { ProjectWorkProvider } from "../providers/ProjectWorkProvider";
+/** Lists project tasks. */ @Controller("task-search") export class TaskIndexController { @core.TypedRoute.Patch() public async index(@core.TypedHeaders() h: IAuth.IHeaders, @core.TypedBody() input: ITask.IRequest): Promise<IPage<ITask>> { return ProjectWorkProvider.taskIndex(h, input); } }

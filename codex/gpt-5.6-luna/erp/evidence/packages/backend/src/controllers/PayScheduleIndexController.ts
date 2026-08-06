@@ -1,0 +1,2 @@
+import * as core from "@nestia/core"; import { Controller } from "@nestjs/common"; import type { IAuth, IPage, IPaySchedule } from "@benchmark/erp-api"; import { PayrollProvider } from "../providers/PayrollProvider";
+/** Lists payroll periods. */ @Controller("pay-schedule-search") export class PayScheduleIndexController { @core.TypedRoute.Patch() public async index(@core.TypedHeaders() h: IAuth.IHeaders, @core.TypedBody() input: IPaySchedule.IRequest): Promise<IPage<IPaySchedule>> { return PayrollProvider.scheduleIndex(h, input); } }

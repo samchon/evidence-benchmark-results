@@ -1,0 +1,2 @@
+import * as core from "@nestia/core"; import { Controller } from "@nestjs/common"; import type { IAuth, IPage, ITagAssignment } from "@benchmark/erp-api"; import { TagAssignmentProvider as P } from "../providers/TagAssignmentProvider";
+/** Finds business records carrying a tag. */ @Controller("tag-assignment-search") export class TagAssignmentSearchController { @core.TypedRoute.Patch() public async search(@core.TypedHeaders() h:IAuth.IHeaders,@core.TypedBody() i:ITagAssignment.IRequest):Promise<IPage<ITagAssignment>>{return P.index(h,i);} }

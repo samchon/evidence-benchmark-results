@@ -1,0 +1,3 @@
+import type { tags } from "typia"; import type { IPage } from "../typings";
+export interface IComment { id: string & tags.Format<"uuid">; targetType: string; targetId: string & tags.Format<"uuid">; authorId: string & tags.Format<"uuid">; body: string; createdAt: string & tags.Format<"date-time">; updatedAt: string & tags.Format<"date-time">; deletedAt: string | null; }
+export namespace IComment { export interface ICreate { targetType: string; targetId: string & tags.Format<"uuid">; body: string; } export interface IRequest extends IPage.IRequest { targetType: string; targetId: string & tags.Format<"uuid">; includeDeleted?: boolean | null; } export interface IUpdate { body: string; } }

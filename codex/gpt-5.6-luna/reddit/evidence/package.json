@@ -1,0 +1,31 @@
+{
+  "private": true,
+  "name": "benchmark-reddit2",
+  "version": "0.1.0",
+  "description": "Full-stack application for benchmark-reddit2",
+  "packageManager": "pnpm@10.10.0",
+  "engines": {
+    "node": ">=22.15"
+  },
+  "scripts": {
+    "build": "pnpm --filter @benchmark/reddit2-backend --fail-if-no-match build:prisma && pnpm --filter @benchmark/reddit2-backend --fail-if-no-match build:main && pnpm --filter @benchmark/reddit2-backend --fail-if-no-match build:sdk && pnpm --filter @benchmark/reddit2-backend --fail-if-no-match build:test && pnpm --filter @benchmark/reddit2-frontend --fail-if-no-match build",
+    "build:frontend": "pnpm --filter @benchmark/reddit2-frontend --fail-if-no-match build",
+    "build:prisma": "pnpm --filter @benchmark/reddit2-backend --fail-if-no-match build:prisma",
+    "dev:frontend": "pnpm --filter @benchmark/reddit2-frontend --fail-if-no-match dev",
+    "format": "pnpm -r --if-present format",
+    "lint": "pnpm --filter @benchmark/reddit2-backend --fail-if-no-match build:prisma && pnpm -r --if-present lint",
+    "schema:database": "pnpm --filter @benchmark/reddit2-backend --fail-if-no-match schema",
+    "start": "pnpm --filter @benchmark/reddit2-backend --fail-if-no-match start",
+    "test": "pnpm test:backend && pnpm test:frontend",
+    "test:backend": "pnpm --filter @benchmark/reddit2-backend --fail-if-no-match test",
+    "test:frontend": "pnpm --filter @benchmark/reddit2-frontend --fail-if-no-match test:e2e"
+  },
+  "devDependencies": {
+    "@ttsc/lint": "catalog:typescript",
+    "@types/node": "catalog:utils",
+    "rimraf": "catalog:utils",
+    "ttsc": "catalog:typescript",
+    "typescript": "catalog:typescript",
+    "@samchon/lint-plugin-evidence": "file:.benchmark-deps/evidence.tgz"
+  }
+}

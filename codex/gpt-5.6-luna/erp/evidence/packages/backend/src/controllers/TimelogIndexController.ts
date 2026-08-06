@@ -1,0 +1,2 @@
+import * as core from "@nestia/core"; import { Controller } from "@nestjs/common"; import type { IAuth, IPage, ITimelog } from "@benchmark/erp-api"; import { ProjectWorkProvider } from "../providers/ProjectWorkProvider";
+/** Lists time entries. */ @Controller("timelog-search") export class TimelogIndexController { @core.TypedRoute.Patch() public async index(@core.TypedHeaders() h: IAuth.IHeaders, @core.TypedBody() input: ITimelog.IRequest): Promise<IPage<ITimelog>> { return ProjectWorkProvider.timelogIndex(h, input); } }

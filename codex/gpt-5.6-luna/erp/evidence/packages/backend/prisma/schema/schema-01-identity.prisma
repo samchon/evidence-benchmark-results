@@ -1,0 +1,458 @@
+/// Global credentialed user identity.
+///
+/// @evidence docs/analysis/01-actors-and-auth.md#req-auth-account-user-account-management Owns the
+///          global profile and credential lifecycle shared by memberships.
+/// @evidence docs/analysis/04-business-rules.md#req-rule-account-user-account-rules Owns global account credential and session state.
+/// @evidence docs/analysis/04-business-rules.md#req-rule-account-006-account-reactivation-does-not-restore-a-separately-revoked-organization-membership Keeps credential reactivation separate from membership authority.
+model users {
+  /// UUID primary key.
+  id String @id
+  /// Globally unique login email.
+  email String @unique
+  /// One-way password hash; never exposed through a DTO.
+  password_hash String
+  /// Display name shown in the global profile.
+  display_name String
+  /// Optional avatar reference.
+  avatar String?
+  /// Optional phone number.
+  phone String?
+  /// Locale preference.
+  locale String
+  /// Timezone preference.
+  timezone String
+  /// Whether the global account may authenticate.
+  active Boolean
+  /// Creation instant.
+  created_at DateTime
+  /// Last profile or credential update instant.
+  updated_at DateTime
+
+  /// Organization memberships held by this identity.
+  memberships memberships[]
+  /// Authenticated sessions for this identity.
+  sessions sessions[]
+  /// Email-bound account recovery proofs issued for this identity.
+  recovery_tokens account_recovery_tokens[]
+  /// Invitations accepted by this identity.
+  accepted_invitations invitations[] @relation("InvitationRecipient")
+  /// Invitations issued by this identity.
+  issued_invitations invitations[] @relation("InvitationIssuer")
+  /// Audit events attributed to this identity.
+  audit_events audit_events[]
+  /// Account merges requested by this user.
+  account_merge_requests_requested account_merge_requests[] @relation("AccountMergeRequestedBy")
+  /// Account merges decided by this user.
+  account_merge_requests_decided account_merge_requests[] @relation("AccountMergeDecidedBy")
+  /// Attachments uploaded by this identity.
+  attachments attachments[]
+  /// Comments authored by this identity.
+  comments comments[]
+  /// Journal entries created by this identity.
+  created_journals journal_entries[]
+  /// Organizations created by this identity.
+  created_organizations organizations[] @relation("OrganizationCreator")
+}
+
+/// Single-use, email-bound credential recovery proof.
+///
+/// @evidence docs/analysis/01-actors-and-auth.md#req-auth-account-user-account-management Records
+///          expiry and reuse state without persisting the raw recovery token.
+model account_recovery_tokens {
+  /// UUID primary key.
+  id String @id
+  /// Global user foreign key.
+  user_id String
+  /// HMAC hash of the raw email-bound proof.
+  token_hash String @unique
+  /// Expiration instant.
+  expires_at DateTime
+  /// Completion instant; null means still unused.
+  used_at DateTime?
+  /// Creation instant.
+  created_at DateTime
+
+  /// Global identity receiving the recovery proof.
+  user users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id, used_at])
+}
+
+/// Organization tenant and its operational defaults.
+///
+/// @evidence docs/analysis/02-domain-model.md#req-dom-org-organization-scope Stores the tenant
+///          boundary and configuration used by every organization-scoped row.
+/// @evidence docs/analysis/03-functional-requirements.md#req-fun-org-organization-administration Stores organization configuration and retirement state.
+/// @evidence docs/analysis/04-business-rules.md#req-rule-org-access-organization-isolation-rules Owns the organization boundary used by scoped records.
+model organizations {
+  /// UUID primary key.
+  id String @id
+  /// Human-readable organization name.
+  name String
+  /// Stable organization code.
+  code String @unique
+  /// Organization lifecycle status.
+  status String
+  /// User who created the organization.
+  created_by_user_id String
+  /// ISO currency code used as the accounting base.
+  base_currency String
+  /// IANA timezone used for organization-local dates.
+  timezone String
+  /// Fiscal year start month from 1 through 12.
+  fiscal_start_month Int
+  /// Default tax jurisdiction identifier or code.
+  default_tax_jurisdiction String?
+  /// Default payment-term identifier or code.
+  default_payment_term String?
+  /// Whether stock may become negative.
+  negative_stock_policy String
+  /// Default approval threshold in base currency.
+  approval_threshold Decimal
+  /// Numbering convention prefix for generated documents.
+  numbering_prefix String
+  /// Whether the organization is active.
+  active Boolean
+  /// Creation instant.
+  created_at DateTime
+  /// Last configuration update instant.
+  updated_at DateTime
+
+  /// Memberships in this organization.
+  memberships memberships[]
+  /// Sessions currently operating this organization.
+  selected_sessions sessions[] @relation("SelectedOrganization")
+  /// Invitations issued for this organization.
+  invitations invitations[]
+  /// Organization roles.
+  roles roles[]
+  /// Organization system principal.
+  system_principal system_principals?
+  /// Immutable audit events in this organization.
+  audit_events audit_events[]
+  /// Creator identity.
+  creator users @relation("OrganizationCreator", fields: [created_by_user_id], references: [id])
+  /// Reusable postal addresses.
+  addresses addresses[]
+  /// Organization contacts.
+  contacts contacts[]
+  /// File attachments.
+  attachments attachments[]
+  /// Discussion comments.
+  comments comments[]
+  /// Classification tags.
+  tags tags[]
+  /// Custom-field definitions.
+  custom_field_definitions custom_field_definitions[]
+  /// Supported currencies.
+  currencies currencies[]
+  /// Effective exchange rates.
+  exchange_rates exchange_rates[]
+  /// Reusable payment terms.
+  payment_terms payment_terms[]
+  /// Tax jurisdictions.
+  tax_jurisdictions tax_jurisdictions[]
+  /// Tax returns prepared for this organization.
+  tax_returns tax_returns[]
+  /// Units of measure.
+  uoms uoms[]
+  /// Document numbering sequences.
+  document_number_sequences document_number_sequences[]
+  /// Fiscal calendars.
+  fiscal_calendars fiscal_calendars[]
+  /// External vendors.
+  vendors vendors[]
+  /// External customers.
+  customers customers[]
+  /// Ledger chart accounts.
+  accounts accounts[]
+  /// Account merge approval requests owned by this organization.
+  account_merge_requests account_merge_requests[]
+  /// Journal entries in this organization.
+  journal_entries journal_entries[]
+  /// Inventory items.
+  inventory_lots inventory_lots[]
+  item_serials item_serials[]
+  items items[]
+  /// Warehouses.
+  warehouses warehouses[]
+  /// Immutable stock movements.
+  stock_movements stock_movements[]
+  /// Organization departments.
+  departments departments[]
+  /// Organization employees.
+  employees employees[]
+  /// Bank accounts and statement activity.
+  bank_accounts bank_accounts[]
+  /// Bank statement transactions.
+  bank_transactions bank_transactions[]
+  /// Bank reconciliations.
+  reconciliations reconciliations[]
+
+  @@index([active])
+}
+
+/// Organization-specific membership of one global user.
+///
+/// @evidence docs/analysis/01-actors-and-auth.md#req-auth-membership-002-accepts-the-invitation Represents
+///          independent invited, active, suspended, and revoked membership state.
+/// @evidence docs/analysis/01-actors-and-auth.md#req-auth-membership-organization-membership-lifecycle Retains membership lifecycle and authority state.
+/// @evidence docs/analysis/04-business-rules.md#req-rule-membership-membership-and-role-rules Preserves organization membership authority.
+model memberships {
+  /// UUID primary key.
+  id String @id
+  /// Global user foreign key.
+  user_id String
+  /// Organization foreign key.
+  organization_id String
+  /// invited, active, suspended, or revoked.
+  status String
+  /// Employee baseline role retained for this membership.
+  baseline_role String
+  /// Creation instant.
+  created_at DateTime
+  /// Last membership-state update instant.
+  updated_at DateTime
+
+  /// Global identity owning the membership.
+  user users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  /// Organization containing the membership.
+  organization organizations @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  /// Roles assigned to this membership.
+  roles membership_roles[]
+  /// Notification preferences for this membership.
+  notification_preference notification_preferences?
+  /// Invitations that established this membership.
+  invitations invitations[] @relation("InvitationMembership")
+
+  @@unique([user_id, organization_id])
+  @@index([organization_id, status])
+}
+
+/// One authenticated connection for a global user.
+///
+/// @evidence docs/analysis/01-actors-and-auth.md#req-auth-session-session-and-logout Keeps
+///          concurrent sessions independently revocable and rechecks context.
+model sessions {
+  /// UUID primary key.
+  id String @id
+  /// Global user foreign key.
+  user_id String
+  /// Hash of the issued refresh credential.
+  refresh_token_hash String @unique
+  /// Session expiration instant.
+  expires_at DateTime
+  /// Revocation instant; null means still usable.
+  revoked_at DateTime?
+  /// Selected organization context; null until explicitly selected.
+  selected_organization_id String?
+  /// Creation instant.
+  created_at DateTime
+
+  /// Authenticated global user.
+  user users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  /// Selected organization, when a context has been chosen.
+  selected_organization organizations? @relation("SelectedOrganization", fields: [selected_organization_id], references: [id], onDelete: SetNull)
+
+  @@index([user_id, revoked_at])
+  @@index([selected_organization_id])
+}
+
+/// Owner-issued invitation for an organization membership.
+///
+/// @evidence docs/analysis/01-actors-and-auth.md#req-auth-provision-account-provisioning-and-login Records
+///          invitation identity, recipient, role baseline, and acceptance state.
+model invitations {
+  /// UUID primary key.
+  id String @id
+  /// Inviting organization foreign key.
+  organization_id String
+  /// Issuing Owner user foreign key.
+  inviter_user_id String
+  /// Existing recipient identity, when known.
+  recipient_user_id String?
+  /// Pending recipient email.
+  email String
+  /// Initial role assigned on acceptance.
+  initial_role String
+  /// pending, accepted, revoked, or expired.
+  status String
+  /// Hash of the invitation proof.
+  token_hash String @unique
+  /// Expiration instant.
+  expires_at DateTime
+  /// Acceptance instant.
+  accepted_at DateTime?
+  /// Creation instant.
+  created_at DateTime
+  /// Membership established by acceptance, when accepted.
+  membership_id String?
+
+  /// Inviting organization.
+  organization organizations @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  /// Owner who issued the invitation.
+  inviter users @relation("InvitationIssuer", fields: [inviter_user_id], references: [id])
+  /// Existing global recipient, when one already exists.
+  recipient users? @relation("InvitationRecipient", fields: [recipient_user_id], references: [id], onDelete: SetNull)
+  /// Membership created by acceptance.
+  membership memberships? @relation("InvitationMembership", fields: [membership_id], references: [id], onDelete: SetNull)
+
+  @@index([organization_id, email, status])
+}
+
+/// Organization role definition.
+///
+/// @evidence docs/analysis/01-actors-and-auth.md#req-auth-role-organization-roles-and-permissions Represents
+///          built-in and custom role ownership and lifecycle.
+/// @evidence docs/analysis/04-business-rules.md#req-rule-role-role-integrity-rules Stores role and permission ownership.
+model roles {
+  /// UUID primary key.
+  id String @id
+  /// Owning organization foreign key.
+  organization_id String
+  /// Role name.
+  name String
+  /// Whether this is one of the immutable built-in roles.
+  built_in Boolean
+  /// Creation instant.
+  created_at DateTime
+  /// Last role update instant.
+  updated_at DateTime
+
+  /// Owning organization.
+  organization organizations @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  /// Permission atoms composing this role.
+  permissions role_permissions[]
+  /// Membership assignments.
+  memberships membership_roles[]
+
+  @@unique([organization_id, name])
+}
+
+/// One permission atom in a role.
+///
+/// @evidence docs/analysis/01-actors-and-auth.md#req-auth-role-organization-roles-and-permissions Represents a
+///          custom role's explicit permission composition.
+model role_permissions {
+  /// UUID primary key.
+  id String @id
+  /// Role foreign key.
+  role_id String
+  /// Source-defined permission key.
+  permission String
+  /// Creation instant.
+  created_at DateTime
+
+  /// Role containing this permission.
+  role roles @relation(fields: [role_id], references: [id], onDelete: Cascade)
+
+  @@unique([role_id, permission])
+}
+
+/// Assignment of a role to an organization membership.
+///
+/// @evidence docs/analysis/01-actors-and-auth.md#req-auth-role-organization-roles-and-permissions Captures the
+///          organization-scoped union of roles for one active membership.
+model membership_roles {
+  /// UUID primary key.
+  id String @id
+  /// Membership foreign key.
+  membership_id String
+  /// Role foreign key.
+  role_id String
+  /// Creation instant.
+  created_at DateTime
+
+  /// Assigned membership.
+  membership memberships @relation(fields: [membership_id], references: [id], onDelete: Cascade)
+  /// Assigned role.
+  role roles @relation(fields: [role_id], references: [id], onDelete: Cascade)
+
+  @@unique([membership_id, role_id])
+}
+
+/// Organization-scoped non-interactive automation principal.
+///
+/// @evidence docs/analysis/01-actors-and-auth.md#req-auth-principal-acting-principals Attributes
+///          scheduled work to one organization without creating a login session.
+model system_principals {
+  /// UUID primary key.
+  id String @id
+  /// Organization foreign key.
+  organization_id String @unique
+  /// Stable principal display name.
+  name String
+  /// Creation instant.
+  created_at DateTime
+
+  /// Organization owning this principal.
+  organization organizations @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  /// Audit events attributed to this principal.
+  audit_events audit_events[]
+}
+
+/// Immutable audit event for sensitive user and system actions.
+///
+/// @evidence docs/analysis/04-business-rules.md#req-rule-audit-004-must-emit-audit-events Records durable
+///          actor, target, before/after, and reason evidence inside one tenant.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-audit-event-audit-events Stores immutable audit history and actor attribution.
+/// @evidence docs/analysis/03-functional-requirements.md#req-fun-audit-audit-history-operations Retains audit history for inspection.
+/// @evidence docs/analysis/03-functional-requirements.md#req-fun-period-close-008-reopens-the-period-with-an-audit-event Records the fiscal-period reopen audit event.
+/// @evidence docs/analysis/04-business-rules.md#req-rule-audit-audit-and-notification-rules Stores audit and notification evidence.
+model audit_events {
+  /// UUID primary key.
+  id String @id
+  /// Organization foreign key.
+  organization_id String
+  /// Human actor, when applicable.
+  user_id String?
+  /// System actor, when applicable.
+  system_principal_id String?
+  /// Action key.
+  action String
+  /// Target type.
+  target_type String
+  /// Target identifier.
+  target_id String
+  /// Serialized before value summary.
+  before_value String?
+  /// Serialized after value summary.
+  after_value String?
+  /// Human reason for sensitive changes.
+  reason String?
+  /// Creation instant.
+  created_at DateTime
+
+  /// Organization containing the event.
+  organization organizations @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  /// Human actor, when present.
+  user users? @relation(fields: [user_id], references: [id], onDelete: SetNull)
+  /// System actor, when present.
+  system_principal system_principals? @relation(fields: [system_principal_id], references: [id], onDelete: SetNull)
+
+  @@index([organization_id, created_at])
+  @@index([target_type, target_id])
+}
+
+/// Per-membership notification delivery preference.
+///
+/// @evidence docs/analysis/02-domain-model.md#req-dom-notification-preference-notification-preferences Persists membership-scoped delivery choices and mandatory notice behavior.
+///          Keeps ordinary delivery choices separate from mandatory notices.
+/// @evidence docs/analysis/03-functional-requirements.md#req-fun-notification-preference-notification-preference-operations Stores organization notification choices.
+model notification_preferences {
+  /// UUID primary key.
+  id String @id
+  /// One-to-one membership foreign key.
+  membership_id String @unique
+  /// Whether ordinary email notifications are enabled.
+  email_enabled Boolean
+  /// Whether ordinary in-app notifications are enabled.
+  in_app_enabled Boolean
+  /// Creation instant.
+  created_at DateTime
+  /// Last preference update instant.
+  updated_at DateTime
+
+  /// Membership owning the preference.
+  membership memberships @relation(fields: [membership_id], references: [id], onDelete: Cascade)
+}

@@ -1,0 +1,2 @@
+import * as core from "@nestia/core"; import { Controller } from "@nestjs/common"; import type { IAuth, IBom, IPage } from "@benchmark/erp-api"; import { ManufacturingProvider } from "../providers/ManufacturingProvider";
+/** Lists bills of materials. */ @Controller("bom-search") export class BomIndexController { @core.TypedRoute.Patch() public async index(@core.TypedHeaders() h: IAuth.IHeaders, @core.TypedBody() input: IBom.IRequest): Promise<IPage<IBom>> { return ManufacturingProvider.bomIndex(h, input); } }

@@ -1,0 +1,2 @@
+import * as core from "@nestia/core"; import { Controller } from "@nestjs/common"; import type { IAuth } from "@benchmark/erp-api"; import { RoleProvider } from "../providers/RoleProvider";
+/** Deletes an unassigned custom role. */ @Controller("role-delete") export class RoleDeleteController { @core.TypedRoute.Delete(":id") public async remove(@core.TypedHeaders() headers: IAuth.IHeaders, @core.TypedParam("id") id: string): Promise<{ success: true }> { return RoleProvider.remove(headers, id); } }

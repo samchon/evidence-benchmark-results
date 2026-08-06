@@ -1,0 +1,2 @@
+import * as core from "@nestia/core"; import { Controller } from "@nestjs/common"; import type { IAuth, ITaxCode } from "@benchmark/erp-api"; import { TaxProvider } from "../providers/TaxProvider";
+/** Activates or retires a tax code. */ @Controller("tax-code-status") export class TaxCodeStatusController { @core.TypedRoute.Post(":id") public async status(@core.TypedHeaders() headers: IAuth.IHeaders, @core.TypedParam("id") id: string, @core.TypedBody() input: { active: boolean }): Promise<ITaxCode> { return TaxProvider.codeStatus(headers, id, input.active); } }
