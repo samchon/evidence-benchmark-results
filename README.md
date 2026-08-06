@@ -15,9 +15,9 @@ codex/gpt-5.6-luna/todo/plain/
 codex/gpt-5.6-luna/todo/evidence/
 ```
 
-- `project`: `todo`, `reddit`, `shopping`, `erp`
-- `mode`: `plain`, `evidence`
+- project: `todo`, `reddit`, `shopping`, `erp`
+- mode: `plain`, `evidence`
 
 The two modes of one project sit side by side because that pair is what the benchmark compares.
 
-Each leaf is the application's complete source. Agent streams, logs, caches, build output and private environment files stay in the measurement repository.
+Each leaf is the application's complete source.
