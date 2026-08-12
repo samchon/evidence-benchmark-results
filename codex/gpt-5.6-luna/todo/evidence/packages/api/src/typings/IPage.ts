@@ -30,11 +30,11 @@ export namespace IPage {
     page?: null | (number & tags.Type<"uint32"> & tags.Minimum<1>);
 
     /**
-     * Maximum number of records returned per page. Zero requests every record.
+     * Maximum number of records returned per page.
      *
-     * @default 100
+     * @default 20
      */
-    limit?: null | (number & tags.Type<"uint32">);
+    limit?: null | (number & tags.Type<"uint32"> & tags.Minimum<1> & tags.Maximum<100>);
   }
 
   /**

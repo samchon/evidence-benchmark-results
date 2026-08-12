@@ -1,2213 +1,1360 @@
-﻿import type {
-  IEntity,
-  IPage,
-  IShoppingAddress,
-  IShoppingAdmin,
-  IShoppingAdminApplication,
-  IShoppingAuth,
-  IShoppingCart,
-  IShoppingCheckout,
-  IShoppingCategory,
-  IShoppingCustomerProfile,
-  IShoppingInventory,
-  IShoppingOrder,
-  IShoppingProduct,
-  IShoppingRequest,
-  IShoppingReview,
-  IShoppingSellerApproval,
-  IShoppingSellerProfile,
-  IShoppingShipment,
-  IShoppingWishlist,
-  IShoppingHeaders,
-} from "@benchmark/shopping-api";
-import { randomUUID, scryptSync, timingSafeEqual } from "node:crypto";
-import { ErrorUtil } from "../utils/ErrorUtil";
+import { createHash, randomBytes, randomUUID } from "node:crypto";
+import { PrismaClient } from "@prisma/sdk";
+import type * as api from "@benchmark/shopping-api";
+
 import { MyGlobal } from "../MyGlobal";
-import type { Prisma } from "@prisma/sdk";
+import { ErrorUtil } from "../utils/ErrorUtil";
 
-type User = { id: string; kind: string; email: string; password_hash: string; display_name: string | null; phone: string | null; shop_name: string | null; shop_description: string | null; shop_logo: string | null; approval_status: string | null; rejection_reason: string | null; suspended: boolean; banned: boolean; deleted_at: Date | null; grades: string; created_at: Date; updated_at: Date; };
-type ProductListRow = Prisma.shopping_productsGetPayload<{ include: { seller: true; images: true; variants: { include: { movements: true } }; reviews: true } }>;
-type ProductDetailRow = Prisma.shopping_productsGetPayload<{ include: { seller: true; category: true; images: true; variants: { include: { movements: true } }; reviews: { include: { user: true } } } }>;
-type CartLineRow = Prisma.shopping_cart_linesGetPayload<{ include: { variant: { include: { product: { include: { seller: true } }; movements: true } } } }>;
-type OrderItemRow = {
-  id: string; product_id: string; product_name: string; product_description: string; variant_sku: string; variant_options_json: string;
-  shopping_seller_id: string; seller_shop_name: string; unit_price: number; quantity: number; status: string; refunded_amount: number | null;
-  purchased_at: Date; delivered_at: Date | null;
-  order?: { id: string; order_number: string; recipient_name: string; phone: string; street_address: string; city: string; state: string; postal_code: string; country: string };
-};
-type OrderDetailRow = Prisma.shopping_ordersGetPayload<{ include: { items: { include: { requests: { include: { snapshots: true } } } }; shipments: { include: { items: true } } } }>;
-export interface AuthPayload {
+/** Actor identity resolved from a live access session. */
+export interface ShoppingActor {
   id: string;
-  session_id: string;
-  type: IShoppingAuth.Actor;
+  type: "customer" | "seller";
+  sessionId: string;
 }
-export type HeaderInput = IShoppingHeaders;
 
-const now = (): Date => new Date();
-const uuid = (): string => randomUUID();
-const hash = (value: string): string => scryptSync(value, "benchmark-shopping", 32).toString(
-  "hex",
-);
-const verify = (value: string, stored: string): boolean => {
-  const actual = Buffer.from(hash(value), "hex");
-  const expected = Buffer.from(stored, "hex");
-  return actual.length === expected.length && timingSafeEqual(actual, expected);
-};
-const page = <T extends object>(data: T[], total: number, input?: IPage.IRequest): IPage<T> => {
-  const limit = input?.limit ?? 100;
-  const current = input?.page ?? 1;
-  return {
-    data,
-    pagination: {
-      current,
-      limit,
-      records: total,
-      pages: limit === 0 ? 1 : Math.ceil(total / limit),
-    },
-  };
-};
-const paginationContexts = new Map<string, string>();
-const bindPaginationContext = (ownerId: string, scope: string, input: IPage.IRequest, context: object): void => {
-  const current = input.page ?? 1;
-  const key = `${ownerId}:${scope}`;
-  const fingerprint = JSON.stringify(context);
-  if (current === 1) {
-    paginationContexts.set(key, fingerprint);
-    return;
-  }
-  if (paginationContexts.get(key) !== fingerprint)
-    throw ErrorUtil.conflict("This page position belongs to a different query context; restart at page one.");
-};
-const parseGrades = (value: string): string[] => value
-  ? value.split(",").filter(Boolean)
-  : [];
-const requireHeader = (headers: HeaderInput): string => {
-  const token = headers.authorization?.replace(/^Bearer\s+/i, "").trim();
-  if (!token) throw ErrorUtil.unauthorized("Authentication is required.");
-  return token;
-};
-
+/** Central business implementation for the shopping API. */
 export namespace ShoppingProvider {
-  export async function authenticate(headers: HeaderInput, kind: IShoppingAuth.Actor): Promise<AuthPayload> {
-    const token = requireHeader(headers);
-    const session = await MyGlobal.prisma.shopping_sessions.findUnique({
-      where: { token },
-      include: { user: true },
-    });
-    if (!session || session.revoked || session.expires_at <= now() || session.user.kind !== kind || session.user.deleted_at || session.user.banned)
-      throw ErrorUtil.unauthorized("The session is invalid or unavailable.");
-    return { id: session.user.id, session_id: session.id, type: kind };
-  }
-  export async function authenticateAny(headers: HeaderInput): Promise<AuthPayload> {
-    const token = requireHeader(headers);
-    const session = await MyGlobal.prisma.shopping_sessions.findUnique({ where: { token }, include: { user: true } });
-    if (!session || session.revoked || session.expires_at <= now() || session.user.deleted_at || session.user.banned)
-      throw ErrorUtil.unauthorized("The session is invalid or unavailable.");
-    return { id: session.user.id, session_id: session.id, type: session.user.kind as IShoppingAuth.Actor };
-  }
-  export async function join(kind: IShoppingAuth.Actor, body: IShoppingAuth.IJoin): Promise<IShoppingAuth.IAuthorized> {
-    const email = body.email.trim().toLowerCase();
-    if (await MyGlobal.prisma.shopping_users.findUnique({
-      where: { kind_email: { kind, email } },
-    }))
-      throw ErrorUtil.conflict("That email is already registered.");
-    const user = await MyGlobal.prisma.shopping_users.create({
-      data: {
-        id: uuid(),
-        kind,
-        email,
-        password_hash: hash(body.password),
-        approval_status: kind === "seller" ? "pending" : null,
-        // Registration never grants governance.  A controlled provisioning
-        // process assigns the initial super administrator separately.
-        grades: "",
-        created_at: now(),
-        updated_at: now(),
-      },
-    });
-    if (kind === "seller") await MyGlobal.prisma.shopping_seller_approvals.create(
-      {
-        data: {
-          id: uuid(),
-          shopping_seller_id: user.id,
-          status: "pending",
-          created_at: now(),
-        },
-      },
-    );
-    return issue(user, kind);
-  }
-  export async function login(kind: IShoppingAuth.Actor, body: IShoppingAuth.ILogin): Promise<IShoppingAuth.IAuthorized> {
-    const user = await MyGlobal.prisma.shopping_users.findUnique({
-      where: { kind_email: { kind, email: body.email.trim().toLowerCase() } },
-    });
-    if (!user || user.deleted_at || user.banned || !verify(
-      body.password,
-      user.password_hash,
-    )) throw ErrorUtil.unauthorized("Invalid credentials.");
-    return issue(user, kind);
-  }
-  export async function refresh(kind: IShoppingAuth.Actor, body: IShoppingAuth.IRefresh): Promise<IShoppingAuth.IAuthorized> {
-    const session = await MyGlobal.prisma.shopping_sessions.findUnique({
-      where: { refresh_token: body.refreshToken },
-      include: { user: true },
-    });
-    if (!session || session.revoked || session.expires_at <= now() || session.user.kind !== kind || session.user.deleted_at || session.user.banned) throw ErrorUtil.unauthorized(
-      "The refresh session is invalid.",
-    );
-    const claimed = await MyGlobal.prisma.shopping_sessions.updateMany({
-      where: { id: session.id, revoked: false },
-      data: { revoked: true },
-    });
-    if (claimed.count !== 1) throw ErrorUtil.unauthorized("The refresh session is invalid.");
-    return issue(session.user, kind);
-  }
-  export async function recoveryRequest(kind: IShoppingAuth.Actor, body: IShoppingAuth.IRecoveryRequest): Promise<IShoppingAuth.IRecoveryChallenge> {
-    const user = await MyGlobal.prisma.shopping_users.findUnique({ where: { kind_email: { kind, email: body.email.trim().toLowerCase() } } });
-    if (!user || user.deleted_at || user.banned) throw ErrorUtil.unauthorized("Recovery is unavailable for these credentials.");
-    const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
-    const token = uuid();
-    await MyGlobal.prisma.shopping_recovery_tokens.create({ data: { id: uuid(), shopping_user_id: user.id, token, expires_at: expiresAt, created_at: now() } });
-    return { token, expiresAt: expiresAt.toISOString() };
-  }
-  export async function recoveryComplete(kind: IShoppingAuth.Actor, body: IShoppingAuth.IRecoveryComplete): Promise<IEntity> {
-    const challenge = await MyGlobal.prisma.shopping_recovery_tokens.findUnique({ where: { token: body.token }, include: { user: true } });
-    if (!challenge || challenge.used || challenge.expires_at <= now() || challenge.user.kind !== kind || challenge.user.deleted_at || challenge.user.banned) throw ErrorUtil.unauthorized("The recovery challenge is invalid or expired.");
-    await MyGlobal.prisma.$transaction(async (tx) => {
-      const claimed = await tx.shopping_recovery_tokens.updateMany({
-        where: { id: challenge.id, used: false, expires_at: { gt: now() } },
-        data: { used: true },
-      });
-      if (claimed.count !== 1) throw ErrorUtil.unauthorized("The recovery challenge is invalid or expired.");
-      const current = await tx.shopping_users.findUnique({ where: { id: challenge.user.id } });
-      if (!current || current.kind !== kind || current.deleted_at || current.banned) throw ErrorUtil.unauthorized("The recovery identity is unavailable.");
-      await tx.shopping_users.update({ where: { id: current.id }, data: { password_hash: hash(body.newPassword), updated_at: now() } });
-      await tx.shopping_sessions.updateMany({ where: { shopping_user_id: current.id }, data: { revoked: true } });
-    });
-    return { id: challenge.user.id };
-  }
-  export async function logout(payload: AuthPayload): Promise<IEntity> {
-    await MyGlobal.prisma.shopping_sessions.updateMany({
-      where: { id: payload.session_id },
-      data: { revoked: true },
-    });
-    return { id: payload.id };
-  }
-  export async function logoutAll(payload: AuthPayload): Promise<IEntity> {
-    await MyGlobal.prisma.shopping_sessions.updateMany({
-      where: { shopping_user_id: payload.id },
-      data: { revoked: true },
-    });
-    return { id: payload.id };
-  }
-  export async function changePassword(payload: AuthPayload, body: IShoppingAuth.IPasswordChange): Promise<IEntity> {
-    const user = await userById(payload.id, payload.type);
-    if (!verify(body.currentPassword, user.password_hash))
-      throw ErrorUtil.unauthorized("The current password is incorrect.");
-    await MyGlobal.prisma.$transaction([
-      MyGlobal.prisma.shopping_users.update({
-        where: { id: user.id },
-        data: { password_hash: hash(body.newPassword), updated_at: now() },
-      }),
-      MyGlobal.prisma.shopping_sessions.updateMany({
-        where: { shopping_user_id: user.id, id: { not: payload.session_id } },
-        data: { revoked: true },
-      }),
-    ]);
-    return { id: user.id };
-  }
-  export async function deleteAccount(payload: AuthPayload, body: IShoppingAuth.IAccountDelete): Promise<IEntity> {
-    const user = await userById(payload.id, payload.type);
-    if (!verify(body.password, user.password_hash))
-      throw ErrorUtil.unauthorized("The current password is incorrect.");
-    const grades = parseGrades(user.grades);
-    if (grades.includes("superAdministrator")) {
-      const remaining = await MyGlobal.prisma.shopping_users.count({
-        where: {
-          id: { not: user.id },
-          deleted_at: null,
-          banned: false,
-          grades: { contains: "superAdministrator" },
-        },
-      });
-      if (remaining === 0) throw ErrorUtil.conflict("The final super administrator cannot be deleted.");
-    }
-    if (user.kind === "seller") {
-      const [activeItems, pendingRequests] = await Promise.all([
-        MyGlobal.prisma.shopping_order_items.count({
-          where: { shopping_seller_id: user.id, status: { in: ["paid", "shipped"] } },
-        }),
-        MyGlobal.prisma.shopping_requests.count({
-          where: { status: "pending", item: { shopping_seller_id: user.id } },
-        }),
-      ]);
-      if (activeItems || pendingRequests)
-        throw ErrorUtil.conflict("Commercial obligations must be resolved before seller closure.");
-    }
-    const retiredEmail = `deleted-${user.id}@deleted.invalid`;
-    await MyGlobal.prisma.$transaction(async (tx) => {
-      const current = await tx.shopping_users.findUnique({ where: { id: user.id } });
-      if (!current || current.deleted_at || current.banned) throw ErrorUtil.conflict("The identity is unavailable.");
-      if (!verify(body.password, current.password_hash))
-        throw ErrorUtil.unauthorized("The current password is incorrect.");
-      const gradesNow = parseGrades(current.grades);
-      if (gradesNow.includes("superAdministrator")) {
-        const remaining = await tx.shopping_users.count({ where: { id: { not: current.id }, deleted_at: null, banned: false, grades: { contains: "superAdministrator" } } });
-        if (remaining === 0) throw ErrorUtil.conflict("The final super administrator cannot be deleted.");
-      }
-      if (current.kind === "seller") {
-        const [active, pending] = await Promise.all([
-          tx.shopping_order_items.count({ where: { shopping_seller_id: current.id, status: { in: ["paid", "shipped"] } } }),
-          tx.shopping_requests.count({ where: { status: "pending", item: { shopping_seller_id: current.id } } }),
-        ]);
-        if (active || pending) throw ErrorUtil.conflict("Commercial obligations must be resolved before seller closure.");
-      }
-      await tx.shopping_sessions.updateMany({ where: { shopping_user_id: user.id }, data: { revoked: true } });
-      if (current.kind === "customer") {
-        await tx.shopping_addresses.deleteMany({ where: { shopping_user_id: user.id } });
-        await tx.shopping_cart_lines.deleteMany({ where: { shopping_user_id: user.id } });
-        await tx.shopping_wishlists.deleteMany({ where: { shopping_user_id: user.id } });
-      } else {
-        await tx.shopping_seller_profile_snapshots.create({ data: { id: uuid(), shopping_seller_id: user.id, before_json: JSON.stringify({ shopName: current.shop_name ?? "", shopDescription: current.shop_description ?? "", shopLogo: current.shop_logo }), after_json: JSON.stringify({ deleted: true }), changed_fields: "deleted", created_at: now() } });
-        const sellerProducts = await tx.shopping_products.findMany({ where: { shopping_seller_id: user.id, deleted_at: null }, include: { images: true, variants: { where: { deleted_at: null } } } });
-        for (const product of sellerProducts) {
-          const variantIds = product.variants.map((v) => v.id);
-          if (variantIds.length) await tx.shopping_inventory_movements.deleteMany({ where: { shopping_variant_id: { in: variantIds } } });
-          await tx.shopping_product_images.deleteMany({ where: { shopping_product_id: product.id } });
-          await tx.shopping_variants.updateMany({ where: { shopping_product_id: product.id, deleted_at: null }, data: { deleted_at: now(), updated_at: now() } });
-          await tx.shopping_products.update({ where: { id: product.id }, data: { deleted_at: now(), updated_at: now() } });
-          await tx.shopping_product_snapshots.create({ data: { id: uuid(), shopping_product_id: product.id, before_json: JSON.stringify(product), after_json: JSON.stringify({ deleted: true }), changed_fields: "seller_deleted", created_at: now() } });
-        }
-        await tx.shopping_wishlists.deleteMany({ where: { product: { shopping_seller_id: user.id } } });
-      }
-      await tx.shopping_users.update({
-        where: { id: user.id },
-        data: {
-          email: retiredEmail,
-          password_hash: hash(uuid()),
-          display_name: null,
-          phone: null,
-          shop_name: null,
-          shop_description: null,
-          shop_logo: null,
-          grades: "",
-          deleted_at: now(),
-          updated_at: now(),
-        },
-      });
-    });
-    return { id: user.id };
-  }
-  async function issue(user: User, kind: IShoppingAuth.Actor): Promise<IShoppingAuth.IAuthorized> {
-    const access = uuid();
-    const refreshToken = uuid();
-    await MyGlobal.prisma.shopping_sessions.create({
-      data: {
-        id: uuid(),
-        shopping_user_id: user.id,
-        token: access,
-        refresh_token: refreshToken,
-        created_at: now(),
-        expires_at: new Date(
-          Date.now() + Number(MyGlobal.env.JWT_REFRESH_TTL_SECONDS) * 1000,
-        ),
-      },
-    });
-    return { id: user.id, type: kind, token: access, refreshToken };
-  }
-
-  export async function customerProfile(payload: AuthPayload): Promise<IShoppingCustomerProfile.IDetail> {
-    const user = await userById(payload.id, "customer");
-    return {
-      id: user.id,
-      displayName: user.display_name ?? "",
-      phone: user.phone ?? "",
-    };
-  }
-  export async function updateCustomerProfile(payload: AuthPayload, body: IShoppingCustomerProfile.IUpdate): Promise<IShoppingCustomerProfile.IDetail> {
-    const user = await userById(payload.id, "customer");
-    const result = await MyGlobal.prisma.shopping_users.update({
-      where: { id: user.id },
-      data: {
-        display_name: body.displayName,
-        phone: body.phone,
-        updated_at: now(),
-      },
-    });
-    return {
-      id: result.id,
-      displayName: result.display_name ?? "",
-      phone: result.phone ?? "",
-    };
-  }
-  export async function addresses(payload: AuthPayload, input: IPage.IRequest = {}): Promise<IPage<IShoppingAddress.IDetail>> {
-    await userById(payload.id, "customer");
-    const [total, rows] = await Promise.all([
-      MyGlobal.prisma.shopping_addresses.count({
-        where: { shopping_user_id: payload.id },
-      }),
-      MyGlobal.prisma.shopping_addresses.findMany({
-        where: { shopping_user_id: payload.id },
-        orderBy: [{ created_at: "asc" }, { id: "asc" }],
-        skip: ((input.page ?? 1) - 1) * (input.limit ?? 100),
-        take: input.limit === 0 ? undefined : (input.limit ?? 100),
-      }),
-    ]);
-    return page(rows.map(address), total, input);
-  }
-  export async function addressCreate(payload: AuthPayload, body: IShoppingAddress.ICreate): Promise<IShoppingAddress.IDetail> {
-    await userById(payload.id, "customer");
-    const data = completeAddress(body);
-    const row = await MyGlobal.prisma.shopping_addresses.create({
-      data: {
-        id: uuid(),
-        shopping_user_id: payload.id,
-        ...data,
-        created_at: now(),
-        updated_at: now(),
-      },
-    });
-    return address(row);
-  }
-  export async function addressUpdate(payload: AuthPayload, id: string, body: IShoppingAddress.IUpdate): Promise<IShoppingAddress.IDetail> {
-    await userById(payload.id, "customer");
-    const row = await ownedAddress(payload.id, id);
-    const data = completeAddress(body);
-    return address(
-      await MyGlobal.prisma.shopping_addresses.update({ where: { id: row.id }, data: { ...data, updated_at: now() } }),
-    );
-  }
-  export async function addressDelete(payload: AuthPayload, id: string): Promise<IEntity> {
-    await userById(payload.id, "customer");
-    await ownedAddress(payload.id, id);
-    await MyGlobal.prisma.shopping_addresses.delete({ where: { id } });
-    return { id };
-  }
-  export async function addressDefault(payload: AuthPayload, id: string): Promise<IShoppingAddress.IDetail> {
-    await userById(payload.id, "customer");
-    const row = await ownedAddress(payload.id, id);
-    await MyGlobal.prisma.$transaction([
-      MyGlobal.prisma.shopping_addresses.updateMany({
-        where: { shopping_user_id: payload.id },
-        data: { is_default: false },
-      }),
-      MyGlobal.prisma.shopping_addresses.update({
-        where: { id: row.id },
-        data: { is_default: true },
-      }),
-    ]);
-    return address({ ...row, is_default: true });
-  }
-
-  export async function sellerProfile(payload: AuthPayload): Promise<IShoppingSellerProfile.IDetail> {
-    const u = await userById(payload.id, "seller");
-    return seller(u);
-  }
-  export async function updateSellerProfile(payload: AuthPayload, body: IShoppingSellerProfile.IUpdate): Promise<IShoppingSellerProfile.IDetail> {
-    const u = await userById(payload.id, "seller");
-    if (!body.shopName.trim() || !body.shopDescription.trim()) throw ErrorUtil.unprocessable("Seller profile fields cannot be blank.");
-    const before = { shopName: u.shop_name ?? "", shopDescription: u.shop_description ?? "", shopLogo: u.shop_logo };
-    const after = { shopName: body.shopName.trim(), shopDescription: body.shopDescription.trim(), shopLogo: body.shopLogo?.trim() || null };
-    const changedFields = (Object.keys(before) as (keyof typeof before)[])
-      .filter((key) => JSON.stringify(before[key]) !== JSON.stringify(after[key]))
-      .map((key) => key.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`))
-      .join(",");
-    if (!changedFields) return seller(u);
-    const r = await MyGlobal.prisma.$transaction(async (tx) => {
-      const updated = await tx.shopping_users.update({ where: { id: u.id }, data: { shop_name: after.shopName, shop_description: after.shopDescription, shop_logo: after.shopLogo, updated_at: now() } });
-      await tx.shopping_seller_profile_snapshots.create({ data: { id: uuid(), shopping_seller_id: u.id, before_json: JSON.stringify(before), after_json: JSON.stringify(after), changed_fields: changedFields, created_at: now() } });
-      return updated;
-    });
-    return seller(r);
-  }
-  export async function sellerProfileSnapshots(payload: AuthPayload, input: IPage.IRequest, sellerId?: string): Promise<IPage<IShoppingSellerProfile.ISnapshot>> {
-    const actor = await userById(payload.id);
-    const targetId = sellerId ?? actor.id;
-    if (sellerId) await requireAdminInternal(payload);
-    else if (actor.kind !== "seller") throw ErrorUtil.forbidden("Only the owning seller may inspect these snapshots.");
-    const target = await MyGlobal.prisma.shopping_users.findUnique({ where: { id: targetId } });
-    if (!target || target.kind !== "seller") throw ErrorUtil.notFound("No such seller.");
-    const [total, rows] = await Promise.all([
-      MyGlobal.prisma.shopping_seller_profile_snapshots.count({ where: { shopping_seller_id: targetId } }),
-      MyGlobal.prisma.shopping_seller_profile_snapshots.findMany({ where: { shopping_seller_id: targetId }, orderBy: [{ created_at: "desc" }, { id: "desc" }], skip: ((input.page ?? 1) - 1) * (input.limit ?? 100), take: input.limit === 0 ? undefined : (input.limit ?? 100) }),
-    ]);
-    return page(rows.map((row) => ({ id: row.id, sellerId: row.shopping_seller_id, changedFields: row.changed_fields, before: row.before_json, after: row.after_json, createdAt: row.created_at.toISOString() })), total, input);
-  }
-  export async function publicSeller(payload: AuthPayload, id: string): Promise<IShoppingSellerProfile.IDetail> {
-    await userById(payload.id, "customer");
-    const selected = await userById(id, "seller", false);
-    if (selected.deleted_at) throw ErrorUtil.notFound("No such seller profile.");
-    return seller(selected);
-  }
-  export async function sellerApproval(payload: AuthPayload): Promise<IShoppingSellerApproval.IDetail> {
-    const u = await userById(payload.id, "seller");
-    const a = await MyGlobal.prisma.shopping_seller_approvals.findFirst({
-      where: { shopping_seller_id: u.id },
-      orderBy: { created_at: "desc" },
-      include: { seller: true },
-    });
-    if (!a) throw ErrorUtil.notFound("No approval request.");
-    return approval(a);
-  }
-  export async function sellerResubmit(payload: AuthPayload): Promise<IShoppingSellerApproval.IDetail> {
-    const u = await userById(payload.id, "seller");
-    if (u.approval_status !== "rejected") throw ErrorUtil.conflict(
-      "Only a rejected seller may resubmit.",
-    );
-    const a = await MyGlobal.prisma.$transaction(async (tx) => {
-      const changed = await tx.shopping_users.updateMany({
-        where: { id: u.id, approval_status: "rejected", deleted_at: null, banned: false },
-        data: { approval_status: "pending", rejection_reason: null, updated_at: now() },
-      });
-      if (changed.count !== 1) throw ErrorUtil.conflict("Only a rejected seller may resubmit.");
-      return tx.shopping_seller_approvals.create({
-        data: { id: uuid(), shopping_seller_id: u.id, status: "pending", created_at: now() },
-        include: { seller: true },
-      });
-    });
-    return approval(a);
-  }
-  export async function sellerApprovals(payload: AuthPayload, input: IPage.IRequest): Promise<IPage<IShoppingSellerApproval.IDetail>> {
-    await requireAdmin(payload);
-    const [total, rows] = await Promise.all([
-      MyGlobal.prisma.shopping_seller_approvals.count({ where: { status: "pending" } }),
-      MyGlobal.prisma.shopping_seller_approvals.findMany({ where: { status: "pending" }, include: { seller: true }, orderBy: [{ created_at: "asc" }, { id: "asc" }], skip: ((input.page ?? 1) - 1) * (input.limit ?? 100), take: input.limit === 0 ? undefined : (input.limit ?? 100) }),
-    ]);
-    return page(rows.map(approval), total, input);
-  }
-  export async function sellerDecision(payload: AuthPayload, id: string, approve: boolean, reason?: string): Promise<IShoppingSellerApproval.IDetail> {
-    await requireAdmin(payload);
-    const row = await MyGlobal.prisma.shopping_seller_approvals.findUnique({ where: { id }, include: { seller: true } });
-    if (!row || row.status !== "pending") throw ErrorUtil.notFound("No pending seller approval.");
-    if (!approve && !reason?.trim()) throw ErrorUtil.unprocessable("A rejection reason is required.");
-    const status = approve ? "approved" : "rejected";
-    const decisionReason = approve ? null : reason!.trim();
-    const updated = await MyGlobal.prisma.$transaction(async (tx) => {
-      const resultRows = await tx.shopping_seller_approvals.updateMany({ where: { id, status: "pending" }, data: { status, reason: decisionReason, decided_at: now(), decided_by_id: payload.id } });
-      if (resultRows.count !== 1) throw ErrorUtil.conflict("The seller approval has already been decided.");
-      const result = await tx.shopping_seller_approvals.findUniqueOrThrow({ where: { id }, include: { seller: true } });
-      await tx.shopping_users.update({ where: { id: row.shopping_seller_id }, data: { approval_status: status, rejection_reason: decisionReason, updated_at: now() } });
-      return result;
-    });
-    return approval(updated);
-  }
-  export async function sellerSuspend(payload: AuthPayload, id: string, suspended: boolean): Promise<IShoppingSellerProfile.IDetail> {
-    await requireAdmin(payload);
-    const sellerUser = await userById(id, "seller", false);
-    if (sellerUser.deleted_at) throw ErrorUtil.notFound("No such seller.");
-    if (sellerUser.suspended === suspended) throw ErrorUtil.conflict(suspended ? "The seller is already suspended." : "The seller is not suspended.");
-    if (suspended && sellerUser.approval_status !== "approved") throw ErrorUtil.conflict("Only an approved seller may be suspended.");
-    const updated = await MyGlobal.prisma.$transaction(async (tx) => {
-      const changed = await tx.shopping_users.updateMany({ where: { id, suspended: !suspended, deleted_at: null, ...(suspended ? { approval_status: "approved" } : {}) }, data: { suspended, updated_at: now() } });
-      if (changed.count !== 1) throw ErrorUtil.conflict("The seller suspension state changed during moderation.");
-      return tx.shopping_users.findUniqueOrThrow({ where: { id } });
-    });
-    return seller(updated);
-  }
-
-  export async function categoryCreate(payload: AuthPayload, body: IShoppingCategory.ICreate): Promise<IShoppingCategory.IDetail> {
-    await requireAdmin(payload);
-    const name = body.name.trim();
-    const description = body.description.trim();
-    if (!name || !description) throw ErrorUtil.unprocessable("Category name and description are required.");
-    if (body.parentId) {
-      const parent = await MyGlobal.prisma.shopping_categories.findUnique({
-        where: { id: body.parentId },
-      });
-      if (!parent || parent.parent_id) throw ErrorUtil.unprocessable(
-        "Categories may only be nested one level deep.",
-      );
-    }
-    const r = await MyGlobal.prisma.shopping_categories.create({
-      data: {
-        id: uuid(),
-        name,
-        description,
-        parent_id: body.parentId ?? null,
-        created_at: now(),
-        updated_at: now(),
-      },
-    });
-    return category(r, []);
-  }
-  export async function categoryUpdate(payload: AuthPayload, id: string, body: IShoppingCategory.IUpdate): Promise<IShoppingCategory.IDetail> {
-    await requireAdmin(payload);
-    await categoryExists(id);
-    const name = body.name.trim();
-    const description = body.description.trim();
-    if (!name || !description) throw ErrorUtil.unprocessable("Category name and description are required.");
-    const r = await MyGlobal.prisma.shopping_categories.update({
-      where: { id },
-      data: {
-        name,
-        description,
-        updated_at: now(),
-      },
-    });
-    return category(r, []);
-  }
-  export async function categoryDelete(payload: AuthPayload, id: string): Promise<IEntity> {
-    await requireAdmin(payload);
-    await categoryExists(id);
-    await MyGlobal.prisma.$transaction(async (tx) => {
-      const descendants = await tx.shopping_categories.findMany({
-        where: { parent_id: id },
-        select: { id: true },
-      });
-      await tx.shopping_products.updateMany({
-        where: { shopping_category_id: { in: [id, ...descendants.map((row) => row.id)] } },
-        data: { shopping_category_id: null, updated_at: now() },
-      });
-      await tx.shopping_categories.delete({ where: { id } });
-    });
-    return { id };
-  }
-  export async function categories(payload: AuthPayload): Promise<IShoppingCategory.IDetail[]> {
-    await userById(payload.id, "customer");
-    const rows = await MyGlobal.prisma.shopping_categories.findMany({
-      where: { parent_id: null },
-      include: { children: true },
-      orderBy: [{ name: "asc" }, { id: "asc" }],
-    });
-    return rows.map((r) => category(r, r.children));
-  }
-  export async function categoryProducts(payload: AuthPayload, categoryId: string, input: IShoppingProduct.IRequest): Promise<IPage<IShoppingProduct.ISummary>> {
-    await categoryExists(categoryId);
-    return products(payload, { ...input, categoryId });
-  }
-
-  export async function productCreate(payload: AuthPayload, body: IShoppingProduct.ICreate): Promise<IShoppingProduct.IDetail> {
-    const seller = await eligibleSeller(payload);
-    const productInput = completeProduct(body);
-    if (!productInput.categoryId) throw ErrorUtil.unprocessable("A live category is required.");
-    await categoryExists(productInput.categoryId);
-    const r = await MyGlobal.prisma.shopping_products.create({
-      data: {
-        id: uuid(),
-        shopping_seller_id: seller.id,
-        shopping_category_id: productInput.categoryId ?? null,
-        name: productInput.name,
-        description: productInput.description,
-        base_price: productInput.basePrice,
-        created_at: now(),
-        updated_at: now(),
-      },
-    });
-    return productDetail(r.id);
-  }
-  export async function productUpdate(payload: AuthPayload, id: string, body: IShoppingProduct.IUpdate): Promise<IShoppingProduct.IDetail> {
-    const seller = await eligibleSeller(payload);
-    const p = await ownedProduct(seller.id, id);
-    const before = JSON.stringify(await productAggregate(p.id));
-    const productInput = completeProduct(body);
-    if (!productInput.categoryId) throw ErrorUtil.unprocessable("A live category is required.");
-    await categoryExists(productInput.categoryId);
-    await MyGlobal.prisma.$transaction(async (tx) => {
-      await tx.shopping_products.update({
-        where: { id: p.id },
-        data: {
-          name: productInput.name,
-          description: productInput.description,
-          base_price: productInput.basePrice,
-          shopping_category_id: productInput.categoryId,
-          updated_at: now(),
-        },
-      });
-      await snapshotTx(tx, p.id, "name,description,basePrice,categoryId", before);
-    });
-    return productDetail(p.id);
-  }
-  export async function imageUpload(payload: AuthPayload, productId: string, body: IShoppingProduct.IImageCreate): Promise<IShoppingProduct.IDetail> {
-    const seller = await eligibleSeller(payload);
-    const p = await ownedProduct(seller.id, productId);
-    const before = JSON.stringify(await productAggregate(p.id));
-    const uri = body.uri.trim();
-    if (!uri) throw ErrorUtil.unprocessable("Image URI is required.");
-    await MyGlobal.prisma.$transaction(async (tx) => {
-      const last = await tx.shopping_product_images.findFirst({ where: { shopping_product_id: p.id }, orderBy: { sequence: "desc" } });
-      await tx.shopping_product_images.create({ data: { id: uuid(), shopping_product_id: p.id, uri, sequence: (last?.sequence ?? -1) + 1, created_at: now() } });
-      await snapshotTx(tx, p.id, "images", before);
-    });
-    return productDetail(p.id);
-  }
-  export async function imageReorder(payload: AuthPayload, productId: string, body: IShoppingProduct.IImageReorder): Promise<IShoppingProduct.IDetail> {
-    const seller = await eligibleSeller(payload);
-    const p = await ownedProduct(seller.id, productId);
-    const before = JSON.stringify(await productAggregate(p.id));
-    await MyGlobal.prisma.$transaction(async (tx) => {
-      const rows = await tx.shopping_product_images.findMany({ where: { shopping_product_id: p.id } });
-      if (rows.length !== body.imageIds.length || new Set(body.imageIds).size !== rows.length || rows.some((r) => !body.imageIds.includes(r.id))) throw ErrorUtil.unprocessable("The image order must contain every image exactly once.");
-      await tx.shopping_product_images.updateMany({ where: { shopping_product_id: p.id }, data: { sequence: { increment: 1000000 } } });
-      for (const [sequence, id] of body.imageIds.entries()) await tx.shopping_product_images.update({ where: { id }, data: { sequence } });
-      await snapshotTx(tx, p.id, "images", before);
-    });
-    return productDetail(p.id);
-  }
-  export async function imageDelete(payload: AuthPayload, productId: string, imageId: string): Promise<IShoppingProduct.IDetail> {
-    const seller = await eligibleSeller(payload);
-    const p = productId
-      ? await ownedProduct(seller.id, productId)
-      : await MyGlobal.prisma.shopping_products.findFirst({ where: { seller: { id: seller.id }, images: { some: { id: imageId } }, deleted_at: null } })
-        ?? (() => { throw ErrorUtil.notFound("No such product."); })();
-    const before = JSON.stringify(await productAggregate(p.id));
-    const image = await MyGlobal.prisma.shopping_product_images.findFirst({ where: { id: imageId, shopping_product_id: p.id } });
-    if (!image) throw ErrorUtil.notFound("No such product image.");
-    await MyGlobal.prisma.$transaction(async (tx) => {
-      await tx.shopping_product_images.delete({ where: { id: image.id } });
-      const remaining = await tx.shopping_product_images.findMany({ where: { shopping_product_id: p.id }, orderBy: { sequence: "asc" } });
-      await tx.shopping_product_images.updateMany({ where: { shopping_product_id: p.id }, data: { sequence: { increment: 1000000 } } });
-      for (const [sequence, row] of remaining.entries()) await tx.shopping_product_images.update({ where: { id: row.id }, data: { sequence } });
-      await snapshotTx(tx, p.id, "images", before);
-    });
-    return productDetail(p.id);
-  }
-  export async function productDelete(payload: AuthPayload, id: string): Promise<IEntity> {
-    const seller = await eligibleSeller(payload);
-    const product = await ownedProduct(seller.id, id);
-    const before = JSON.stringify(await productAggregate(product.id));
-    const [activeItems, pendingRequests] = await Promise.all([
-      MyGlobal.prisma.shopping_order_items.count({ where: { product_id: product.id, status: { in: ["paid", "shipped"] } } }),
-      MyGlobal.prisma.shopping_requests.count({ where: { status: "pending", item: { product_id: product.id } } }),
-    ]);
-    if (activeItems || pendingRequests) throw ErrorUtil.conflict("Commercial obligations must be resolved before product deletion.");
-    await MyGlobal.prisma.$transaction(async (tx) => {
-      const [activeAtCommit, pendingAtCommit] = await Promise.all([
-        tx.shopping_order_items.count({ where: { product_id: product.id, status: { in: ["paid", "shipped"] } } }),
-        tx.shopping_requests.count({ where: { status: "pending", item: { product_id: product.id } } }),
-      ]);
-      if (activeAtCommit || pendingAtCommit) throw ErrorUtil.conflict("Commercial obligations must be resolved before product deletion.");
-      const variantIds = (await tx.shopping_variants.findMany({ where: { shopping_product_id: product.id, deleted_at: null }, select: { id: true } })).map((v) => v.id);
-      if (variantIds.length) await tx.shopping_inventory_movements.deleteMany({ where: { shopping_variant_id: { in: variantIds } } });
-      await tx.shopping_product_images.deleteMany({ where: { shopping_product_id: product.id } });
-      await tx.shopping_variants.updateMany({ where: { shopping_product_id: product.id, deleted_at: null }, data: { deleted_at: now(), updated_at: now() } });
-      await tx.shopping_products.update({ where: { id: product.id }, data: { deleted_at: now(), updated_at: now() } });
-      await tx.shopping_wishlists.deleteMany({ where: { shopping_product_id: product.id } });
-      await snapshotTx(tx, product.id, "deleted", before);
-    });
-    return { id };
-  }
-  export async function policyDeleteProduct(payload: AuthPayload, id: string, body: IShoppingAdmin.IReason): Promise<IEntity> {
-    await requireAdminInternal(payload);
-    if (!body.reason.trim()) throw ErrorUtil.badRequest("A nonempty policy reason is required.");
-    const product = await MyGlobal.prisma.shopping_products.findFirst({ where: { id, deleted_at: null } });
-    if (!product) throw ErrorUtil.notFound("No such product.");
-    const before = JSON.stringify(await productAggregate(product.id));
-    await MyGlobal.prisma.$transaction(async (tx) => {
-      const variantIds = (await tx.shopping_variants.findMany({ where: { shopping_product_id: id, deleted_at: null }, select: { id: true } })).map((v) => v.id);
-      if (variantIds.length) await tx.shopping_inventory_movements.deleteMany({ where: { shopping_variant_id: { in: variantIds } } });
-      await tx.shopping_product_images.deleteMany({ where: { shopping_product_id: id } });
-      await tx.shopping_variants.updateMany({ where: { shopping_product_id: id, deleted_at: null }, data: { deleted_at: now(), updated_at: now() } });
-      await tx.shopping_products.update({ where: { id }, data: { deleted_at: now(), updated_at: now() } });
-      await tx.shopping_wishlists.deleteMany({ where: { shopping_product_id: id } });
-      await snapshotTx(tx, product.id, "deleted", before);
-      await tx.shopping_admin_actions.create({ data: {
-        id: uuid(), actor_id: payload.id, target_kind: "product", target_id: id,
-        action: "policy_delete_product", reason: body.reason.trim(), outcome_json: JSON.stringify({ productId: id, deleted: true }), created_at: now(),
-      } });
-    });
-    return { id };
-  }
-  export async function productAt(payload: AuthPayload, id: string): Promise<IShoppingProduct.IDetail> {
-    await userById(payload.id, "customer");
-    return productDetail(id);
-  }
-  export async function productSnapshots(payload: AuthPayload, id: string, input: IPage.IRequest, admin: boolean): Promise<IPage<IShoppingProduct.ISnapshot>> {
-    const actor = await userById(payload.id);
-    const product = await MyGlobal.prisma.shopping_products.findUnique({ where: { id } });
-    if (!product) throw ErrorUtil.notFound("No such product.");
-    if (admin) await requireAdminInternal(payload);
-    else if (actor.kind !== "seller" || product.shopping_seller_id !== actor.id) throw ErrorUtil.forbidden("Only the owning seller may inspect these snapshots.");
-    const [total, rows] = await Promise.all([
-      MyGlobal.prisma.shopping_product_snapshots.count({ where: { shopping_product_id: id } }),
-      MyGlobal.prisma.shopping_product_snapshots.findMany({
-        where: { shopping_product_id: id },
-        orderBy: [{ created_at: "desc" }, { id: "desc" }],
-        skip: ((input.page ?? 1) - 1) * (input.limit ?? 100),
-        take: input.limit === 0 ? undefined : (input.limit ?? 100),
-      }),
-    ]);
-    return page(rows.map((row) => ({ id: row.id, productId: row.shopping_product_id, changedFields: row.changed_fields, createdAt: row.created_at.toISOString(), before: row.before_json, after: row.after_json, payload: row.after_json })), total, input);
-  }
-  export async function adminProducts(payload: AuthPayload, input: IShoppingProduct.IRequest): Promise<IPage<IShoppingProduct.ISummary>> {
-    await requireAdminInternal(payload);
-    const where: Prisma.shopping_productsWhereInput = {
-      deleted_at: null,
-      ...(input.search ? { OR: [{ name: { contains: input.search } }, { description: { contains: input.search } }] } : {}),
-      ...(input.categoryId ? { shopping_category_id: input.categoryId } : {}),
-      ...(input.sellerId ? { shopping_seller_id: input.sellerId } : {}),
-    };
-    const [total, rows] = await Promise.all([
-      MyGlobal.prisma.shopping_products.count({ where }),
-      MyGlobal.prisma.shopping_products.findMany({ where, include: { seller: true, images: { orderBy: { sequence: "asc" } }, variants: { where: { deleted_at: null }, include: { movements: true } }, reviews: { where: { deleted_at: null } } }, orderBy: [{ created_at: "desc" }, { id: "desc" }], skip: ((input.page ?? 1) - 1) * (input.limit ?? 100), take: input.limit === 0 ? undefined : (input.limit ?? 100) }),
-    ]);
-    return page(rows.map(summary), total, input);
-  }
-  export async function adminProductAt(payload: AuthPayload, id: string): Promise<IShoppingProduct.IDetail> {
-    await requireAdminInternal(payload);
-    return productDetail(id);
-  }
-  export async function products(payload: AuthPayload, input: IShoppingProduct.IRequest): Promise<IPage<IShoppingProduct.ISummary>> {
-    await userById(payload.id, "customer");
-    validateDiscoveryInput(input);
-    if (input.categoryId) await categoryExists(input.categoryId);
-    bindPaginationContext(payload.id, "products", input, {
-      search: input.search?.trim().toLocaleLowerCase() ?? null,
-      categoryId: input.categoryId ?? null,
-      sellerId: input.sellerId ?? null,
-      minPrice: input.minPrice ?? null,
-      maxPrice: input.maxPrice ?? null,
-      inStock: input.inStock ?? null,
-      sort: input.sort ?? "newest",
-      limit: input.limit ?? 100,
-    });
-    const where: Prisma.shopping_productsWhereInput = {
-    deleted_at: null,
-      seller: { banned: false, suspended: false, deleted_at: null, approval_status: "approved" },
-    ...(input.categoryId ? { shopping_category_id: input.categoryId } : {}),
-    ...(input.sellerId ? { shopping_seller_id: input.sellerId } : {}),
+  const db = (): PrismaClient => MyGlobal.prisma;
+  type SnapshotClient = Pick<PrismaClient, "shopping_products" | "shopping_product_images" | "shopping_variants">;
+  type IdentityClient = Pick<PrismaClient, "shopping_customers" | "shopping_sellers">;
+  type SessionClient = Pick<PrismaClient, "shopping_customer_sessions" | "shopping_seller_sessions">;
+  type AuthorityClient = IdentityClient & Pick<PrismaClient, "shopping_administrator_grades">;
+  const now = (): Date => new Date();
+  const id = (): string => randomUUID();
+  const text = (value: string, label: string): string => {
+    if (value.trim().length === 0) throw ErrorUtil.unprocessable(`${label} must not be blank.`);
+    return value.trim();
   };
-    const rows = await MyGlobal.prisma.shopping_products.findMany({
-        where,
-        include: {
-          seller: true,
-          images: { orderBy: { sequence: "asc" } },
-          variants: {
-            where: { deleted_at: null },
-            include: { movements: true },
-          },
-          reviews: { where: { deleted_at: null } },
-        },
-      });
-    return discoverPage(rows, input);
-  }
-  export async function variantCreate(payload: AuthPayload, productId: string, body: IShoppingProduct.IVariantCreate): Promise<IShoppingProduct.IDetail> {
-    const seller = await eligibleSeller(payload);
-    const p = await ownedProduct(seller.id, productId);
-    const before = JSON.stringify(await productAggregate(p.id));
-    const variantInput = normalizeVariant(body);
-    await validateVariantInput(p.id, variantInput);
-    await MyGlobal.prisma.$transaction(async (tx) => {
-      await tx.shopping_variants.create({
-        data: {
-          id: uuid(),
-          shopping_product_id: p.id,
-          sku: variantInput.sku,
-          options_json: JSON.stringify(variantInput.options),
-          price_override: variantInput.priceOverride ?? null,
-          created_at: now(),
-          updated_at: now(),
-        },
-      });
-      await snapshotTx(tx, p.id, "variant", before);
-    });
-    return productDetail(p.id);
-  }
-  export async function variantUpdate(payload: AuthPayload, productId: string, variantId: string, body: IShoppingProduct.IVariantUpdate): Promise<IShoppingProduct.IDetail> {
-    const seller = await eligibleSeller(payload);
-    const p = await ownedProduct(seller.id, productId);
-    await variantOwned(p.id, variantId);
-    const before = JSON.stringify(await productAggregate(p.id));
-    const variantInput = normalizeVariant(body);
-    await validateVariantInput(p.id, variantInput, variantId);
-    await MyGlobal.prisma.$transaction(async (tx) => {
-      await tx.shopping_variants.update({
-        where: { id: variantId },
-        data: {
-          sku: variantInput.sku,
-          options_json: JSON.stringify(variantInput.options),
-          price_override: variantInput.priceOverride ?? null,
-          updated_at: now(),
-        },
-      });
-      await snapshotTx(tx, p.id, "variant", before);
-    });
-    return productDetail(p.id);
-  }
-  export async function variantDelete(payload: AuthPayload, productId: string, variantId: string): Promise<IShoppingProduct.IDetail> {
-    const seller = await eligibleSeller(payload);
-    const p = await ownedProduct(seller.id, productId);
-    const variant = await variantOwned(p.id, variantId);
-    const before = JSON.stringify(await productAggregate(p.id));
-    const [activeItems, pendingRequests] = await Promise.all([
-      MyGlobal.prisma.shopping_order_items.count({ where: { shopping_variant_id: variant.id, status: { in: ["paid", "shipped"] } } }),
-      MyGlobal.prisma.shopping_requests.count({ where: { status: "pending", item: { shopping_variant_id: variant.id } } }),
-    ]);
-    if (activeItems || pendingRequests) throw ErrorUtil.conflict("Fulfillment or unresolved requests block variant deletion.");
-    await MyGlobal.prisma.$transaction(async (tx) => {
-      const [activeAtCommit, pendingAtCommit] = await Promise.all([
-        tx.shopping_order_items.count({ where: { shopping_variant_id: variant.id, status: { in: ["paid", "shipped"] } } }),
-        tx.shopping_requests.count({ where: { status: "pending", item: { shopping_variant_id: variant.id } } }),
-      ]);
-      if (activeAtCommit || pendingAtCommit) throw ErrorUtil.conflict("Fulfillment or unresolved requests block variant deletion.");
-      await tx.shopping_variants.update({ where: { id: variant.id }, data: { deleted_at: now(), updated_at: now() } });
-      await tx.shopping_inventory_movements.deleteMany({ where: { shopping_variant_id: variant.id } });
-      await snapshotTx(tx, p.id, "variant", before);
-    });
-    return productDetail(p.id);
-  }
-  export async function inventory(payload: AuthPayload, productId: string, variantId: string, input: IShoppingInventory.ICreate): Promise<IShoppingProduct.IDetail> {
-    const seller = await eligibleSeller(payload, true);
-    const v = productId
-      ? await variantOwned(productId, variantId)
-      : await variantOwnedBySeller(seller.id, variantId);
-    const p = await ownedProduct(seller.id, v.shopping_product_id);
-    if (!Number.isInteger(input.quantity) || input.quantity < 1) throw ErrorUtil.unprocessable("Inventory quantity must be a positive whole-number magnitude.");
-    const operation = input.operation ?? "restock";
-    if (!(operation === "restock" || operation === "adjustment" || operation === "loss")) throw ErrorUtil.unprocessable("The inventory operation is unsupported.");
-    const quantity = operation === "restock" ? input.quantity : -input.quantity;
-    const reason = input.reason.trim();
-    if (!reason || /^(purchase|cancellation|refund|admin)\b/i.test(reason)) throw ErrorUtil.unprocessable("Inventory reason is invalid or reserved for an automatic movement.");
-    await MyGlobal.prisma.$transaction(async (tx) => {
-      const movements = await tx.shopping_inventory_movements.findMany({ where: { shopping_variant_id: v.id }, select: { quantity: true } });
-      const holds = await tx.shopping_inventory_holds.findMany({ where: { shopping_variant_id: v.id, status: "held", payment: { status: { in: ["pending", "unknown"] } } }, select: { quantity: true } });
-      const stock = movements.reduce((sum, row) => sum + row.quantity, 0);
-      const held = holds.reduce((sum, row) => sum + row.quantity, 0);
-      if (stock + quantity < held || stock + quantity < 0) throw ErrorUtil.unprocessable("Inventory cannot become negative and movement must be nonzero.");
-      await tx.shopping_inventory_movements.create({ data: { id: uuid(), shopping_variant_id: v.id, quantity, reason, created_at: now() } });
-    });
-    return productDetail(p.id);
-  }
-  export async function inventoryHistory(payload: AuthPayload, productId: string, variantId: string, input: IPage.IRequest): Promise<IShoppingInventory.IHistory> {
-    const seller = await eligibleSeller(payload, true);
-    const v = productId
-      ? await variantOwned(productId, variantId)
-      : await variantOwnedBySeller(seller.id, variantId);
-    const p = await ownedProduct(seller.id, v.shopping_product_id);
-    const [total, rows, movementTotals] = await Promise.all([
-      MyGlobal.prisma.shopping_inventory_movements.count({
-        where: { shopping_variant_id: v.id },
-      }),
-      MyGlobal.prisma.shopping_inventory_movements.findMany({
-        where: { shopping_variant_id: v.id },
-        orderBy: [{ created_at: "desc" }, { id: "desc" }],
-        skip: ((input.page ?? 1) - 1) * (input.limit ?? 100),
-        take: input.limit === 0 ? undefined : (input.limit ?? 100),
-      }),
-      MyGlobal.prisma.shopping_inventory_movements.aggregate({
-        where: { shopping_variant_id: v.id },
-        _sum: { quantity: true },
-      }),
-    ]);
-    return {
-      ...page(
-      rows.map((r) => ({
-        id: r.id,
-        quantity: r.quantity,
-        reason: r.reason,
-        createdAt: r.created_at.toISOString(),
-      })),
-      total,
-      input,
-      ),
-      currentStock: movementTotals._sum.quantity ?? 0,
-    };
+  const date = (value: Date | null): string | null => value?.toISOString() ?? null;
+  const hash = (value: string): string => createHash("sha256").update(value).digest("hex");
+  const token = (): string => `${randomUUID()}.${randomBytes(24).toString("hex")}`;
+  const parseAuth = (authorization?: string): string => {
+    if (authorization === undefined || authorization.trim().length === 0)
+      throw ErrorUtil.unauthorized("Authentication is required.");
+    return authorization.startsWith("Bearer ")
+      ? authorization.slice(7)
+      : authorization;
+  };
+
+  function actorResult(actor: ShoppingActor, accessToken: string, refreshToken: string): api.IShoppingAuthorized {
+    return { actor: { id: actor.id, type: actor.type }, token: { access: accessToken, refresh: refreshToken } };
   }
 
-  export async function cart(payload: AuthPayload): Promise<IShoppingCart.ISummary> {
-    const u = await userById(payload.id, "customer");
-    const rows = await MyGlobal.prisma.shopping_cart_lines.findMany({
-      where: { shopping_user_id: u.id },
-      include: {
-        variant: {
-          include: { product: { include: { seller: true } }, movements: true },
-        },
-      },
-      orderBy: { created_at: "asc" },
+  /** Registers one customer and starts its session. Administrator provisioning is explicit. */
+  export async function customerJoin(body: api.IShoppingCustomer.IJoin): Promise<api.IShoppingAuthorized> {
+    const email = text(body.email, "email");
+    const normalized = email.trim().toLowerCase();
+    if (await db().shopping_customers.findUnique({ where: { email_normalized: normalized } })) throw ErrorUtil.conflict("That customer email is already registered.");
+    const result = await db().$transaction(async (tx) => {
+      const customer = await tx.shopping_customers.create({ data: { id: id(), email, email_normalized: normalized, password_hash: hash(body.password), login_state: "active", created_at: now() } });
+      await tx.shopping_customer_profiles.create({ data: { id: id(), customer_id: customer.id, display_name: "New customer", phone_number: "", updated_at: now() } });
+      const session = await createSession("customer", customer.id, tx);
+      return { customer, session };
     });
-    const lines = rows.map(cartLine);
-    return { lines, total: lines.reduce((sum, line) => sum + line.subtotal, 0) };
-  }
-  export async function cartAdd(payload: AuthPayload, body: IShoppingCart.ICreate): Promise<IShoppingCart.ISummary> {
-    await userById(payload.id, "customer");
-    const v = await MyGlobal.prisma.shopping_variants.findUnique({
-      where: { id: body.variantId },
-      include: { product: { include: { seller: true } }, movements: true },
-    });
-    if (!v || v.deleted_at || v.product.deleted_at || v.product.seller.approval_status !== "approved" || v.product.seller.banned || v.product.seller.suspended || stockFromMovements(v.movements) <= 0) throw ErrorUtil.unprocessable(
-      "That variant is unavailable.",
-    );
-    await MyGlobal.prisma.shopping_cart_lines.upsert({
-      where: {
-        shopping_user_id_shopping_variant_id: {
-          shopping_user_id: payload.id,
-          shopping_variant_id: v.id,
-        },
-      },
-      create: {
-        id: uuid(),
-        shopping_user_id: payload.id,
-        shopping_variant_id: v.id,
-        quantity: body.quantity,
-        created_at: now(),
-        updated_at: now(),
-      },
-      update: { quantity: { increment: body.quantity }, updated_at: now() },
-    });
-    return cart(payload);
-  }
-  export async function cartUpdate(payload: AuthPayload, id: string, body: IShoppingCart.IUpdate): Promise<IShoppingCart.ISummary> {
-    await userById(payload.id, "customer");
-    const line = await MyGlobal.prisma.shopping_cart_lines.findFirst({
-      where: { id, shopping_user_id: payload.id },
-    });
-    if (!line) throw ErrorUtil.notFound("No such cart line.");
-    // A retained unavailable line is deliberately correctable: customers may
-    // reduce its quantity or remove it even after catalog retirement,
-    // suspension, or stock loss.  Availability is reported by `cart`, not a
-    // precondition on this mutation.
-    await MyGlobal.prisma.shopping_cart_lines.update({
-      where: { id },
-      data: { quantity: body.quantity, updated_at: now() },
-    });
-    return cart(payload);
-  }
-  export async function cartDelete(payload: AuthPayload, id: string): Promise<IEntity> {
-    await userById(payload.id, "customer");
-    const line = await MyGlobal.prisma.shopping_cart_lines.findFirst({
-      where: { id, shopping_user_id: payload.id },
-    });
-    if (!line) throw ErrorUtil.notFound("No such cart line.");
-    await MyGlobal.prisma.shopping_cart_lines.delete({ where: { id } });
-    return { id };
-  }
-  export async function wishlist(payload: AuthPayload, input: IPage.IRequest): Promise<IPage<IShoppingWishlist.ISummary>> {
-    await userById(payload.id, "customer");
-    bindPaginationContext(payload.id, "wishlist", input, { limit: input.limit ?? 100 });
-    const where = { shopping_user_id: payload.id };
-    const [total, rows] = await Promise.all([
-      MyGlobal.prisma.shopping_wishlists.count({ where }),
-      MyGlobal.prisma.shopping_wishlists.findMany({
-        where,
-        include: {
-          product: {
-            include: {
-              seller: true,
-              images: { orderBy: { sequence: "asc" } },
-              variants: {
-                where: { deleted_at: null },
-                include: { movements: true },
-              },
-              reviews: { where: { deleted_at: null } },
-            },
-          },
-        },
-        orderBy: [{ created_at: "desc" }, { id: "desc" }],
-        skip: ((input.page ?? 1) - 1) * (input.limit ?? 100),
-        take: input.limit === 0 ? undefined : (input.limit ?? 100),
-      }),
-    ]);
-    return page(
-      rows.map((r) => ({
-        id: r.id,
-        productId: r.product.id,
-        product: summary(r.product),
-        createdAt: r.created_at.toISOString(),
-      })),
-      total,
-      input,
-    );
-  }
-  export async function wishlistAdd(payload: AuthPayload, productId: string): Promise<IEntity> {
-    await userById(payload.id, "customer");
-    await productExists(productId);
-    await MyGlobal.prisma.shopping_wishlists.upsert({
-      where: {
-        shopping_user_id_shopping_product_id: {
-          shopping_user_id: payload.id,
-          shopping_product_id: productId,
-        },
-      },
-      create: {
-        id: uuid(),
-        shopping_user_id: payload.id,
-        shopping_product_id: productId,
-        created_at: now(),
-      },
-      update: {},
-    });
-    return { id: productId };
-  }
-  export async function wishlistDelete(payload: AuthPayload, productId: string): Promise<IEntity> {
-    await userById(payload.id, "customer");
-    const r = await MyGlobal.prisma.shopping_wishlists.findUnique({
-      where: {
-        shopping_user_id_shopping_product_id: {
-          shopping_user_id: payload.id,
-          shopping_product_id: productId,
-        },
-      },
-    });
-    if (!r) throw ErrorUtil.notFound("No such wishlist product.");
-    await MyGlobal.prisma.shopping_wishlists.delete({ where: { id: r.id } });
-    return { id: productId };
+    const customer = result.customer;
+    const session = result.session;
+    return actorResult({ id: customer.id, type: "customer", sessionId: session.id }, session.access, session.refresh);
   }
 
-  export async function orderList(payload: AuthPayload, input: IPage.IRequest): Promise<IPage<IShoppingOrder.ISummary>> {
-    await userById(payload.id, "customer");
-    const [total, rows] = await Promise.all([
-      MyGlobal.prisma.shopping_orders.count({
-        where: { shopping_customer_id: payload.id },
-      }),
-      MyGlobal.prisma.shopping_orders.findMany({
-        where: { shopping_customer_id: payload.id },
-        include: { items: true },
-        orderBy: [{ created_at: "desc" }, { id: "desc" }],
-        skip: ((input.page ?? 1) - 1) * (input.limit ?? 100),
-        take: input.limit === 0 ? undefined : (input.limit ?? 100),
-      }),
-    ]);
-    return page(
-      rows.map((r) => ({
-        id: r.id,
-        orderNumber: r.order_number,
-        total: r.total,
-        status: deriveStatus(r.items.map((i) => i.status)),
-        createdAt: r.created_at.toISOString(),
-        itemCount: r.items.length,
-      })),
-      total,
-      input,
-    );
-  }
-  export async function orderAt(payload: AuthPayload, id: string): Promise<IShoppingOrder.IDetail> {
-    await userById(payload.id, "customer");
-    return orderDetail(id, payload.id);
-  }
-  export async function adminOrderList(payload: AuthPayload, input: IShoppingOrder.IAdminRequest): Promise<IPage<IShoppingAdmin.IOrderSummary>> {
-    await requireAdminInternal(payload);
-    if (input.createdFrom && input.createdTo && new Date(input.createdFrom).getTime() > new Date(input.createdTo).getTime()) throw ErrorUtil.unprocessable("The order date range is invalid.");
-    if (input.status && !["paid", "shipped", "delivered", "cancelled", "refunded", "partially completed"].includes(input.status)) throw ErrorUtil.unprocessable("The order status filter is invalid.");
-    const createdAt: Prisma.DateTimeFilter = {
-      ...(input.createdFrom ? { gte: new Date(input.createdFrom) } : {}),
-      ...(input.createdTo ? { lte: new Date(input.createdTo) } : {}),
-    };
-    const where: Prisma.shopping_ordersWhereInput = {
-      ...(Object.keys(createdAt).length ? { created_at: createdAt } : {}),
-      ...(input.customerId ? { shopping_customer_id: input.customerId } : {}),
-      ...(input.sellerId ? { items: { some: { shopping_seller_id: input.sellerId } } } : {}),
-    };
-    const [total, rows] = await Promise.all([
-      MyGlobal.prisma.shopping_orders.count({ where }),
-      MyGlobal.prisma.shopping_orders.findMany({ where, include: { items: true }, orderBy: [{ created_at: "desc" }, { id: "desc" }], ...(input.status ? {} : { skip: ((input.page ?? 1) - 1) * (input.limit ?? 100), take: input.limit === 0 ? undefined : (input.limit ?? 100) }) }),
-    ]);
-    const filtered = input.status ? rows.filter((row) => deriveStatus(row.items.map((item) => item.status)) === input.status) : rows;
-    const selected = input.status && input.limit !== 0 ? filtered.slice(((input.page ?? 1) - 1) * (input.limit ?? 100), (input.page ?? 1) * (input.limit ?? 100)) : filtered;
-    return page(selected.map((row) => ({ id: row.id, orderNumber: row.order_number, total: row.total, status: deriveStatus(row.items.map((item) => item.status)), createdAt: row.created_at.toISOString(), itemCount: row.items.length, customerId: row.shopping_customer_id, sellerCount: new Set(row.items.map((item) => item.shopping_seller_id)).size })), input.status ? filtered.length : total, input);
-  }
-  export async function adminOrderAt(payload: AuthPayload, id: string): Promise<IShoppingOrder.IDetail> {
-    await requireAdminInternal(payload);
-    return orderDetail(id, undefined, true);
-  }
-  export async function adminActions(payload: AuthPayload, input: IShoppingAdmin.IActionRequest): Promise<IPage<IShoppingAdmin.IAction>> {
-    await requireAdminInternal(payload);
-    const where: Prisma.shopping_admin_actionsWhereInput = {
-      ...(input.targetKind ? { target_kind: input.targetKind } : {}),
-      ...(input.targetId ? { target_id: input.targetId } : {}),
-      ...(input.action ? { action: input.action } : {}),
-    };
-    const [total, rows] = await Promise.all([
-      MyGlobal.prisma.shopping_admin_actions.count({ where }),
-      MyGlobal.prisma.shopping_admin_actions.findMany({ where, orderBy: [{ created_at: "desc" }, { id: "desc" }], skip: ((input.page ?? 1) - 1) * (input.limit ?? 100), take: input.limit === 0 ? undefined : (input.limit ?? 100) }),
-    ]);
-    return page(rows.map((row) => ({ id: row.id, actorId: row.actor_id, targetKind: row.target_kind, targetId: row.target_id, action: row.action, reason: row.reason, outcome: row.outcome_json, createdAt: row.created_at.toISOString() })), total, input);
-  }
-  export async function forceCancelItem(payload: AuthPayload, id: string, body: IShoppingAdmin.IReason): Promise<IShoppingOrder.IDetail> {
-    await requireAdminInternal(payload);
-    await forceTransition([id], "cancelled", body.reason, payload.id, "order_item", id);
-    const itemRow = await MyGlobal.prisma.shopping_order_items.findUnique({ where: { id }, select: { shopping_order_id: true } });
-    if (!itemRow) throw ErrorUtil.notFound("No such order item.");
-    return orderDetail(itemRow.shopping_order_id);
-  }
-  export async function forceCancelOrder(payload: AuthPayload, orderId: string, body: IShoppingAdmin.IReason): Promise<IShoppingOrder.IDetail> {
-    await requireAdminInternal(payload);
-    const order = await MyGlobal.prisma.shopping_orders.findUnique({ where: { id: orderId }, include: { items: true } });
-    if (!order) throw ErrorUtil.notFound("No such order.");
-    const ids = order.items.filter((item) => item.status === "paid" || item.status === "shipped").map((item) => item.id);
-    if (!ids.length) throw ErrorUtil.conflict("No order item is eligible for cancellation.");
-    await forceTransition(ids, "cancelled", body.reason, payload.id, "order", orderId);
-    return orderDetail(order.id);
-  }
-  export async function forceRefundItem(payload: AuthPayload, id: string, body: IShoppingAdmin.IReason): Promise<IShoppingOrder.IDetail> {
-    await requireAdminInternal(payload);
-    await forceTransition([id], "refunded", body.reason, payload.id, "order_item", id);
-    const itemRow = await MyGlobal.prisma.shopping_order_items.findUnique({ where: { id }, select: { shopping_order_id: true } });
-    if (!itemRow) throw ErrorUtil.notFound("No such order item.");
-    return orderDetail(itemRow.shopping_order_id);
-  }
-  export async function forceRefundOrder(payload: AuthPayload, orderId: string, body: IShoppingAdmin.IReason): Promise<IShoppingOrder.IDetail> {
-    await requireAdminInternal(payload);
-    const order = await MyGlobal.prisma.shopping_orders.findUnique({ where: { id: orderId }, include: { items: true } });
-    if (!order) throw ErrorUtil.notFound("No such order.");
-    const ids = order.items.filter((item) => item.status === "paid" || item.status === "shipped" || item.status === "delivered").map((item) => item.id);
-    if (!ids.length) throw ErrorUtil.conflict("No order item is eligible for refund.");
-    await forceTransition(ids, "refunded", body.reason, payload.id, "order", orderId);
-    return orderDetail(order.id);
-  }
-  export async function checkoutStart(payload: AuthPayload, body: IShoppingCheckout.IStart): Promise<IShoppingCheckout.ISummary> {
-    const customer = await userById(payload.id, "customer");
-    const address = body.addressId
-      ? await ownedAddress(customer.id, body.addressId)
-      : await MyGlobal.prisma.shopping_addresses.findFirst({ where: { shopping_user_id: customer.id, is_default: true } })
-        ?? (() => { throw ErrorUtil.conflict("A default address is required."); })();
-    const lines = await MyGlobal.prisma.shopping_cart_lines.findMany({ where: { shopping_user_id: customer.id }, include: { variant: { include: { product: { include: { seller: true } }, movements: true } } } });
-    const eligible = [] as typeof lines;
-    for (const line of lines) {
-      const held = await heldQuantity(line.variant.id);
-      const stock = stockFromMovements(line.variant.movements) - held;
-      if (!line.variant.deleted_at && !line.variant.product.deleted_at && !line.variant.product.seller.deleted_at && !line.variant.product.seller.banned && !line.variant.product.seller.suspended && line.variant.product.seller.approval_status === "approved" && stock >= line.quantity) eligible.push(line);
-    }
-    if (!eligible.length) throw ErrorUtil.unprocessable("The cart has no purchasable lines.");
-    const total = eligible.reduce((sum, line) => sum + effectivePrice(line.variant) * line.quantity, 0);
-    const sessionId = uuid();
-    await MyGlobal.prisma.$transaction(async (tx) => {
-      await tx.shopping_checkout_sessions.create({ data: { id: sessionId, shopping_user_id: customer.id, shopping_address_id: address.id, recipient_name: address.recipient_name, phone: address.phone, street_address: address.street_address, city: address.city, state: address.state, postal_code: address.postal_code, country: address.country, total, status: "review", created_at: now(), updated_at: now() } });
-      await tx.shopping_checkout_lines.createMany({ data: eligible.map((line) => ({ id: uuid(), shopping_checkout_id: sessionId, shopping_variant_id: line.variant.id, product_id: line.variant.product.id, product_name: line.variant.product.name, variant_sku: line.variant.sku, unit_price: effectivePrice(line.variant), quantity: line.quantity })) });
+  /** Authenticates a customer without disclosing whether email or password failed. */
+  export async function customerLogin(body: api.IShoppingCustomer.ILogin): Promise<api.IShoppingAuthorized> {
+    const result = await db().$transaction(async (tx) => {
+      const customer = await tx.shopping_customers.findUnique({ where: { email_normalized: body.email.trim().toLowerCase() } });
+      if (customer === null || customer.deleted_at !== null || customer.login_state !== "active" || customer.password_hash !== hash(body.password)) throw ErrorUtil.unauthorized("Invalid credentials.");
+      const session = await createSession("customer", customer.id, tx);
+      return { customer, session };
     });
-    return checkoutSummary(sessionId, customer.id);
-  }
-  export async function checkoutReview(payload: AuthPayload, id: string): Promise<IShoppingCheckout.ISummary> {
-    await userById(payload.id, "customer");
-    return refreshCheckout(id, payload.id);
-  }
-  export async function checkoutPayment(payload: AuthPayload, id: string, body: IShoppingCheckout.IPayment): Promise<IShoppingCheckout.IPaymentResult> {
-    const customer = await userById(payload.id, "customer");
-    const session = await MyGlobal.prisma.shopping_checkout_sessions.findFirst({ where: { id, shopping_user_id: customer.id }, include: { lines: true } });
-    if (!session) throw ErrorUtil.notFound("No such checkout.");
-    if (body.amount === undefined || body.amount !== session.total) throw ErrorUtil.conflict("The payment amount does not match the reviewed total.");
-    const outcome: "failed" | "succeeded" | "unknown" = body.status
-      ?? (body.succeeded === undefined ? "unknown" : body.succeeded ? "succeeded" : "failed");
-    const existing = await MyGlobal.prisma.shopping_payment_attempts.findUnique({ where: { attempt_key: body.paymentAttemptId } });
-    if (existing && existing.shopping_checkout_id !== session.id) throw ErrorUtil.conflict("That payment attempt belongs to another checkout.");
-    if (existing?.status === "succeeded") {
-      if (outcome !== "succeeded") throw ErrorUtil.conflict("The payment attempt already succeeded with an incompatible outcome.");
-      if (existing.order_id) return { status: "succeeded", checkout: await checkoutSummary(session.id, customer.id), order: await orderDetail(existing.order_id, customer.id) };
-    }
-    if (session.status === "completed") throw ErrorUtil.conflict("That checkout has already completed.");
-    if (existing?.status === "failed") throw ErrorUtil.conflict("That payment attempt is final.");
-    // A terminal failure must always reconcile an existing unknown attempt,
-    // even when the customer's cart has changed since the attempt was held.
-    if (outcome === "failed" && existing?.status === "unknown") {
-      await MyGlobal.prisma.$transaction(async (tx) => {
-        await tx.shopping_payment_attempts.update({ where: { id: existing.id }, data: { status: "failed", amount: body.amount, finalized_at: now() } });
-        await tx.shopping_inventory_holds.updateMany({ where: { shopping_payment_id: existing.id, status: "held" }, data: { status: "released" } });
-        await tx.shopping_checkout_sessions.update({ where: { id: session.id }, data: { status: "payment_failed", updated_at: now() } });
-      });
-      return { status: "failed", checkout: await checkoutSummary(session.id, customer.id) };
-    }
-    const reconcilingUnknown = existing?.status === "unknown";
-    const otherUnresolved = await MyGlobal.prisma.shopping_payment_attempts.findFirst({ where: { shopping_checkout_id: session.id, status: { in: ["unknown", "pending"] }, ...(existing ? { id: { not: existing.id } } : {}) } });
-    if (otherUnresolved) throw ErrorUtil.conflict("Another payment attempt is unresolved; reconcile it before retrying.");
-    const attemptId = existing?.id ?? uuid();
-    const lines = await MyGlobal.prisma.shopping_checkout_lines.findMany({ where: { shopping_checkout_id: session.id }, include: { variant: { include: { product: { include: { seller: true } }, movements: true } } } });
-    if (!lines.length) throw ErrorUtil.conflict("The checkout has no lines.");
-    const cartLines = await MyGlobal.prisma.shopping_cart_lines.findMany({ where: { shopping_user_id: customer.id } });
-    const cartByVariant = new Map(cartLines.map((line) => [line.shopping_variant_id, line.quantity]));
-    if (!reconcilingUnknown && lines.some((line) => cartByVariant.get(line.shopping_variant_id ?? "") !== line.quantity)) {
-      await refreshCheckout(session.id, customer.id);
-      throw ErrorUtil.conflict("The reviewed cart quantities are stale; review the refreshed checkout.");
-    }
-    if (outcome === "failed") {
-      await MyGlobal.prisma.$transaction(async (tx) => {
-        await tx.shopping_payment_attempts.upsert({ where: { attempt_key: body.paymentAttemptId }, create: { id: attemptId, shopping_checkout_id: session.id, attempt_key: body.paymentAttemptId, status: "failed", amount: body.amount, created_at: now(), finalized_at: now() }, update: { status: "failed", amount: body.amount, finalized_at: now() } });
-        await tx.shopping_inventory_holds.updateMany({ where: { shopping_payment_id: attemptId, status: "held" }, data: { status: "released" } });
-        await tx.shopping_checkout_sessions.update({ where: { id: session.id }, data: { status: "payment_failed", updated_at: now() } });
-      });
-      return { status: "failed", checkout: await checkoutSummary(session.id, customer.id) };
-    }
-    if (session.shopping_address_id) {
-      const liveAddress = await MyGlobal.prisma.shopping_addresses.findFirst({ where: { id: session.shopping_address_id, shopping_user_id: customer.id } });
-      if (!liveAddress || liveAddress.recipient_name !== session.recipient_name || liveAddress.phone !== session.phone || liveAddress.street_address !== session.street_address || liveAddress.city !== session.city || liveAddress.state !== session.state || liveAddress.postal_code !== session.postal_code || liveAddress.country !== session.country) {
-        await refreshCheckout(session.id, customer.id);
-        throw ErrorUtil.conflict("The reviewed address is stale; review the refreshed checkout.");
-      }
-    }
-    for (const line of lines) {
-      const allHeld = await heldQuantity(line.variant?.id ?? "");
-      const ownHeld = existing ? (await MyGlobal.prisma.shopping_inventory_holds.findFirst({ where: { shopping_payment_id: existing.id, shopping_variant_id: line.shopping_variant_id!, status: "held" } }))?.quantity ?? 0 : 0;
-      if (!line.variant || line.variant.deleted_at || line.variant.product.deleted_at || line.variant.product.seller.deleted_at || line.variant.product.seller.approval_status !== "approved" || line.variant.product.seller.banned || line.variant.product.seller.suspended || effectivePrice(line.variant) !== line.unit_price || stockFromMovements(line.variant.movements) - allHeld + ownHeld < line.quantity) {
-        await refreshCheckout(session.id, customer.id);
-        throw ErrorUtil.conflict("The reviewed checkout is stale; review the refreshed checkout.");
-      }
-    }
-    if (outcome === "unknown") {
-      await MyGlobal.prisma.$transaction(async (tx) => {
-        await tx.shopping_payment_attempts.upsert({ where: { attempt_key: body.paymentAttemptId }, create: { id: attemptId, shopping_checkout_id: session.id, attempt_key: body.paymentAttemptId, status: "unknown", amount: body.amount, created_at: now() }, update: { status: "unknown", amount: body.amount, finalized_at: null } });
-        for (const line of lines) {
-          const held = await tx.shopping_inventory_holds.findFirst({ where: { shopping_payment_id: attemptId, shopping_variant_id: line.shopping_variant_id!, status: "held" } });
-          if (!held) await tx.shopping_inventory_holds.create({ data: { id: uuid(), shopping_payment_id: attemptId, shopping_variant_id: line.shopping_variant_id!, quantity: line.quantity, status: "held", created_at: now() } });
-        }
-        await tx.shopping_checkout_sessions.update({ where: { id: session.id }, data: { status: "payment_unknown", updated_at: now() } });
-      });
-      return { status: "unknown", checkout: await checkoutSummary(session.id, customer.id) };
-    }
-    const orderId = uuid();
-    const committed = await MyGlobal.prisma.$transaction(async (tx) => {
-      const attempt = await tx.shopping_payment_attempts.upsert({ where: { attempt_key: body.paymentAttemptId }, create: { id: attemptId, shopping_checkout_id: session.id, attempt_key: body.paymentAttemptId, status: "pending", amount: body.amount, created_at: now() }, update: { amount: body.amount } });
-      // A concurrent notification may have committed the same attempt while
-      // this request was validating its checkout. Return that order rather
-      // than creating a second commercial outcome.
-      if (attempt.status === "succeeded" && attempt.order_id) return { orderId: attempt.order_id };
-      for (const line of lines) {
-        const current = await tx.shopping_checkout_lines.findUnique({ where: { id: line.id }, include: { variant: { include: { product: { include: { seller: true } }, movements: true } } } });
-        if (!current?.variant || current.variant.deleted_at || current.variant.product.deleted_at || current.variant.product.seller.deleted_at || current.variant.product.seller.approval_status !== "approved" || current.variant.product.seller.banned || current.variant.product.seller.suspended || effectivePrice(current.variant) !== line.unit_price || current.variant.product.id !== line.product_id || current.variant.sku !== line.variant_sku) throw ErrorUtil.conflict("The reviewed checkout is stale.");
-        const heldRows = await tx.shopping_inventory_holds.findMany({ where: { shopping_variant_id: current.variant.id, status: "held", payment: { status: { in: ["pending", "unknown"] } } }, select: { quantity: true, shopping_payment_id: true } });
-        const held = heldRows.reduce((sum, row) => sum + row.quantity, 0);
-        const ownHeld = heldRows.filter((row) => row.shopping_payment_id === attemptId).reduce((sum, row) => sum + row.quantity, 0);
-        if (stockFromMovements(current.variant.movements) - held + ownHeld < line.quantity) throw ErrorUtil.conflict("The reviewed checkout is stale.");
-        if (!ownHeld) await tx.shopping_inventory_holds.create({ data: { id: uuid(), shopping_payment_id: attemptId, shopping_variant_id: current.variant.id, quantity: line.quantity, status: "held", created_at: now() } });
-      }
-      await tx.shopping_orders.create({ data: { id: orderId, order_number: `ORD-${uuid()}`, shopping_customer_id: customer.id, total: session.total, status: "paid", recipient_name: session.recipient_name, phone: session.phone, street_address: session.street_address, city: session.city, state: session.state, postal_code: session.postal_code, country: session.country, created_at: now() } });
-      for (const line of lines) {
-        const product = line.variant!.product;
-        await tx.shopping_order_items.create({ data: { id: uuid(), shopping_order_id: orderId, shopping_variant_id: line.variant!.id, shopping_seller_id: product.shopping_seller_id, product_id: product.id, product_name: product.name, product_description: product.description, variant_sku: line.variant!.sku, variant_options_json: line.variant!.options_json, seller_shop_name: product.seller.shop_name ?? "", seller_shop_logo: product.seller.shop_logo, unit_price: line.unit_price, quantity: line.quantity, status: "paid", refunded_amount: null, purchased_at: now() } });
-        await tx.shopping_inventory_movements.create({ data: { id: uuid(), shopping_variant_id: line.variant!.id, quantity: -line.quantity, reason: `purchase:${orderId}`, created_at: now() } });
-        await tx.shopping_cart_lines.deleteMany({ where: { shopping_user_id: customer.id, shopping_variant_id: line.variant!.id } });
-        await tx.shopping_inventory_holds.updateMany({ where: { shopping_payment_id: attemptId, shopping_variant_id: line.variant!.id, status: "held" }, data: { status: "consumed" } });
-      }
-      await tx.shopping_payment_attempts.update({ where: { id: attemptId }, data: { status: "succeeded", order_id: orderId, finalized_at: now() } });
-      await tx.shopping_checkout_sessions.update({ where: { id: session.id }, data: { status: "completed", updated_at: now() } });
-      return { orderId };
-    });
-    return { status: "succeeded", checkout: await checkoutSummary(session.id, customer.id), order: await orderDetail(committed.orderId, customer.id) };
-  }
-  export async function shipmentCreate(payload: AuthPayload, orderId: string, body: IShoppingShipment.ICreate): Promise<IShoppingOrder.IDetail> {
-    const seller = await eligibleSeller(payload, true);
-    const carrier = body.carrier.trim();
-    const trackingNumber = body.trackingNumber.trim();
-    if (!carrier || !trackingNumber) throw ErrorUtil.unprocessable("Carrier and tracking number are required.");
-    const items = await MyGlobal.prisma.shopping_order_items.findMany({
-      where: {
-        id: { in: body.itemIds },
-        shopping_order_id: orderId,
-        shopping_seller_id: seller.id,
-        status: "paid",
-        shipment_items: { none: {} },
-        requests: { none: { kind: "cancellation", status: "pending" } },
-      },
-    });
-    if (items.length !== body.itemIds.length || !items.length) throw ErrorUtil.unprocessable(
-      "All selected items must be paid items owned by the seller.",
-    );
-    const shipmentId = uuid();
-    await MyGlobal.prisma.$transaction(async (tx) => {
-      const current = await tx.shopping_order_items.findMany({
-        where: {
-          id: { in: body.itemIds },
-          shopping_order_id: orderId,
-          shopping_seller_id: seller.id,
-          status: "paid",
-          shipment_items: { none: {} },
-          requests: { none: { kind: "cancellation", status: "pending" } },
-        },
-      });
-      if (current.length !== body.itemIds.length || !current.length) throw ErrorUtil.conflict("Selected items changed before shipment creation.");
-      const shippedAt = now();
-      await tx.shopping_shipments.create({ data: { id: shipmentId, shopping_order_id: orderId, shopping_seller_id: seller.id, carrier, tracking_number: trackingNumber, shipped_at: shippedAt } });
-      for (const item of current) {
-        const updated = await tx.shopping_order_items.updateMany({ where: { id: item.id, status: "paid", shipment_items: { none: {} }, requests: { none: { kind: "cancellation", status: "pending" } } }, data: { status: "shipped" } });
-        if (updated.count !== 1) throw ErrorUtil.conflict("Selected items changed before shipment creation.");
-        await tx.shopping_shipment_items.create({ data: { id: uuid(), shopping_shipment_id: shipmentId, shopping_order_item_id: item.id } });
-      }
-    });
-    return orderDetail(orderId, undefined, false, seller.id);
-  }
-  export async function shipmentDeliver(payload: AuthPayload, shipmentId: string): Promise<IShoppingOrder.IDetail> {
-    const customer = await userById(payload.id, "customer");
-    const shipment = await MyGlobal.prisma.shopping_shipments.findUnique({
-      where: { id: shipmentId },
-      include: { order: true, items: true },
-    });
-    if (!shipment || shipment.order.shopping_customer_id !== customer.id) throw ErrorUtil.notFound(
-      "No such shipment.",
-    );
-    await MyGlobal.prisma.$transaction(async (tx) => {
-      const current = await tx.shopping_shipments.findUnique({ where: { id: shipmentId }, include: { order: true, items: true } });
-      if (!current || current.order.shopping_customer_id !== customer.id) throw ErrorUtil.notFound("No such shipment.");
-      if (current.delivered_at) throw ErrorUtil.conflict("The shipment is no longer awaiting delivery confirmation.");
-      const itemIds = current.items.map((item) => item.shopping_order_item_id);
-      const deliveredAt = now();
-      const shipmentUpdate = await tx.shopping_shipments.updateMany({ where: { id: shipmentId, delivered_at: null }, data: { delivered_at: deliveredAt } });
-      if (shipmentUpdate.count !== 1) throw ErrorUtil.conflict("The shipment is no longer awaiting delivery confirmation.");
-      const itemUpdate = await tx.shopping_order_items.updateMany({ where: { id: { in: itemIds }, status: "shipped" }, data: { status: "delivered", delivered_at: deliveredAt } });
-      if (itemUpdate.count !== itemIds.length) throw ErrorUtil.conflict("Every shipment item must still be shipped.");
-    });
-    return orderDetail(shipment.order.id, customer.id);
-  }
-  export async function shipmentTrack(payload: AuthPayload, shipmentId: string): Promise<IShoppingOrder.IDetail> {
-    const customer = await userById(payload.id, "customer");
-    await autoConfirmDue(customer.id, shipmentId);
-    const shipment = await MyGlobal.prisma.shopping_shipments.findUnique({ where: { id: shipmentId }, select: { shopping_order_id: true } });
-    if (!shipment) throw ErrorUtil.notFound("No such shipment.");
-    return orderDetail(shipment.shopping_order_id, customer.id);
-  }
-  export async function shipmentAutoConfirm(payload: AuthPayload, shipmentId: string): Promise<IShoppingOrder.IDetail> {
-    const customer = await userById(payload.id, "customer");
-    const shipment = await MyGlobal.prisma.shopping_shipments.findUnique({ where: { id: shipmentId }, include: { order: true } });
-    if (!shipment || shipment.order.shopping_customer_id !== customer.id) throw ErrorUtil.notFound("No such shipment.");
-    await autoConfirmDue(customer.id, shipmentId, true);
-    return orderDetail(shipment.order.id, customer.id);
-  }
-  export async function sellerQueue(payload: AuthPayload, input: IShoppingOrder.ISellerRequest): Promise<IPage<IShoppingOrder.IItem>> {
-    const seller = await eligibleSeller(payload, true);
-    if (input.status && !["paid", "shipped", "delivered", "cancelled", "refunded"].includes(input.status)) throw ErrorUtil.unprocessable("The order-item status filter is invalid.");
-    const where: Prisma.shopping_order_itemsWhereInput = { shopping_seller_id: seller.id, ...(input.status ? { status: input.status } : {}) };
-    const [total, rows] = await Promise.all([
-      MyGlobal.prisma.shopping_order_items.count({ where }),
-      MyGlobal.prisma.shopping_order_items.findMany({
-        where,
-        include: { order: true },
-        orderBy: [{ purchased_at: "asc" }, { id: "asc" }],
-        skip: ((input.page ?? 1) - 1) * (input.limit ?? 100),
-        take: input.limit === 0 ? undefined : (input.limit ?? 100),
-      }),
-    ]);
-    return page(rows.map(item), total, input);
-  }
-  export async function requestCreate(payload: AuthPayload, itemId: string, kind: "cancellation" | "refund", body: IShoppingRequest.ICreate): Promise<IShoppingRequest.IDetail> {
-    const customer = await userById(payload.id, "customer");
-    if (!body.reason.trim()) throw ErrorUtil.badRequest("A nonempty request reason is required.");
-    const item = await MyGlobal.prisma.shopping_order_items.findUnique({
-      where: { id: itemId },
-      include: { order: true },
-    });
-    if (!item || item.order.shopping_customer_id !== customer.id) throw ErrorUtil.notFound(
-      "No such order item.",
-    );
-    const expected = kind === "cancellation" ? "paid" : "delivered";
-    if (item.status !== expected) throw ErrorUtil.conflict(
-      `Only ${expected} items may be requested.`,
-    );
-    if (kind === "cancellation") {
-      const shipment = await MyGlobal.prisma.shopping_shipment_items.findUnique({ where: { shopping_order_item_id: itemId } });
-      if (shipment) throw ErrorUtil.conflict("A shipped item cannot be cancelled.");
-    } else if (!item.delivered_at || now().getTime() > item.delivered_at.getTime() + 7 * 24 * 60 * 60 * 1000) {
-      throw ErrorUtil.conflict("The refund window has closed.");
-    }
-    const r = await MyGlobal.prisma.$transaction(async (tx) => {
-      // Serialize the check and insert so concurrent submissions converge on
-      // one pending request for this item/kind.
-      const current = await tx.shopping_order_items.findUnique({
-        where: { id: itemId },
-        include: { order: true },
-      });
-      if (!current || current.order.shopping_customer_id !== customer.id || current.status !== expected)
-        throw ErrorUtil.conflict(`Only ${expected} items may be requested.`);
-      if (kind === "cancellation") {
-        const shipment = await tx.shopping_shipment_items.findUnique({ where: { shopping_order_item_id: itemId } });
-        if (shipment) throw ErrorUtil.conflict("A shipped item cannot be cancelled.");
-      } else if (!current.delivered_at || now().getTime() > current.delivered_at.getTime() + 7 * 24 * 60 * 60 * 1000) {
-        throw ErrorUtil.conflict("The refund window has closed.");
-      }
-      const duplicate = await tx.shopping_requests.findFirst({ where: { shopping_order_item_id: itemId, kind, status: "pending" } });
-      if (duplicate) throw ErrorUtil.conflict("A pending request already exists.");
-      return tx.shopping_requests.create({
-        data: {
-          id: uuid(),
-          shopping_order_item_id: itemId,
-          kind,
-          reason: body.reason.trim(),
-          status: "pending",
-          created_at: now(),
-        },
-      });
-    });
-    return request(r);
-  }
-  export async function sellerRequests(payload: AuthPayload, kind: "cancellation" | "refund", input: IPage.IRequest): Promise<IPage<IShoppingRequest.IDetail>> {
-    const seller = await eligibleSeller(payload, true);
-    const [total, rows] = await Promise.all([
-      MyGlobal.prisma.shopping_requests.count({
-        where: {
-          kind,
-          status: "pending",
-          item: { shopping_seller_id: seller.id },
-        },
-      }),
-      MyGlobal.prisma.shopping_requests.findMany({
-        where: {
-          kind,
-          status: "pending",
-          item: { shopping_seller_id: seller.id },
-        },
-        orderBy: [{ created_at: "asc" }, { id: "asc" }],
-        include: { item: { include: { order: true } }, snapshots: { orderBy: [{ created_at: "asc" }, { id: "asc" }] } },
-        skip: ((input.page ?? 1) - 1) * (input.limit ?? 100),
-        take: input.limit === 0 ? undefined : (input.limit ?? 100),
-      }),
-    ]);
-    return page(rows.map(request), total, input);
-  }
-  export async function decideRequest(payload: AuthPayload, id: string, approve: boolean): Promise<IShoppingRequest.IDetail> {
-    const seller = await eligibleSeller(payload, true);
-    const r = await MyGlobal.prisma.shopping_requests.findUnique({
-      where: { id },
-      include: { item: true },
-    });
-    if (!r || r.item.shopping_seller_id !== seller.id || r.status !== "pending") throw ErrorUtil.notFound(
-      "No pending request.",
-    );
-    const expected = r.kind === "cancellation" ? "paid" : "delivered";
-    if (r.item.status !== expected) throw ErrorUtil.conflict(`Only ${expected} items may be decided.`);
-    const target = r.kind === "cancellation" ? "cancelled" : "refunded";
-    const decisionAt = now();
-    const decisionSnapshotId = uuid();
-    await MyGlobal.prisma.$transaction(async (tx) => {
-      const changed = await tx.shopping_requests.updateMany({ where: { id, status: "pending" }, data: { status: approve ? "approved" : "rejected", decided_at: decisionAt } });
-      if (changed.count !== 1) throw ErrorUtil.conflict("The request has already been decided.");
-      const itemChanged = await tx.shopping_order_items.updateMany({ where: { id: r.item.id, status: expected }, data: { status: approve ? target : expected } });
-      if (itemChanged.count !== 1) throw ErrorUtil.conflict(`Only ${expected} items may be decided.`);
-      await tx.shopping_request_snapshots.create({ data: { id: decisionSnapshotId, shopping_request_id: id, actor_id: seller.id, actor_kind: "seller", before_status: r.status, after_status: approve ? "approved" : "rejected", before_reason: r.reason, after_reason: r.reason, created_at: decisionAt } });
-      if (approve) {
-        await tx.shopping_order_items.update({ where: { id: r.item.id }, data: { refunded_amount: r.item.unit_price * r.item.quantity } });
-        if (r.item.shopping_variant_id)
-          // Retired variants remain as non-purchasable identity rows.  Keep
-          // the restoration movement attached to that identity as obligation
-          // evidence; live-stock projections already exclude retired rows.
-          await tx.shopping_inventory_movements.create({ data: { id: uuid(), shopping_variant_id: r.item.shopping_variant_id, quantity: r.item.quantity, reason: `${r.kind}:${id}`, created_at: decisionAt } });
-      }
-    });
-    return request({
-      ...r,
-      status: approve ? "approved" : "rejected",
-      decided_at: decisionAt,
-      snapshots: [{ id: decisionSnapshotId, actor_id: seller.id, actor_kind: "seller", before_status: r.status, after_status: approve ? "approved" : "rejected", before_reason: r.reason, after_reason: r.reason, created_at: decisionAt }],
-    });
-  }
-  export async function reviewCreate(payload: AuthPayload, body: IShoppingReview.ICreate): Promise<IShoppingReview.IDetail> {
-    const customer = await userById(payload.id, "customer");
-    await productExists(body.productId);
-    const item = await MyGlobal.prisma.shopping_order_items.findFirst({
-      where: {
-        order: { id: body.orderId, shopping_customer_id: customer.id },
-        product_id: body.productId,
-        status: "delivered",
-      },
-    });
-    if (!item) throw ErrorUtil.forbidden("A delivered purchase is required.");
-    const existing = await MyGlobal.prisma.shopping_reviews.findUnique({ where: { shopping_user_id_shopping_product_id_shopping_order_id: { shopping_user_id: customer.id, shopping_product_id: body.productId, shopping_order_id: body.orderId } } });
-    if (existing) throw ErrorUtil.conflict("A review already exists for this purchase.");
-    const r = await MyGlobal.prisma.shopping_reviews.create({
-      data: {
-        id: uuid(),
-        shopping_user_id: customer.id,
-        shopping_product_id: body.productId,
-        shopping_order_id: body.orderId,
-        rating: body.rating,
-        text: body.text?.trim() || null,
-        created_at: now(),
-        updated_at: now(),
-      },
-    });
-    return review(r, customer);
-  }
-  export async function reviewUpdate(payload: AuthPayload, id: string, body: IShoppingReview.IUpdate): Promise<IShoppingReview.IDetail> {
-    const customer = await userById(payload.id, "customer");
-    const r = await MyGlobal.prisma.shopping_reviews.findFirst({
-      where: { id, shopping_user_id: customer.id, deleted_at: null },
-    });
-    if (!r) throw ErrorUtil.notFound("No such review.");
-    // A retired product may retain its review evidence, but its live review
-    // cannot be edited after the product leaves the catalog.
-    await productExists(r.shopping_product_id);
-    const n = await MyGlobal.prisma.$transaction(async (tx) => {
-      const changed = await tx.shopping_reviews.updateMany({
-        where: { id, shopping_user_id: customer.id, deleted_at: null, rating: r.rating, text: r.text },
-        data: { rating: body.rating, text: body.text ?? null, updated_at: now() },
-      });
-      if (changed.count !== 1) throw ErrorUtil.conflict("The review changed during editing.");
-      await tx.shopping_review_snapshots.create({
-        data: {
-          id: uuid(),
-          shopping_review_id: id,
-          before_rating: r.rating,
-          after_rating: body.rating,
-          before_text: r.text,
-          after_text: body.text ?? null,
-          created_at: now(),
-        },
-      });
-      return tx.shopping_reviews.findUniqueOrThrow({ where: { id } });
-    });
-    return review(n, customer);
-  }
-  export async function reviewDelete(payload: AuthPayload, id: string): Promise<IEntity> {
-    const customer = await userById(payload.id, "customer");
-    const r = await MyGlobal.prisma.shopping_reviews.findFirst({
-      where: { id, shopping_user_id: customer.id, deleted_at: null },
-    });
-    if (!r) throw ErrorUtil.notFound("No such review.");
-    await MyGlobal.prisma.shopping_reviews.update({
-      where: { id },
-      data: { deleted_at: now() },
-    });
-    return { id };
+    const customer = result.customer;
+    const session = result.session;
+    return actorResult({ id: customer.id, type: "customer", sessionId: session.id }, session.access, session.refresh);
   }
 
-  export async function adminApplicationCreate(payload: AuthPayload, body: IShoppingAdminApplication.ICreate): Promise<IShoppingAdminApplication.IDetail> {
-    const u = await userById(payload.id, undefined);
-    if (!body.reason.trim()) throw ErrorUtil.unprocessable("An application reason is required.");
-    if (parseGrades(u.grades).length)
-      throw ErrorUtil.conflict("The identity is not eligible for another application.");
-    const r = await MyGlobal.prisma.$transaction(async (tx) => {
-      // Keep the eligibility check in the same serialized write transaction
-      // as the insert; two simultaneous submissions cannot both become
-      // pending applications.
-      const pending = await tx.shopping_admin_applications.findFirst({ where: { shopping_user_id: u.id, status: "pending" } });
-      if (pending) throw ErrorUtil.conflict("The identity is not eligible for another application.");
-      const current = await tx.shopping_users.findUnique({ where: { id: u.id } });
-      if (!current || current.deleted_at || current.banned || parseGrades(current.grades).length)
-        throw ErrorUtil.conflict("The identity is not eligible for another application.");
-      return tx.shopping_admin_applications.create({
-        data: {
-          id: uuid(),
-          shopping_user_id: u.id,
-          reason: body.reason.trim(),
-          status: "pending",
-          created_at: now(),
-        },
-      });
+  /** Registers one seller in pending approval state and starts its session. */
+  export async function sellerJoin(body: api.IShoppingSeller.IJoin): Promise<api.IShoppingAuthorized> {
+    const email = text(body.email, "email");
+    const normalized = email.trim().toLowerCase();
+    if (await db().shopping_sellers.findUnique({ where: { email_normalized: normalized } })) throw ErrorUtil.conflict("That seller email is already registered.");
+    const result = await db().$transaction(async (tx) => {
+      const seller = await tx.shopping_sellers.create({ data: { id: id(), email, email_normalized: normalized, password_hash: hash(body.password), approval_state: "pending", rejection_reason: null, suspended: false, login_state: "active", created_at: now() } });
+      await tx.shopping_seller_profiles.create({ data: { id: id(), seller_id: seller.id, shop_name: "New shop", shop_description: "", logo: null, updated_at: now() } });
+      await tx.shopping_seller_approval_requests.create({ data: { id: id(), seller_id: seller.id, status: "pending", pending_key: seller.id, reason: null, decided_by: null, decided_at: null, created_at: now() } });
+      const session = await createSession("seller", seller.id, tx);
+      return { seller, session };
     });
-    return adminApplication({ ...r, applicant_kind: u.kind });
-  }
-  export async function adminApplications(payload: AuthPayload, input: IPage.IRequest): Promise<IPage<IShoppingAdminApplication.IDetail>> {
-    const u = await userById(payload.id, undefined);
-    const [total, rows] = await Promise.all([
-      MyGlobal.prisma.shopping_admin_applications.count({
-        where: { shopping_user_id: u.id },
-      }),
-      MyGlobal.prisma.shopping_admin_applications.findMany({
-        where: { shopping_user_id: u.id },
-        include: { user: { select: { kind: true } } },
-        orderBy: [{ created_at: "desc" }, { id: "desc" }],
-        skip: ((input.page ?? 1) - 1) * (input.limit ?? 100),
-        take: input.limit === 0 ? undefined : (input.limit ?? 100),
-      }),
-    ]);
-    return page(rows.map((row) => adminApplication({ ...row, applicant_kind: row.user.kind })), total, input);
-  }
-  export async function adminApplicationsPending(payload: AuthPayload, input: IPage.IRequest): Promise<IPage<IShoppingAdminApplication.IDetail>> {
-    await requireSuperAdmin(payload);
-    const [total, rows] = await Promise.all([
-      MyGlobal.prisma.shopping_admin_applications.count({ where: { status: "pending" } }),
-      MyGlobal.prisma.shopping_admin_applications.findMany({
-        where: { status: "pending" },
-        include: { user: { select: { kind: true } } },
-        orderBy: [{ created_at: "asc" }, { id: "asc" }],
-        skip: ((input.page ?? 1) - 1) * (input.limit ?? 100),
-        take: input.limit === 0 ? undefined : (input.limit ?? 100),
-      }),
-    ]);
-    return page(rows.map((row) => adminApplication({ ...row, applicant_kind: row.user.kind })), total, input);
-  }
-  export async function adminApplicationDecision(payload: AuthPayload, id: string, approve: boolean): Promise<IShoppingAdminApplication.IDetail> {
-    await requireSuperAdmin(payload);
-    const application = await MyGlobal.prisma.shopping_admin_applications.findUnique({ where: { id } });
-    if (!application || application.status !== "pending") throw ErrorUtil.notFound("No pending administrator application.");
-    const applicant = await MyGlobal.prisma.shopping_users.findUnique({ where: { id: application.shopping_user_id } });
-    if (!applicant || applicant.deleted_at || applicant.banned) throw ErrorUtil.conflict("The applicant identity is unavailable.");
-    const result = await MyGlobal.prisma.$transaction(async (tx) => {
-      const decidedRows = await tx.shopping_admin_applications.updateMany({ where: { id, status: "pending" }, data: { status: approve ? "approved" : "rejected", decided_at: now(), decided_by_id: payload.id } });
-      if (decidedRows.count !== 1) throw ErrorUtil.conflict("The administrator application has already been decided.");
-      const decided = await tx.shopping_admin_applications.findUniqueOrThrow({ where: { id } });
-      const currentApplicant = await tx.shopping_users.findUnique({ where: { id: application.shopping_user_id } });
-      if (!currentApplicant || currentApplicant.deleted_at || currentApplicant.banned) throw ErrorUtil.conflict("The applicant identity is unavailable.");
-      if (approve) {
-        const grades = parseGrades(currentApplicant.grades);
-        if (!grades.includes("regularAdministrator")) grades.push("regularAdministrator");
-        await tx.shopping_users.update({ where: { id: currentApplicant.id }, data: { grades: grades.join(","), updated_at: now() } });
-      }
-      return decided;
-    });
-    return adminApplication({ ...result, applicant_kind: applicant.kind });
-  }
-  export async function adminGrade(payload: AuthPayload, targetId: string, promote: boolean): Promise<IShoppingAdmin.IUserSummary> {
-    const actor = await requireSuperAdmin(payload);
-    if (actor.id === targetId && !promote) throw ErrorUtil.conflict("A super administrator cannot demote itself.");
-    return MyGlobal.prisma.$transaction(async (tx) => {
-      const target = await tx.shopping_users.findUnique({ where: { id: targetId } });
-      if (!target || target.deleted_at || (promote && target.banned)) throw ErrorUtil.conflict("The target identity is unavailable for this grade change.");
-      const grades = parseGrades(target.grades);
-      const beforeGrades = [...grades];
-      if (promote) {
-        if (!grades.includes("regularAdministrator")) throw ErrorUtil.conflict("Only a regular administrator can be promoted.");
-        if (grades.includes("superAdministrator")) throw ErrorUtil.conflict("The target is already a super administrator.");
-        grades.push("superAdministrator");
-      } else {
-        if (!grades.includes("superAdministrator")) throw ErrorUtil.conflict("The target is not a super administrator.");
-        const otherSupers = await tx.shopping_users.count({ where: { id: { not: target.id }, deleted_at: null, banned: false, grades: { contains: "superAdministrator" } } });
-        if (otherSupers === 0) throw ErrorUtil.conflict("At least one active super administrator must remain.");
-        grades.splice(grades.indexOf("superAdministrator"), 1);
-      }
-      const updated = await tx.shopping_users.update({ where: { id: target.id }, data: { grades: grades.join(","), updated_at: now() } });
-      await tx.shopping_admin_actions.create({ data: { id: uuid(), actor_id: actor.id, target_kind: "user", target_id: target.id, action: promote ? "promote_admin" : "demote_admin", reason: "administrator grade change", outcome_json: JSON.stringify({ beforeGrades, afterGrades: parseGrades(updated.grades) }), created_at: now() } });
-      return userSummary(updated);
-    });
-  }
-  export async function users(payload: AuthPayload, kind: IShoppingAuth.Actor, input: IPage.IRequest): Promise<IPage<IShoppingAdmin.IUserSummary>> {
-    await requireAdminInternal(payload);
-    const where = { kind, deleted_at: null };
-    const [total, rows] = await Promise.all([
-      MyGlobal.prisma.shopping_users.count({ where }),
-      MyGlobal.prisma.shopping_users.findMany({ where, orderBy: [{ created_at: "desc" }, { id: "desc" }], skip: ((input.page ?? 1) - 1) * (input.limit ?? 100), take: input.limit === 0 ? undefined : (input.limit ?? 100) }),
-    ]);
-    return page(rows.map(userSummary), total, input);
-  }
-  export async function userBan(payload: AuthPayload, targetId: string, banned: boolean, expectedKind?: IShoppingAuth.Actor): Promise<IShoppingAdmin.IUserSummary> {
-    const actor = await requireAdminInternal(payload);
-    if (actor.id === targetId) throw ErrorUtil.conflict("An administrator cannot change its own ban state.");
-    const target = await userById(targetId, undefined, false);
-    if (target.deleted_at) throw ErrorUtil.notFound("No such user.");
-    if (expectedKind && target.kind !== expectedKind) throw ErrorUtil.notFound("No such user.");
-    if (target.banned === banned) throw ErrorUtil.conflict(banned ? "The user is already banned." : "The user is not banned.");
-    if (!parseGrades(actor.grades).includes("superAdministrator") && parseGrades(target.grades).includes("superAdministrator")) throw ErrorUtil.forbidden("A regular administrator cannot moderate a super administrator.");
-    const beforeBanned = target.banned;
-    return MyGlobal.prisma.$transaction(async (tx) => {
-      const changed = await tx.shopping_users.updateMany({ where: { id: target.id, banned: beforeBanned, deleted_at: null }, data: { banned, updated_at: now() } });
-      if (changed.count !== 1) throw ErrorUtil.conflict("The user ban state changed during moderation.");
-      if (banned) await tx.shopping_sessions.updateMany({ where: { shopping_user_id: target.id }, data: { revoked: true } });
-      const updated = await tx.shopping_users.findUniqueOrThrow({ where: { id: target.id } });
-      await tx.shopping_admin_actions.create({ data: { id: uuid(), actor_id: actor.id, target_kind: "user", target_id: target.id, action: banned ? "ban_user" : "unban_user", reason: "administrator account action", outcome_json: JSON.stringify({ beforeBanned, afterBanned: banned }), created_at: now() } });
-      return userSummary(updated);
-    });
-  }
-  export async function requireAdmin(payload: AuthPayload): Promise<User> {
-    return requireAdminInternal(payload);
-  }
-  export async function dashboard(payload: AuthPayload): Promise<IShoppingAdmin.ISummary> {
-    const seller = await eligibleSeller(payload, true);
-    const [products, orderItems, pendingCancellations, pendingRefunds] = await Promise.all(
-      [
-        MyGlobal.prisma.shopping_products.count({
-          where: { shopping_seller_id: seller.id, deleted_at: null },
-        }),
-        MyGlobal.prisma.shopping_order_items.count({
-          where: { shopping_seller_id: seller.id },
-        }),
-        MyGlobal.prisma.shopping_requests.count({
-          where: {
-            kind: "cancellation",
-            status: "pending",
-            item: { shopping_seller_id: seller.id },
-          },
-        }),
-        MyGlobal.prisma.shopping_requests.count({
-          where: {
-            kind: "refund",
-            status: "pending",
-            item: { shopping_seller_id: seller.id },
-          },
-        }),
-      ],
-    );
-    return {
-      products,
-      orderItems,
-      pendingCancellations,
-      pendingRefunds,
-    };
+    const seller = result.seller;
+    const session = result.session;
+    return actorResult({ id: seller.id, type: "seller", sessionId: session.id }, session.access, session.refresh);
   }
 
-  async function userById(id: string, kind?: string, requireActive = true): Promise<User> {
-    const u = await MyGlobal.prisma.shopping_users.findUnique({
-      where: { id },
+  /** Authenticates a seller in any non-banned, non-deleted approval state. */
+  export async function sellerLogin(body: api.IShoppingSeller.ILogin): Promise<api.IShoppingAuthorized> {
+    const result = await db().$transaction(async (tx) => {
+      const seller = await tx.shopping_sellers.findUnique({ where: { email_normalized: body.email.trim().toLowerCase() } });
+      if (seller === null || seller.deleted_at !== null || seller.login_state !== "active" || seller.password_hash !== hash(body.password)) throw ErrorUtil.unauthorized("Invalid credentials.");
+      const session = await createSession("seller", seller.id, tx);
+      return { seller, session };
     });
-    if (!u || (kind && u.kind !== kind) || (requireActive && (u.deleted_at || u.banned))) throw ErrorUtil.unauthorized(
-      "The identity is unavailable.",
-    );
-    return u;
+    const seller = result.seller;
+    const session = result.session;
+    return actorResult({ id: seller.id, type: "seller", sessionId: session.id }, session.access, session.refresh);
   }
-  async function ownedAddress(userId: string, id: string) {
-    const r = await MyGlobal.prisma.shopping_addresses.findFirst({
-      where: { id, shopping_user_id: userId },
-    });
-    if (!r) throw ErrorUtil.notFound("No such address.");
-    return r;
-  }
-  async function eligibleSeller(payload: AuthPayload, allowSuspended = false): Promise<User> {
-    const u = await userById(payload.id, "seller");
-    if (u.approval_status !== "approved") throw ErrorUtil.forbidden(
-      "Seller approval is required.",
-    );
-    if (!allowSuspended && u.suspended) throw ErrorUtil.forbidden(
-      "The seller is suspended.",
-    );
-    return u;
-  }
-  async function requireAdminInternal(payload: AuthPayload): Promise<User> {
-    const u = await userById(payload.id);
-    if (!parseGrades(u.grades).some(
-      (g) => g === "regularAdministrator" || g === "superAdministrator",
-    )) throw ErrorUtil.forbidden("Administrator authority is required.");
-    return u;
-  }
-  async function requireSuperAdmin(payload: AuthPayload): Promise<User> {
-    const u = await requireAdminInternal(payload);
-    if (!parseGrades(u.grades).includes("superAdministrator")) throw ErrorUtil.forbidden("Super administrator authority is required.");
-    return u;
-  }
-  async function forceTransition(ids: string[], target: "cancelled" | "refunded", reason: string, actorId: string, targetKind: "order" | "order_item", targetId: string): Promise<void> {
-    if (!reason.trim()) throw ErrorUtil.badRequest("A nonempty policy reason is required.");
-    const transitionAt = now();
-    await MyGlobal.prisma.$transaction(async (tx) => {
-      const items = await tx.shopping_order_items.findMany({ where: { id: { in: ids } } });
-      if (items.length !== ids.length) throw ErrorUtil.notFound("No such order item.");
-      for (const item of items) {
-        const allowed = target === "cancelled"
-          ? item.status === "paid" || item.status === "shipped"
-          : item.status === "paid" || item.status === "shipped" || item.status === "delivered";
-        if (!allowed) throw ErrorUtil.conflict("The order item is not eligible for this transition.");
-        if (target === "refunded") {
-          const blocking = await tx.shopping_requests.findFirst({ where: { shopping_order_item_id: item.id, kind: "cancellation", status: "pending" } });
-          if (blocking) throw ErrorUtil.conflict("A pending cancellation blocks this refund.");
-        }
-        const transitioned = await tx.shopping_order_items.updateMany({ where: { id: item.id, status: item.status }, data: { status: target, delivered_at: target === "cancelled" ? null : item.delivered_at } });
-        if (transitioned.count !== 1) throw ErrorUtil.conflict("The order item changed during force resolution.");
-        const requestKind = target === "cancelled" ? "cancellation" : "refund";
-        const pendingRequest = await tx.shopping_requests.findFirst({ where: { shopping_order_item_id: item.id, kind: requestKind, status: "pending" } });
-        if (pendingRequest) {
-          await tx.shopping_requests.update({ where: { id: pendingRequest.id }, data: { status: "approved", decided_at: transitionAt } });
-          await tx.shopping_request_snapshots.create({ data: { id: uuid(), shopping_request_id: pendingRequest.id, actor_id: actorId, actor_kind: "administrator", before_status: pendingRequest.status, after_status: "approved", before_reason: pendingRequest.reason, after_reason: pendingRequest.reason, created_at: transitionAt } });
-        }
-        await tx.shopping_order_items.update({ where: { id: item.id }, data: { refunded_amount: item.unit_price * item.quantity } });
-        if (item.shopping_variant_id)
-          await tx.shopping_inventory_movements.create({ data: { id: uuid(), shopping_variant_id: item.shopping_variant_id, quantity: item.quantity, reason: `admin ${target}: ${reason.trim()}`, created_at: transitionAt } });
-      }
-      await tx.shopping_admin_actions.create({ data: {
-        id: uuid(), actor_id: actorId, target_kind: targetKind, target_id: targetId,
-        action: `force_${target}`, reason: reason.trim(),
-        outcome_json: JSON.stringify({ itemIds: ids, status: target }), created_at: transitionAt,
-      } });
-    });
-  }
-  async function autoConfirmDue(customerId: string, shipmentId: string, strict = false): Promise<void> {
-    const shipment = await MyGlobal.prisma.shopping_shipments.findUnique({ where: { id: shipmentId }, include: { order: true, items: true } });
-    if (!shipment || shipment.order.shopping_customer_id !== customerId) throw ErrorUtil.notFound("No such shipment.");
-    if (shipment.delivered_at) return;
-    const due = shipment.shipped_at.getTime() + 14 * 24 * 60 * 60 * 1000 <= Date.now();
-    if (!due) {
-      if (strict) throw ErrorUtil.conflict("Shipment auto-confirmation is not due yet.");
+
+  /** Changes one actor's password while retaining only the current session. */
+  export async function updatePassword(
+    actor: ShoppingActor,
+    body: api.IShoppingCustomer.IPasswordUpdate,
+  ): Promise<void> {
+    const passwordHash = hash(body.currentPassword);
+    if (actor.type === "customer") {
+      await db().$transaction(async (tx) => {
+        const customer = await tx.shopping_customers.findFirst({ where: { id: actor.id, deleted_at: null, login_state: "active" } });
+        if (customer === null || customer.password_hash !== passwordHash)
+          throw ErrorUtil.forbidden("The current password is incorrect.");
+        const changedAt = now();
+        const changed = await tx.shopping_customers.updateMany({ where: { id: actor.id, deleted_at: null, login_state: "active", password_hash: passwordHash }, data: { password_hash: hash(body.newPassword) } });
+        if (changed.count !== 1) throw ErrorUtil.forbidden("The customer account is no longer available.");
+        await tx.shopping_customer_sessions.updateMany({ where: { customer_id: actor.id, id: { not: actor.sessionId }, revoked_at: null }, data: { revoked_at: changedAt } });
+      });
       return;
     }
-    await MyGlobal.prisma.$transaction(async (tx) => {
-      const current = await tx.shopping_shipments.findUnique({ where: { id: shipment.id }, include: { order: true, items: true } });
-      if (!current || current.order.shopping_customer_id !== customerId) throw ErrorUtil.notFound("No such shipment.");
-      if (current.delivered_at) return;
-      const deliveredAt = now();
-      const dueAt = new Date(deliveredAt.getTime() - 14 * 24 * 60 * 60 * 1000);
-      const shipmentUpdate = await tx.shopping_shipments.updateMany({ where: { id: shipment.id, delivered_at: null, shipped_at: { lte: dueAt } }, data: { delivered_at: deliveredAt } });
-      if (shipmentUpdate.count !== 1) return;
-      const itemIds = current.items.map((item) => item.shopping_order_item_id);
-      const itemUpdate = await tx.shopping_order_items.updateMany({ where: { id: { in: itemIds }, status: "shipped" }, data: { status: "delivered", delivered_at: deliveredAt } });
-      if (itemUpdate.count !== itemIds.length) throw ErrorUtil.conflict("Every shipment item must still be shipped.");
+    await db().$transaction(async (tx) => {
+      const seller = await tx.shopping_sellers.findFirst({ where: { id: actor.id, deleted_at: null, login_state: "active" } });
+      if (seller === null || seller.password_hash !== passwordHash)
+        throw ErrorUtil.forbidden("The current password is incorrect.");
+      const changedAt = now();
+      const changed = await tx.shopping_sellers.updateMany({ where: { id: actor.id, deleted_at: null, login_state: "active", password_hash: passwordHash }, data: { password_hash: hash(body.newPassword) } });
+      if (changed.count !== 1) throw ErrorUtil.forbidden("The seller account is no longer available.");
+      await tx.shopping_seller_sessions.updateMany({ where: { seller_id: actor.id, id: { not: actor.sessionId }, revoked_at: null }, data: { revoked_at: changedAt } });
     });
   }
-  async function categoryExists(id: string) {
-    const r = await MyGlobal.prisma.shopping_categories.findUnique({
-      where: { id },
-    });
-    if (!r) throw ErrorUtil.notFound("No such category.");
-    return r;
-  }
-  const completeProduct = (body: IShoppingProduct.ICreate): { name: string; description: string; categoryId: string | null | undefined; basePrice: number } => {
-    const name = body.name.trim();
-    const description = body.description.trim();
-    if (!name || !description || !Number.isFinite(body.basePrice) || body.basePrice < 0) throw ErrorUtil.unprocessable("Product name, description, and nonnegative price are required.");
-    return { name, description, categoryId: body.categoryId, basePrice: body.basePrice };
-  };
-  async function productExists(id: string) {
-    const r = await MyGlobal.prisma.shopping_products.findFirst({
-      where: { id, deleted_at: null },
-    });
-    if (!r) throw ErrorUtil.notFound("No such product.");
-    return r;
-  }
-  async function ownedProduct(sellerId: string, id: string) {
-    const r = await MyGlobal.prisma.shopping_products.findFirst({
-      where: { id, shopping_seller_id: sellerId, deleted_at: null },
-    });
-    if (!r) throw ErrorUtil.notFound("No such product.");
-    return r;
-  }
-  async function variantOwned(productId: string, id: string) {
-    const r = await MyGlobal.prisma.shopping_variants.findFirst({
-      where: { id, shopping_product_id: productId, deleted_at: null },
-      include: { movements: true },
-    });
-    if (!r) throw ErrorUtil.notFound("No such variant.");
-    return r;
-  }
-  async function variantOwnedBySeller(sellerId: string, id: string) {
-    const r = await MyGlobal.prisma.shopping_variants.findFirst({
-      where: { id, deleted_at: null, product: { shopping_seller_id: sellerId, deleted_at: null } },
-      include: { movements: true },
-    });
-    if (!r) throw ErrorUtil.notFound("No such variant.");
-    return r;
-  }
-  async function validateVariantInput(productId: string, body: IShoppingProduct.IVariantCreate, excludeId?: string): Promise<void> {
-    const sku = body.sku.trim().toLowerCase();
-    const entries = Object.entries(body.options).map(([name, value]) => [name.trim().toLowerCase(), value.trim().toLowerCase()] as const);
-    if (!sku || !entries.length || entries.some(([name, value]) => !name || !value) || new Set(entries.map(([name]) => name)).size !== entries.length) throw ErrorUtil.unprocessable("A variant requires a unique SKU and nonempty option pairs.");
-    if (body.priceOverride !== undefined && body.priceOverride !== null && body.priceOverride < 0) throw ErrorUtil.unprocessable("Variant price override cannot be negative.");
-    const rows = await MyGlobal.prisma.shopping_variants.findMany({ where: {} });
-    for (const row of rows) {
-      if (row.id === excludeId) continue;
-      if (row.sku.trim().toLowerCase() === sku) throw ErrorUtil.conflict("That SKU is already used on the platform.");
-      if (row.shopping_product_id !== productId || row.deleted_at) continue;
-      const existing = Object.entries(JSON.parse(row.options_json) as Record<string, string>).map(([name, value]) => `${name.trim().toLowerCase()}=${value.trim().toLowerCase()}`).sort((a, b) => a.localeCompare(b)).join("|");
-      const next = entries.map(([name, value]) => `${name}=${value}`).sort((a, b) => a.localeCompare(b)).join("|");
-      if (existing === next) throw ErrorUtil.conflict("That option combination is already used by this product.");
-    }
-  }
-  function normalizeVariant(body: IShoppingProduct.IVariantCreate): IShoppingProduct.IVariantCreate {
-    return {
-      sku: body.sku.trim(),
-      options: Object.fromEntries(Object.entries(body.options).map(([name, value]) => [name.trim(), value.trim()])),
-      priceOverride: body.priceOverride ?? null,
-    };
-  }
-  async function stockOf(id: string) {
-    const rows = await MyGlobal.prisma.shopping_inventory_movements.findMany({
-      where: { shopping_variant_id: id },
-    });
-    return rows.reduce((sum, r) => sum + r.quantity, 0);
-  }
-  async function heldQuantity(variantId: string): Promise<number> {
-    const rows = await MyGlobal.prisma.shopping_inventory_holds.findMany({ where: { shopping_variant_id: variantId, status: "held", payment: { status: { in: ["pending", "unknown"] } } } });
-    return rows.reduce((sum, row) => sum + row.quantity, 0);
-  }
-  const stockFromMovements = (rows: { quantity: number }[]): number => rows.reduce(
-    (sum, r) => sum + r.quantity,
-    0,
-  );
-  const effectivePrice = (v: { price_override: number | null; product?: { base_price: number } }): number => v.price_override ?? v.product?.base_price ?? 0;
-  async function checkoutSummary(id: string, customerId: string): Promise<IShoppingCheckout.ISummary> {
-    const session = await MyGlobal.prisma.shopping_checkout_sessions.findFirst({ where: { id, shopping_user_id: customerId }, include: { lines: true } });
-    if (!session) throw ErrorUtil.notFound("No such checkout.");
-    return {
-      id: session.id,
-      status: session.status,
-      total: session.total,
-      recipientName: session.recipient_name,
-      phone: session.phone,
-      streetAddress: session.street_address,
-      city: session.city,
-      state: session.state,
-      postalCode: session.postal_code,
-      country: session.country,
-      lines: session.lines.map((line) => ({ variantId: line.shopping_variant_id ?? "", productId: line.product_id, productName: line.product_name, variantSku: line.variant_sku, unitPrice: line.unit_price, quantity: line.quantity, subtotal: line.unit_price * line.quantity })),
-    };
-  }
-  async function refreshCheckout(id: string, customerId: string): Promise<IShoppingCheckout.ISummary> {
-    const session = await MyGlobal.prisma.shopping_checkout_sessions.findFirst({ where: { id, shopping_user_id: customerId }, include: { lines: true } });
-    if (!session) throw ErrorUtil.notFound("No such checkout.");
-    if (session.status === "completed" || session.status === "payment_unknown") return checkoutSummary(id, customerId);
-    const addressRow = session.shopping_address_id
-      ? await MyGlobal.prisma.shopping_addresses.findFirst({ where: { id: session.shopping_address_id, shopping_user_id: customerId } })
-      : null;
-    if (!addressRow) throw ErrorUtil.conflict("The checkout address is no longer available.");
-    const cart = await MyGlobal.prisma.shopping_cart_lines.findMany({ where: { shopping_user_id: customerId }, include: { variant: { include: { product: { include: { seller: true } }, movements: true } } } });
-    const eligible = [] as typeof cart;
-    for (const line of cart) {
-      const held = await heldQuantity(line.variant.id);
-      const stock = stockFromMovements(line.variant.movements) - held;
-      if (!line.variant.deleted_at && !line.variant.product.deleted_at && !line.variant.product.seller.deleted_at && !line.variant.product.seller.banned && !line.variant.product.seller.suspended && line.variant.product.seller.approval_status === "approved" && stock >= line.quantity) eligible.push(line);
-    }
-    if (!eligible.length) throw ErrorUtil.unprocessable("The cart has no purchasable lines.");
-    const total = eligible.reduce((sum, line) => sum + effectivePrice(line.variant) * line.quantity, 0);
-    await MyGlobal.prisma.$transaction(async (tx) => {
-      await tx.shopping_checkout_lines.deleteMany({ where: { shopping_checkout_id: session.id } });
-      await tx.shopping_checkout_lines.createMany({ data: eligible.map((line) => ({ id: uuid(), shopping_checkout_id: session.id, shopping_variant_id: line.variant.id, product_id: line.variant.product.id, product_name: line.variant.product.name, variant_sku: line.variant.sku, unit_price: effectivePrice(line.variant), quantity: line.quantity })) });
-      await tx.shopping_checkout_sessions.update({ where: { id: session.id }, data: { shopping_address_id: addressRow.id, recipient_name: addressRow.recipient_name, phone: addressRow.phone, street_address: addressRow.street_address, city: addressRow.city, state: addressRow.state, postal_code: addressRow.postal_code, country: addressRow.country, total, status: "review", updated_at: now() } });
-    });
-    return checkoutSummary(id, customerId);
-  }
-  async function productAggregate(productId: string) {
-    return MyGlobal.prisma.shopping_products.findUnique({
-      where: { id: productId },
-      include: {
-        images: { orderBy: { sequence: "asc" } },
-        variants: { where: { deleted_at: null } },
-      },
-    });
-  }
-  async function productAggregateTx(tx: Prisma.TransactionClient, productId: string) {
-    return tx.shopping_products.findUnique({
-      where: { id: productId },
-      include: {
-        images: { orderBy: { sequence: "asc" } },
-        variants: { where: { deleted_at: null } },
-      },
-    });
-  }
-  async function snapshotTx(tx: Prisma.TransactionClient, productId: string, fields: string, beforeJson?: string) {
-    const p = await productAggregateTx(tx, productId);
-    if (p) await tx.shopping_product_snapshots.create({
-      data: {
-        id: uuid(),
-        shopping_product_id: productId,
-        before_json: beforeJson ?? JSON.stringify(p),
-        after_json: JSON.stringify(p),
-        changed_fields: fields,
-        created_at: now(),
-      },
-    });
-  }
-  async function snapshot(productId: string, fields: string, beforeJson?: string) {
-    await MyGlobal.prisma.$transaction((tx) => snapshotTx(tx, productId, fields, beforeJson));
-  }
-  const completeAddress = (b: IShoppingAddress.ICreate) => {
-    const values = {
-      recipient_name: b.recipientName?.trim(),
-      phone: b.phone?.trim(),
-      street_address: b.streetAddress?.trim(),
-      city: b.city?.trim(),
-      state: b.state?.trim(),
-      postal_code: b.postalCode?.trim(),
-      country: b.country?.trim(),
-    };
-    if (Object.values(values).some((value) => !value)) throw ErrorUtil.unprocessable("All shipping address fields are required.");
-    return values as { recipient_name: string; phone: string; street_address: string; city: string; state: string; postal_code: string; country: string };
-  };
-  const address = (r: { id: string; recipient_name: string; phone: string; street_address: string; city: string; state: string; postal_code: string; country: string; is_default: boolean }): IShoppingAddress.IDetail => ({
-    id: r.id,
-    recipientName: r.recipient_name,
-    phone: r.phone,
-    streetAddress: r.street_address,
-    city: r.city,
-    state: r.state,
-    postalCode: r.postal_code,
-    country: r.country,
-    isDefault: r.is_default,
-  });
-  const seller = (u: User): IShoppingSellerProfile.IDetail => ({
-    id: u.id,
-    shopName: u.shop_name ?? "",
-    shopDescription: u.shop_description ?? "",
-    shopLogo: u.shop_logo,
-    approvalStatus: u.approval_status ?? "pending",
-    suspended: u.suspended,
-    banned: u.banned,
-  });
-  const userSummary = (u: User): IShoppingAdmin.IUserSummary => ({
-    id: u.id,
-    email: u.email,
-    displayName: u.display_name,
-    kind: u.kind,
-    banned: u.banned,
-    grades: parseGrades(u.grades),
-    createdAt: u.created_at.toISOString(),
-  });
-  const approval = (a: { id: string; shopping_seller_id: string; status: string; reason: string | null; created_at: Date; decided_at: Date | null; decided_by_id?: string | null; seller?: User }): IShoppingSellerApproval.IDetail => ({
-    id: a.id,
-    sellerId: a.shopping_seller_id,
-    seller: seller(a.seller ?? { id: a.shopping_seller_id, shop_name: "", shop_description: "", shop_logo: null, approval_status: a.status, suspended: false, banned: false } as User),
-    status: a.status,
-    reason: a.reason,
-    createdAt: a.created_at.toISOString(),
-    decidedAt: a.decided_at?.toISOString() ?? null,
-    decidedById: a.decided_by_id ?? null,
-  });
-  const category = (r: { id: string; name: string; description: string; parent_id: string | null }, children: { id: string; name: string; description: string; parent_id: string | null }[]): IShoppingCategory.IDetail => ({
-    id: r.id,
-    name: r.name,
-    description: r.description,
-    parentId: r.parent_id,
-    children: children.map((c) => ({
-      id: c.id,
-      name: c.name,
-      description: c.description,
-      parentId: c.parent_id,
-      children: [],
-    })),
-  });
-  const summary = (r: ProductListRow): IShoppingProduct.ISummary => ({
-    id: r.id,
-    sellerId: r.shopping_seller_id,
-    sellerName: r.seller?.shop_name ?? "",
-    name: r.name,
-    description: r.description,
-    basePrice: r.base_price,
-    priceMin: (r.variants?.length ? Math.min(...r.variants.map((v) => effectivePrice({ ...v, product: r }))) : r.base_price),
-    priceMax: (r.variants?.length ? Math.max(...r.variants.map((v) => effectivePrice({ ...v, product: r }))) : r.base_price),
-    thumbnail: r.images?.[0]?.uri ?? null,
-    available: (r.variants ?? []).some(
-      (v) => stockFromMovements(v.movements ?? []) > 0,
-    ) && !r.deleted_at && !r.seller?.banned && !r.seller?.suspended && r.seller?.approval_status === "approved",
-    averageRating: r.reviews?.length ? Math.round((r.reviews.reduce((sum, x) => sum + x.rating, 0) / r.reviews.length) * 10) / 10 : null,
-    reviewCount: r.reviews?.length ?? 0,
-    createdAt: r.created_at.toISOString(),
-  });
-  const validateDiscoveryInput = (input: IShoppingProduct.IRequest): void => {
-    if (input.minPrice !== undefined && input.minPrice !== null && (!Number.isFinite(input.minPrice) || input.minPrice < 0)) throw ErrorUtil.unprocessable("The minimum price is invalid.");
-    if (input.maxPrice !== undefined && input.maxPrice !== null && (!Number.isFinite(input.maxPrice) || input.maxPrice < 0)) throw ErrorUtil.unprocessable("The maximum price is invalid.");
-    if (input.minPrice !== undefined && input.minPrice !== null && input.maxPrice !== undefined && input.maxPrice !== null && input.minPrice > input.maxPrice) throw ErrorUtil.unprocessable("The price interval is invalid.");
-    if (input.sort && !["newest", "priceAsc", "priceDesc"].includes(input.sort)) throw ErrorUtil.unprocessable("The product sort is unsupported.");
-  };
-  const discoverPage = (rows: ProductListRow[], input: IShoppingProduct.IRequest): IPage<IShoppingProduct.ISummary> => {
-    const needle = input.search?.trim().toLocaleLowerCase();
-    const matches = rows.filter((r) => {
-      if (needle && !r.name.toLocaleLowerCase().includes(needle)) return false;
-      const variants = r.variants ?? [];
-      const prices = variants.length ? variants.map((v) => effectivePrice({ ...v, product: r })) : [r.base_price];
-      if (input.minPrice !== undefined && input.minPrice !== null && input.maxPrice !== undefined && input.maxPrice !== null && !prices.some((price: number) => price >= input.minPrice! && price <= input.maxPrice!)) return false;
-      if (input.minPrice !== undefined && input.minPrice !== null && (input.maxPrice === undefined || input.maxPrice === null) && !prices.some((price: number) => price >= input.minPrice!)) return false;
-      if (input.maxPrice !== undefined && input.maxPrice !== null && (input.minPrice === undefined || input.minPrice === null) && !prices.some((price: number) => price <= input.maxPrice!)) return false;
-      if (input.inStock === true && !variants.some((v) => stockFromMovements(v.movements ?? []) > 0)) return false;
-      return true;
-    });
-    const sort = input.sort ?? "newest";
-    matches.sort((a, b) => {
-      if (sort === "newest") return b.created_at.getTime() - a.created_at.getTime() || b.id.localeCompare(a.id);
-      const ap = a.variants?.length ? Math.min(...a.variants.map((v) => effectivePrice({ ...v, product: a }))) : a.base_price;
-      const bp = b.variants?.length ? Math.min(...b.variants.map((v) => effectivePrice({ ...v, product: b }))) : b.base_price;
-      const compared = ap - bp;
-      return (sort === "priceAsc" ? compared : -compared) || (sort === "priceAsc" ? a.id.localeCompare(b.id) : b.id.localeCompare(a.id));
-    });
-    const current = input.page ?? 1;
-    const limit = input.limit ?? 100;
-    const sliced = limit === 0 ? matches : matches.slice((current - 1) * limit, current * limit);
-    return page(sliced.map(summary), matches.length, input);
-  };
-  async function productDetail(id: string): Promise<IShoppingProduct.IDetail> {
-    const r: ProductDetailRow | null = await MyGlobal.prisma.shopping_products.findFirst({
-      where: { id, deleted_at: null },
-      include: {
-        seller: true,
-        category: true,
-        images: { orderBy: { sequence: "asc" } },
-        variants: { where: { deleted_at: null }, include: { movements: true } },
-        reviews: { where: { deleted_at: null }, include: { user: true }, orderBy: [{ created_at: "desc" }, { id: "desc" }] },
-      },
-    });
-    if (!r) throw ErrorUtil.notFound("No such product.");
-    return {
-    ...summary(r),
-    categoryId: r.shopping_category_id,
-    images: r.images.map((i) => ({
-      id: i.id,
-      uri: i.uri,
-      sequence: i.sequence,
-    })),
-    variants: r.variants.map((v) => ({
-      id: v.id,
-      sku: v.sku,
-      options: JSON.parse(v.options_json),
-      priceOverride: v.price_override,
-      stock: stockFromMovements(v.movements),
-    })),
-    averageRating: r.reviews.length ? Math.round((r.reviews.reduce((sum, x) => sum + x.rating, 0) / r.reviews.length) * 10) / 10 : null,
-    reviewCount: r.reviews.length,
-    reviews: r.reviews.map((x) => review(x, x.user)),
-  };
-  }
-  const cartLine = (r: CartLineRow): IShoppingCart.ILine => ({
-    id: r.id,
-    variantId: r.shopping_variant_id,
-    productId: r.variant.product.id,
-    productName: r.variant.product.name,
-    sku: r.variant.sku,
-    options: JSON.parse(r.variant.options_json),
-    unitPrice: effectivePrice(r.variant),
-    quantity: r.quantity,
-    subtotal: effectivePrice(r.variant) * r.quantity,
-    available: !r.variant.deleted_at && stockFromMovements(r.variant.movements) >= r.quantity && !r.variant.product.deleted_at && !r.variant.product.seller.deleted_at && r.variant.product.seller.approval_status === "approved" && !r.variant.product.seller.banned && !r.variant.product.seller.suspended,
-    shortage: !r.variant.deleted_at && stockFromMovements(r.variant.movements) > 0 && stockFromMovements(r.variant.movements) < r.quantity,
-  });
-  const item = (r: OrderItemRow): IShoppingOrder.IItem => ({
-    id: r.id,
-    productId: r.product_id,
-    productName: r.product_name,
-    variantSku: r.variant_sku,
-    options: JSON.parse(r.variant_options_json),
-    sellerId: r.shopping_seller_id,
-    sellerName: r.seller_shop_name,
-    unitPrice: r.unit_price,
-    quantity: r.quantity,
-    status: r.status as IShoppingOrder.IItem["status"],
-    refundAmount: r.refunded_amount ?? null,
-    purchasedAt: r.purchased_at.toISOString(),
-    deliveredAt: r.delivered_at?.toISOString() ?? null,
-    ...(r.order ? { orderId: r.order.id, orderNumber: r.order.order_number, recipientName: r.order.recipient_name, phone: r.order.phone, streetAddress: r.order.street_address, city: r.order.city, state: r.order.state, postalCode: r.order.postal_code, country: r.order.country } : {}),
-    ...(r.product_description !== undefined ? { productDescription: r.product_description } : {}),
-  });
-  const deriveStatus = (statuses: string[]): string => {
-    if (!statuses.length || statuses.every((s) => s === "paid")) return "paid";
-    if (statuses.every((s) => s === "refunded")) return "refunded";
-    if (statuses.every((s) => s === "cancelled")) return "cancelled";
-    if (statuses.every((s) => s === "delivered")) return "delivered";
-    if (statuses.some((s) => s === "delivered" || s === "refunded" || s === "cancelled") && new Set(statuses).size > 1) return "partially completed";
-    return statuses.some((s) => s === "shipped") ? "shipped" : "partially completed";
-  };
-  async function orderDetail(id: string, customerId?: string, includeAdmin = false, sellerId?: string): Promise<IShoppingOrder.IDetail> {
-    const r: OrderDetailRow | null = await MyGlobal.prisma.shopping_orders.findFirst({
-      where: { id, ...(customerId ? { shopping_customer_id: customerId } : {}) },
-      include: { items: { include: { requests: { include: { snapshots: { orderBy: [{ created_at: "asc" }, { id: "asc" }] } } } } }, shipments: { include: { items: true } } },
-    });
-    if (!r) throw ErrorUtil.notFound("No such order.");
-    const visibleItems = sellerId ? r.items.filter((i) => i.shopping_seller_id === sellerId) : r.items;
-    if (sellerId && visibleItems.length === 0) throw ErrorUtil.forbidden("The seller does not own any item in this order.");
-    const requests = visibleItems.flatMap((i) => i.requests ?? []).map(request);
-    const actions = includeAdmin
-      ? await MyGlobal.prisma.shopping_admin_actions.findMany({ where: { OR: [{ target_kind: "order", target_id: r.id }, { target_kind: "order_item", target_id: { in: visibleItems.map((i) => i.id) } }] }, orderBy: [{ created_at: "asc" }, { id: "asc" }] })
-      : [];
-    return {
-      id: r.id,
-      orderNumber: r.order_number,
-      total: r.total,
-      status: deriveStatus(visibleItems.map((i) => i.status)),
-      createdAt: r.created_at.toISOString(),
-      itemCount: visibleItems.length,
-      recipientName: r.recipient_name,
-      phone: r.phone,
-      streetAddress: r.street_address,
-      city: r.city,
-      state: r.state,
-      postalCode: r.postal_code,
-      country: r.country,
-      items: visibleItems.map(item),
-      requests,
-      shipments: r.shipments.filter((s) => !sellerId || s.shopping_seller_id === sellerId).map((s) => ({
-        id: s.id,
-        sellerId: s.shopping_seller_id,
-        carrier: s.carrier,
-        trackingNumber: s.tracking_number,
-        shippedAt: s.shipped_at.toISOString(),
-        deliveredAt: s.delivered_at?.toISOString() ?? null,
-        itemIds: s.items.map((i) => i.shopping_order_item_id),
-      })),
-      ...(includeAdmin ? { adminActions: actions.map((a) => ({ id: a.id, actorId: a.actor_id, targetKind: a.target_kind, targetId: a.target_id, action: a.action, reason: a.reason, outcome: a.outcome_json, createdAt: a.created_at.toISOString() })) } : {}),
-    };
-  }
-  const request = (r: { id: string; shopping_order_item_id: string; kind: string; reason: string; status: string; created_at: Date; decided_at: Date | null; snapshots?: { id: string; before_status: string; after_status: string; before_reason: string; after_reason: string; actor_id: string; actor_kind: string; created_at: Date }[]; item?: { quantity: number; product_name: string; variant_sku: string; shopping_seller_id: string; delivered_at: Date | null; order?: { id: string; order_number: string } } }): IShoppingRequest.IDetail => ({
-    id: r.id,
-    itemId: r.shopping_order_item_id,
-    kind: r.kind as "cancellation" | "refund",
-    reason: r.reason,
-    status: r.status,
-    createdAt: r.created_at.toISOString(),
-    decidedAt: r.decided_at?.toISOString() ?? null,
-    ...(r.item ? { orderId: r.item.order?.id, orderNumber: r.item.order?.order_number, quantity: r.item.quantity, deliveredAt: r.item.delivered_at?.toISOString() ?? null, productName: r.item.product_name, variantSku: r.item.variant_sku, sellerId: r.item.shopping_seller_id } : {}),
-    ...(r.snapshots ? { snapshots: r.snapshots.map((s) => ({ id: s.id, beforeStatus: s.before_status, afterStatus: s.after_status, beforeReason: s.before_reason, afterReason: s.after_reason, actorId: s.actor_id, actorKind: s.actor_kind, createdAt: s.created_at.toISOString() })) } : {}),
-  });
-  const review = (r: { id: string; shopping_product_id: string; shopping_user_id: string; rating: number; text: string | null; created_at: Date }, u: User): IShoppingReview.IDetail => ({
-    id: r.id,
-    productId: r.shopping_product_id,
-    authorId: u.deleted_at ? null : r.shopping_user_id,
-    authorName: u.deleted_at ? "deleted user" : (u.display_name ?? ""),
-    rating: r.rating,
-    text: r.text,
-    createdAt: r.created_at.toISOString(),
-  });
-  const adminApplication = (r: { id: string; shopping_user_id: string; reason: string; status: string; created_at: Date; decided_at: Date | null; decided_by_id?: string | null; applicant_kind?: string }): IShoppingAdminApplication.IDetail => ({
-    id: r.id,
-    applicantId: r.shopping_user_id,
-    applicantKind: (r.applicant_kind ?? "customer") as IShoppingAuth.Actor,
-    reason: r.reason,
-    status: r.status,
-    createdAt: r.created_at.toISOString(),
-    decidedAt: r.decided_at?.toISOString() ?? null,
-    decidedById: r.decided_by_id ?? null,
-  });
-}
 
+  /** Issues a one-time recovery challenge for an existing identity. */
+  export async function requestRecovery(
+    type: ShoppingActor["type"],
+    body: api.IShoppingCustomer.IRecoveryRequest,
+  ): Promise<api.IShoppingRecovery> {
+    const challenge = token();
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+    const email = text(body.email, "email");
+    await db().$transaction(async (tx) => {
+      if (type === "customer") {
+        const customer = await tx.shopping_customers.findUnique({ where: { email_normalized: email.toLowerCase() } });
+        if (customer !== null && customer.deleted_at === null && customer.login_state === "active")
+          await tx.shopping_recovery_deliveries.create({ data: { id: id(), actor_type: type, actor_id: customer.id, recipient: customer.email, kind: "passwordRecovery", payload: JSON.stringify({ token: challenge, expiresAt: expiresAt.toISOString() }), secret_hash: hash(challenge), created_at: now(), expires_at: expiresAt, consumed_at: null } });
+      } else {
+        const seller = await tx.shopping_sellers.findUnique({ where: { email_normalized: email.toLowerCase() } });
+        if (seller !== null && seller.deleted_at === null && seller.login_state === "active")
+          await tx.shopping_recovery_deliveries.create({ data: { id: id(), actor_type: type, actor_id: seller.id, recipient: seller.email, kind: "passwordRecovery", payload: JSON.stringify({ token: challenge, expiresAt: expiresAt.toISOString() }), secret_hash: hash(challenge), created_at: now(), expires_at: expiresAt, consumed_at: null } });
+      }
+    });
+    return { accepted: true, expiresAt: expiresAt.toISOString() };
+  }
+
+  /** Consumes a recovery challenge and revokes every earlier session. */
+  export async function completeRecovery(
+    type: ShoppingActor["type"],
+    body: api.IShoppingCustomer.IRecoveryComplete,
+  ): Promise<void> {
+    const challengeHash = hash(body.token);
+    const delivery = await db().shopping_recovery_deliveries.findFirst({ where: { actor_type: type, secret_hash: challengeHash, consumed_at: null } });
+    if (delivery === null || delivery.expires_at <= now())
+      throw ErrorUtil.unauthorized("The recovery challenge is invalid or expired.");
+    const consumedAt = now();
+    await db().$transaction(async (tx) => {
+      const consumed = await tx.shopping_recovery_deliveries.updateMany({ where: { id: delivery.id, consumed_at: null, expires_at: { gt: consumedAt } }, data: { consumed_at: consumedAt } });
+      if (consumed.count !== 1) throw ErrorUtil.unauthorized("The recovery challenge is invalid or expired.");
+      if (type === "customer") {
+        const customer = await tx.shopping_customers.findFirst({ where: { id: delivery.actor_id, deleted_at: null, login_state: "active" } });
+        if (customer === null) throw ErrorUtil.unauthorized("The recovery challenge is invalid or expired.");
+        await tx.shopping_customers.update({ where: { id: customer.id }, data: { password_hash: hash(body.newPassword) } });
+        await tx.shopping_customer_sessions.updateMany({ where: { customer_id: customer.id, revoked_at: null }, data: { revoked_at: consumedAt } });
+      } else {
+        const seller = await tx.shopping_sellers.findFirst({ where: { id: delivery.actor_id, deleted_at: null, login_state: "active" } });
+        if (seller === null) throw ErrorUtil.unauthorized("The recovery challenge is invalid or expired.");
+        await tx.shopping_sellers.update({ where: { id: seller.id }, data: { password_hash: hash(body.newPassword) } });
+        await tx.shopping_seller_sessions.updateMany({ where: { seller_id: seller.id, revoked_at: null }, data: { revoked_at: consumedAt } });
+      }
+    });
+  }
+
+  /** Continues one customer or seller session with a new access token. */
+  export async function refresh(type: ShoppingActor["type"], body: api.IShoppingCustomer.IRefresh): Promise<api.IShoppingAuthorized> {
+    const refreshHash = hash(body.refreshToken);
+    if (type === "customer") {
+      return db().$transaction(async (tx) => {
+        const session = await tx.shopping_customer_sessions.findUnique({ where: { refresh_hash: refreshHash } });
+        if (session === null || session.revoked_at !== null || session.expired_at <= now()) throw ErrorUtil.unauthorized("The refresh session is no longer valid.");
+        const customer = await tx.shopping_customers.findUnique({ where: { id: session.customer_id } });
+        if (customer === null || customer.login_state !== "active" || customer.deleted_at !== null) throw ErrorUtil.unauthorized("The account is unavailable.");
+        const access = token(); await tx.shopping_customer_sessions.update({ where: { id: session.id }, data: { access_hash: hash(access) } });
+        return actorResult({ id: customer.id, type, sessionId: session.id }, access, body.refreshToken);
+      });
+    }
+    return db().$transaction(async (tx) => {
+      const session = await tx.shopping_seller_sessions.findUnique({ where: { refresh_hash: refreshHash } });
+      if (session === null || session.revoked_at !== null || session.expired_at <= now()) throw ErrorUtil.unauthorized("The refresh session is no longer valid.");
+      const seller = await tx.shopping_sellers.findUnique({ where: { id: session.seller_id } });
+      if (seller === null || seller.login_state !== "active" || seller.deleted_at !== null) throw ErrorUtil.unauthorized("The account is unavailable.");
+      const access = token(); await tx.shopping_seller_sessions.update({ where: { id: session.id }, data: { access_hash: hash(access) } });
+      return actorResult({ id: seller.id, type, sessionId: session.id }, access, body.refreshToken);
+    });
+  }
+
+  interface SessionTokens { id: string; access: string; refresh: string; }
+  async function createSession(type: ShoppingActor["type"], actorId: string, client: Pick<PrismaClient, "shopping_customer_sessions" | "shopping_seller_sessions"> = db()): Promise<SessionTokens> {
+    const access = token(); const refreshToken = token(); const expiry = new Date(Date.now() + Number(MyGlobal.env.JWT_REFRESH_TTL_SECONDS) * 1000);
+    if (type === "customer") {
+      const row = await client.shopping_customer_sessions.create({ data: { id: id(), customer_id: actorId, access_hash: hash(access), refresh_hash: hash(refreshToken), expired_at: expiry, revoked_at: null, created_at: now() } });
+      return { id: row.id, access, refresh: refreshToken };
+    }
+    const row = await client.shopping_seller_sessions.create({ data: { id: id(), seller_id: actorId, access_hash: hash(access), refresh_hash: hash(refreshToken), expired_at: expiry, revoked_at: null, created_at: now() } });
+    return { id: row.id, access, refresh: refreshToken };
+  }
+
+  /** Resolves a current bearer session and its actor type. */
+  export async function authenticate(authorization: string | undefined, type: ShoppingActor["type"]): Promise<ShoppingActor> {
+    const access = hash(parseAuth(authorization));
+    if (type === "customer") {
+      return db().$transaction(async (tx) => {
+        const session = await tx.shopping_customer_sessions.findUnique({ where: { access_hash: access } });
+        if (session === null || session.revoked_at !== null || session.expired_at <= now()) throw ErrorUtil.unauthorized("The session is no longer valid.");
+        const customer = await tx.shopping_customers.findUnique({ where: { id: session.customer_id } });
+        if (customer === null || customer.login_state !== "active" || customer.deleted_at !== null) throw ErrorUtil.unauthorized("The account is unavailable.");
+        return { id: customer.id, type, sessionId: session.id };
+      });
+    }
+    return db().$transaction(async (tx) => {
+      const session = await tx.shopping_seller_sessions.findUnique({ where: { access_hash: access } });
+      if (session === null || session.revoked_at !== null || session.expired_at <= now()) throw ErrorUtil.unauthorized("The session is no longer valid.");
+      const seller = await tx.shopping_sellers.findUnique({ where: { id: session.seller_id } });
+      if (seller === null || seller.login_state !== "active" || seller.deleted_at !== null) throw ErrorUtil.unauthorized("The account is unavailable.");
+      return { id: seller.id, type, sessionId: session.id };
+    });
+  }
+
+  /** Resolves either authenticated commerce identity for shared taxonomy browsing. */
+  export async function authenticateBrowse(authorization: string | undefined): Promise<ShoppingActor> {
+    try {
+      return await authenticate(authorization, "customer");
+    } catch {
+      return authenticate(authorization, "seller");
+    }
+  }
+
+  /** Resolves a logout token without making repeated logout an error. */
+  export async function authenticateForLogout(authorization: string | undefined, type: ShoppingActor["type"]): Promise<ShoppingActor | null> {
+    if (authorization === undefined || authorization.trim().length === 0) return null;
+    const access = hash(parseAuth(authorization));
+    if (type === "customer") {
+      const session = await db().shopping_customer_sessions.findUnique({ where: { access_hash: access } });
+      return session === null ? null : { id: session.customer_id, type, sessionId: session.id };
+    }
+    const session = await db().shopping_seller_sessions.findUnique({ where: { access_hash: access } });
+    return session === null ? null : { id: session.seller_id, type, sessionId: session.id };
+  }
+
+  /** Resolves either underlying identity type for platform-wide administrator routes. */
+  export async function authenticateAdmin(authorization: string | undefined): Promise<ShoppingActor> {
+    try {
+      return await authenticate(authorization, "customer");
+    } catch {
+      return authenticate(authorization, "seller");
+    }
+  }
+
+  /** Revokes one current session. */
+  export async function logout(actor: ShoppingActor): Promise<void> {
+    if (actor.type === "customer") await db().shopping_customer_sessions.updateMany({ where: { id: actor.sessionId }, data: { revoked_at: now() } });
+    else await db().shopping_seller_sessions.updateMany({ where: { id: actor.sessionId }, data: { revoked_at: now() } });
+  }
+  /** Revokes every session for one actor. */
+  export async function logoutAll(actor: ShoppingActor): Promise<void> {
+    if (actor.type === "customer") await db().shopping_customer_sessions.updateMany({ where: { customer_id: actor.id, revoked_at: null }, data: { revoked_at: now() } });
+    else await db().shopping_seller_sessions.updateMany({ where: { seller_id: actor.id, revoked_at: null }, data: { revoked_at: now() } });
+  }
+
+  /** Returns a customer profile. */
+  export async function customerProfile(actor: ShoppingActor): Promise<api.IShoppingCustomerProfile> {
+    const profile = await db().shopping_customer_profiles.findUnique({ where: { customer_id: actor.id } });
+    if (profile === null) throw ErrorUtil.notFound("The customer profile does not exist.");
+    return { displayName: profile.display_name, phoneNumber: profile.phone_number };
+  }
+  /** Replaces a customer profile. */
+  export async function updateCustomerProfile(actor: ShoppingActor, body: api.IShoppingCustomerProfile.IUpdate): Promise<api.IShoppingCustomerProfile> {
+    const profile = await db().$transaction(async (tx) => {
+      const customer = await tx.shopping_customers.findFirst({ where: { id: actor.id, deleted_at: null, login_state: "active" } });
+      if (customer === null) throw ErrorUtil.forbidden("The customer account is no longer available.");
+      const changed = await tx.shopping_customer_profiles.updateMany({ where: { customer_id: actor.id }, data: { display_name: text(body.displayName, "displayName"), phone_number: text(body.phoneNumber, "phoneNumber"), updated_at: now() } });
+      if (changed.count !== 1) throw ErrorUtil.notFound("The customer profile does not exist.");
+      const row = await tx.shopping_customer_profiles.findUnique({ where: { customer_id: actor.id } });
+      if (row === null) throw ErrorUtil.notFound("The customer profile does not exist.");
+      return row;
+    });
+    return { displayName: profile.display_name, phoneNumber: profile.phone_number };
+  }
+  /** Returns a seller profile, either as owner or public customer view. */
+  export async function sellerProfile(sellerId: string): Promise<api.IShoppingSellerProfile & { id: string }> {
+    const profile = await db().shopping_seller_profiles.findUnique({ where: { seller_id: sellerId } });
+    const seller = await db().shopping_sellers.findUnique({ where: { id: sellerId } });
+    if (profile === null || seller === null || seller.deleted_at !== null) throw ErrorUtil.notFound("The seller profile does not exist.");
+    return { id: sellerId, shopName: profile.shop_name, shopDescription: profile.shop_description, logo: profile.logo };
+  }
+  /** Replaces a seller profile and records immutable evidence. */
+  export async function updateSellerProfile(actor: ShoppingActor, body: api.IShoppingSellerProfile.IUpdate): Promise<api.IShoppingSellerProfile> {
+    const current = await db().shopping_seller_profiles.findUnique({ where: { seller_id: actor.id } });
+    if (current === null) throw ErrorUtil.notFound("The seller profile does not exist.");
+    const shopName = text(body.shopName, "shopName");
+    const shopDescription = text(body.shopDescription, "shopDescription");
+    const changedAt = now();
+    const updated = await db().$transaction(async (tx) => { const seller = await tx.shopping_sellers.findFirst({ where: { id: actor.id, deleted_at: null, login_state: "active" } }); if (seller === null) throw ErrorUtil.forbidden("The seller account is no longer available."); const current = await tx.shopping_seller_profiles.findUnique({ where: { seller_id: actor.id } }); if (current === null) throw ErrorUtil.notFound("The seller profile does not exist."); const before = { shopName: current.shop_name, shopDescription: current.shop_description, logo: current.logo }; const after = { shopName, shopDescription, logo: body.logo === undefined ? current.logo : body.logo }; const changed = [before.shopName === after.shopName ? null : "shopName", before.shopDescription === after.shopDescription ? null : "shopDescription", before.logo === after.logo ? null : "logo"].filter((field): field is string => field !== null); const result = await tx.shopping_seller_profiles.update({ where: { seller_id: actor.id }, data: { shop_name: after.shopName, shop_description: after.shopDescription, logo: after.logo, updated_at: changedAt } }); await tx.shopping_snapshots.create({ data: { id: id(), kind: "sellerProfile", subject_type: "seller", subject_id: actor.id, changed: JSON.stringify(changed), before_data: JSON.stringify(before), after_data: JSON.stringify({ shopName: result.shop_name, shopDescription: result.shop_description, logo: result.logo }), created_at: changedAt } }); return result; });
+    return { shopName: updated.shop_name, shopDescription: updated.shop_description, logo: updated.logo };
+  }
+
+  /** Returns all owned saved addresses. */
+  export async function addresses(actor: ShoppingActor): Promise<api.IShoppingShippingAddress[]> {
+    const rows = await db().shopping_shipping_addresses.findMany({ where: { customer_id: actor.id }, orderBy: [{ is_default: "desc" }, { created_at: "asc" }] });
+    return rows.map(addressDto);
+  }
+  /** Adds a non-default saved address. */
+  export async function createAddress(actor: ShoppingActor, body: api.IShoppingShippingAddress.ICreate): Promise<api.IShoppingShippingAddress> {
+    const row = await db().$transaction(async (tx) => { const customer = await tx.shopping_customers.findFirst({ where: { id: actor.id, deleted_at: null, login_state: "active" } }); if (customer === null) throw ErrorUtil.forbidden("The customer account is no longer available."); return tx.shopping_shipping_addresses.create({ data: { id: id(), customer_id: actor.id, ...addressData(body), is_default: false, created_at: now() } }); });
+    return addressDto(row);
+  }
+  /** Replaces an owned saved address. */
+  export async function updateAddress(actor: ShoppingActor, addressId: string, body: api.IShoppingShippingAddress.IUpdate): Promise<api.IShoppingShippingAddress> {
+    const row = await db().$transaction(async (tx) => {
+      const customer = await tx.shopping_customers.findFirst({ where: { id: actor.id, deleted_at: null, login_state: "active" } });
+      if (customer === null) throw ErrorUtil.forbidden("The customer account is no longer available.");
+      const changed = await tx.shopping_shipping_addresses.updateMany({ where: { id: addressId, customer_id: actor.id }, data: addressData(body) });
+      if (changed.count !== 1) throw ErrorUtil.notFound("The shipping address does not exist.");
+      const updated = await tx.shopping_shipping_addresses.findUnique({ where: { id: addressId } });
+      if (updated === null) throw ErrorUtil.notFound("The shipping address does not exist.");
+      return updated;
+    });
+    return addressDto(row);
+  }
+  /** Deletes an owned saved address. */
+  export async function deleteAddress(actor: ShoppingActor, addressId: string): Promise<void> {
+    await db().$transaction(async (tx) => {
+      const customer = await tx.shopping_customers.findFirst({ where: { id: actor.id, deleted_at: null, login_state: "active" } });
+      if (customer === null) throw ErrorUtil.forbidden("The customer account is no longer available.");
+      const deleted = await tx.shopping_shipping_addresses.deleteMany({ where: { id: addressId, customer_id: actor.id } });
+      if (deleted.count !== 1) throw ErrorUtil.notFound("The shipping address does not exist.");
+    });
+  }
+  /** Makes one owned address the only default. */
+  export async function defaultAddress(actor: ShoppingActor, addressId: string): Promise<api.IShoppingShippingAddress> {
+    return addressDto(await db().$transaction(async (tx) => { const customer = await tx.shopping_customers.findFirst({ where: { id: actor.id, deleted_at: null, login_state: "active" } }); if (customer === null) throw ErrorUtil.forbidden("The customer account is no longer available."); const owned = await tx.shopping_shipping_addresses.findFirst({ where: { id: addressId, customer_id: actor.id } }); if (owned === null) throw ErrorUtil.notFound("The shipping address does not exist."); await tx.shopping_shipping_addresses.updateMany({ where: { customer_id: actor.id }, data: { is_default: false } }); return tx.shopping_shipping_addresses.update({ where: { id: addressId, customer_id: actor.id }, data: { is_default: true } }); }));
+  }
+
+  function addressData(body: api.IShoppingShippingAddress.ICreate) {
+    return { recipient_name: text(body.recipientName, "recipientName"), recipient_phone: text(body.recipientPhone, "recipientPhone"), street_address: text(body.streetAddress, "streetAddress"), city: text(body.city, "city"), state_or_province: text(body.stateOrProvince, "stateOrProvince"), postal_code: text(body.postalCode, "postalCode"), country: text(body.country, "country") };
+  }
+  function addressDto(row: { id: string; recipient_name: string; recipient_phone: string; street_address: string; city: string; state_or_province: string; postal_code: string; country: string; is_default: boolean }): api.IShoppingShippingAddress {
+    return { id: row.id, recipientName: row.recipient_name, recipientPhone: row.recipient_phone, streetAddress: row.street_address, city: row.city, stateOrProvince: row.state_or_province, postalCode: row.postal_code, country: row.country, isDefault: row.is_default };
+  }
+
+  async function grantGrade(actorType: string, actorId: string, grade: string): Promise<void> {
+    await db().shopping_administrator_grades.create({ data: { id: id(), actor_type: actorType, actor_id: actorId, grade, created_at: now() } });
+  }
+  async function hasGrade(actor: ShoppingActor, grade?: string): Promise<boolean> {
+    const rows = await db().shopping_administrator_grades.findMany({ where: { actor_type: actor.type, actor_id: actor.id } });
+    return grade === undefined ? rows.length > 0 : rows.some((row) => row.grade === grade || (grade === "regularAdministrator" && row.grade === "superAdministrator"));
+  }
+  async function requireAdmin(actor: ShoppingActor, superOnly = false): Promise<void> {
+    if (!(await hasGrade(actor, superOnly ? "superAdministrator" : "regularAdministrator"))) throw ErrorUtil.forbidden("Administrator authority is required.");
+  }
+  async function requireCustomerAtCommit(actor: ShoppingActor, client: IdentityClient): Promise<void> {
+    if (actor.type !== "customer") throw ErrorUtil.forbidden("Customer authority is required.");
+    const customer = await client.shopping_customers.findFirst({ where: { id: actor.id, deleted_at: null, login_state: "active" } });
+    if (customer === null) throw ErrorUtil.forbidden("The customer account is no longer available.");
+  }
+  async function requireSellerAtCommit(actor: ShoppingActor, client: IdentityClient, catalog = false): Promise<void> {
+    if (actor.type !== "seller") throw ErrorUtil.forbidden("Seller authority is required.");
+    const seller = await client.shopping_sellers.findFirst({ where: { id: actor.id, deleted_at: null, login_state: "active" } });
+    if (seller === null) throw ErrorUtil.forbidden("The seller account is unavailable.");
+    if (catalog && (seller.approval_state !== "approved" || seller.suspended)) throw ErrorUtil.forbidden("The seller is not eligible for catalog changes.");
+  }
+  async function requireSessionAtCommit(actor: ShoppingActor, client: SessionClient): Promise<void> {
+    const session = actor.type === "customer"
+      ? await client.shopping_customer_sessions.findFirst({ where: { id: actor.sessionId, customer_id: actor.id, revoked_at: null, expired_at: { gt: now() } } })
+      : await client.shopping_seller_sessions.findFirst({ where: { id: actor.sessionId, seller_id: actor.id, revoked_at: null, expired_at: { gt: now() } } });
+    if (session === null) throw ErrorUtil.unauthorized("The session is no longer valid.");
+  }
+  async function requireAdminAtCommit(actor: ShoppingActor, client: AuthorityClient, superOnly = false): Promise<void> {
+    const identity = actor.type === "customer"
+      ? await client.shopping_customers.findFirst({ where: { id: actor.id, deleted_at: null, login_state: "active" } })
+      : await client.shopping_sellers.findFirst({ where: { id: actor.id, deleted_at: null, login_state: "active" } });
+    if (identity === null) throw ErrorUtil.forbidden("Administrator authority is no longer available.");
+    const grades = await client.shopping_administrator_grades.findMany({ where: { actor_type: actor.type, actor_id: actor.id } });
+    if (!grades.some((grade) => grade.grade === (superOnly ? "superAdministrator" : "regularAdministrator") || (!superOnly && grade.grade === "superAdministrator"))) throw ErrorUtil.forbidden("Administrator authority is required.");
+  }
+  async function requireTargetModeration(actor: ShoppingActor, targetType: ShoppingActor["type"], targetId: string): Promise<void> { if (actor.type === targetType && actor.id === targetId) throw ErrorUtil.forbidden("An administrator cannot target itself."); if (await hasGrade({ id: targetId, type: targetType, sessionId: "" }, "superAdministrator") && !(await hasGrade(actor, "superAdministrator"))) throw ErrorUtil.forbidden("A regular administrator cannot target a super administrator."); }
+  async function requireTargetModerationAtCommit(actor: ShoppingActor, targetType: ShoppingActor["type"], targetId: string, client: AuthorityClient): Promise<void> {
+    if (actor.type === targetType && actor.id === targetId) throw ErrorUtil.forbidden("An administrator cannot target itself.");
+    const targetGrades = await client.shopping_administrator_grades.findMany({ where: { actor_type: targetType, actor_id: targetId } });
+    const actorGrades = await client.shopping_administrator_grades.findMany({ where: { actor_type: actor.type, actor_id: actor.id } });
+    if (targetGrades.some((grade) => grade.grade === "superAdministrator") && !actorGrades.some((grade) => grade.grade === "superAdministrator"))
+      throw ErrorUtil.forbidden("A regular administrator cannot target a super administrator.");
+  }
+  async function snapshot(kind: string, subjectType: string, subjectId: string, before: unknown, after: unknown): Promise<void> {
+    await db().shopping_snapshots.create({ data: { id: id(), kind, subject_type: subjectType, subject_id: subjectId, changed: JSON.stringify([kind]), before_data: JSON.stringify(before), after_data: JSON.stringify(after), created_at: now() } });
+  }
+
+  /** Lists immutable product evidence for its owner or an administrator. */
+  export async function productSnapshots(
+    actor: ShoppingActor,
+    productId: string,
+    input: api.IPage.IRequest,
+    admin: boolean,
+  ): Promise<api.IPage<api.IShoppingProduct.ISnapshot>> {
+    const productRow = await db().shopping_products.findUnique({ where: { id: productId } });
+    if (productRow === null) throw ErrorUtil.notFound("The product does not exist.");
+    if (admin) await requireAdmin(actor);
+    else if (actor.type !== "seller" || productRow.seller_id !== actor.id)
+      throw ErrorUtil.forbidden("Only the product owner may view these snapshots.");
+    const rows = await db().shopping_snapshots.findMany({ where: { subject_type: "product", subject_id: productId }, orderBy: [{ created_at: "desc" }, { id: "desc" }] });
+    return page(rows.map((row) => ({ id: row.id, changed: JSON.parse(row.changed) as string[], before: JSON.parse(row.before_data) as api.IShoppingProduct.ISnapshot.IState, after: JSON.parse(row.after_data) as api.IShoppingProduct.ISnapshot.IState, createdAt: row.created_at.toISOString() })), input);
+  }
+
+  /** Lists immutable seller-profile evidence for its owner or an administrator. */
+  export async function sellerProfileSnapshots(actor: ShoppingActor, input: api.IPage.IRequest, admin: boolean, sellerId = actor.id): Promise<api.IPage<api.IShoppingSnapshot>> {
+    const seller = await db().shopping_sellers.findUnique({ where: { id: sellerId } });
+    if (seller === null) throw ErrorUtil.notFound("The seller does not exist.");
+    if (admin) await requireAdmin(actor);
+    else if (actor.type !== "seller" || actor.id !== sellerId) throw ErrorUtil.forbidden("Only the seller owner may view these snapshots.");
+    const rows = await db().shopping_snapshots.findMany({ where: { kind: "sellerProfile", subject_type: "seller", subject_id: sellerId }, orderBy: [{ created_at: "desc" }, { id: "desc" }] });
+    return snapshotPage(rows, input);
+  }
+
+  /** Lists immutable review evidence for its author or an administrator. */
+  export async function reviewSnapshots(actor: ShoppingActor, reviewId: string, input: api.IPage.IRequest, admin: boolean): Promise<api.IPage<api.IShoppingSnapshot>> {
+    const review = await db().shopping_reviews.findUnique({ where: { id: reviewId } });
+    if (review === null) throw ErrorUtil.notFound("The review does not exist.");
+    if (admin) await requireAdmin(actor);
+    else if (actor.type !== "customer" || review.customer_id !== actor.id) throw ErrorUtil.forbidden("Only the review author may view these snapshots.");
+    const rows = await db().shopping_snapshots.findMany({ where: { subject_type: "review", subject_id: reviewId }, orderBy: [{ created_at: "desc" }, { id: "desc" }] });
+    return snapshotPage(rows, input);
+  }
+
+  /** Lists cancellation and refund evidence visible within one order scope. */
+  export async function orderSnapshots(actor: ShoppingActor, orderId: string, input: api.IPage.IRequest, scope: "customer" | "seller" | "admin"): Promise<api.IPage<api.IShoppingSnapshot>> {
+    const order = await db().shopping_orders.findUnique({ where: { id: orderId } });
+    if (order === null) throw ErrorUtil.notFound("The order does not exist.");
+    if (scope === "admin") await requireAdmin(actor);
+    else if (scope === "customer" && (actor.type !== "customer" || order.customer_id !== actor.id)) throw ErrorUtil.forbidden("The order belongs to another customer.");
+    const items = await db().shopping_order_items.findMany({ where: { order_id: orderId, ...(scope === "seller" ? { seller_id: actor.id } : {}) }, select: { id: true } });
+    if (scope === "seller" && items.length === 0) throw ErrorUtil.forbidden("The order has no item owned by this seller.");
+    const itemIds = items.map((item) => item.id);
+    const [cancellations, refunds] = await Promise.all([
+      db().shopping_cancellation_requests.findMany({ where: { order_item_id: { in: itemIds } }, select: { id: true } }),
+      db().shopping_refund_requests.findMany({ where: { order_item_id: { in: itemIds } }, select: { id: true } }),
+    ]);
+    const subjectIds = [...cancellations, ...refunds].map((request) => request.id);
+    const rows = subjectIds.length === 0 ? [] : await db().shopping_snapshots.findMany({ where: { subject_type: { in: ["cancellation", "refund"] }, subject_id: { in: subjectIds } }, orderBy: [{ created_at: "desc" }, { id: "desc" }] });
+    return snapshotPage(rows, input);
+  }
+
+  function snapshotPage(rows: Array<{ id: string; kind: string; subject_type: string; subject_id: string; changed: string; before_data: string; after_data: string; created_at: Date }>, input: api.IPage.IRequest): api.IPage<api.IShoppingSnapshot> {
+    return page(rows.map((row) => ({ id: row.id, kind: row.kind, subjectType: row.subject_type, subjectId: row.subject_id, changed: JSON.parse(row.changed) as string[], before: JSON.parse(row.before_data) as Record<string, unknown>, after: JSON.parse(row.after_data) as Record<string, unknown>, createdAt: row.created_at.toISOString() })), input);
+  }
+
+  /** Creates a top-level category or a direct child category. */
+  export async function createCategory(actor: ShoppingActor, body: api.IShoppingCategory.ICreate): Promise<api.IShoppingCategory> {
+    await requireAdmin(actor);
+    const result = await db().$transaction(async (tx) => {
+      await requireAdminAtCommit(actor, tx);
+      let parent: { id: string; name: string; description: string } | null = null;
+      if (body.parentId !== undefined) {
+        parent = await tx.shopping_categories.findFirst({ where: { id: body.parentId, deleted_at: null, parent_id: null }, select: { id: true, name: true, description: true } });
+        if (parent === null) throw ErrorUtil.unprocessable("A category parent must be a live top-level category.");
+      }
+      const row = await tx.shopping_categories.create({ data: { id: id(), name: text(body.name, "name"), description: text(body.description, "description"), parent_id: parent?.id ?? null, created_at: now(), deleted_at: null } });
+      return { row, parent };
+    });
+    return categoryDto(result.row, result.parent, []);
+  }
+  /** Lists the complete two-level live category tree. */
+  export async function categories(actor: ShoppingActor): Promise<api.IShoppingCategory[]> {
+    if (actor.type !== "customer" && actor.type !== "seller") throw ErrorUtil.forbidden("Only commerce identities browse categories.");
+    const rows = await db().shopping_categories.findMany({ where: { deleted_at: null, parent_id: null }, orderBy: [{ name: "asc" }, { id: "asc" }] });
+    const children = await db().shopping_categories.findMany({ where: { deleted_at: null, parent_id: { not: null } }, orderBy: [{ name: "asc" }, { id: "asc" }] });
+    return rows.map((row) => categoryDto(row, null, children.filter((child) => child.parent_id === row.id).map((child) => ({ id: child.id, name: child.name, description: child.description }))));
+  }
+  /** Replaces a category's name and description. */
+  export async function updateCategory(actor: ShoppingActor, categoryId: string, body: api.IShoppingCategory.IUpdate): Promise<api.IShoppingCategory> {
+    await requireAdmin(actor);
+    const result = await db().$transaction(async (tx) => { await requireAdminAtCommit(actor, tx); const existing = await tx.shopping_categories.findFirst({ where: { id: categoryId, deleted_at: null } }); if (existing === null) throw ErrorUtil.notFound("The category does not exist."); const changed = await tx.shopping_categories.updateMany({ where: { id: categoryId, deleted_at: null }, data: { name: text(body.name, "name"), description: text(body.description, "description") } }); if (changed.count !== 1) throw ErrorUtil.conflict("The category is no longer live."); const row = await tx.shopping_categories.findUnique({ where: { id: categoryId } }); if (row === null) throw ErrorUtil.conflict("The category is no longer live."); const parent = existing.parent_id === null ? null : await tx.shopping_categories.findFirst({ where: { id: existing.parent_id, deleted_at: null }, select: { id: true, name: true, description: true } }); return { row, parent }; });
+    return categoryDto(result.row, result.parent, []);
+  }
+  /** Retires a category and uncategorizes its products. */
+  export async function deleteCategory(actor: ShoppingActor, categoryId: string): Promise<void> {
+    await requireAdmin(actor);
+    const deletedAt = now();
+    await db().$transaction(async (tx) => {
+      await requireAdminAtCommit(actor, tx);
+      const existing = await tx.shopping_categories.findFirst({ where: { id: categoryId, deleted_at: null } });
+      if (existing === null) throw ErrorUtil.notFound("The category does not exist.");
+      const ids = existing.parent_id === null ? [categoryId, ...(await tx.shopping_categories.findMany({ where: { parent_id: categoryId, deleted_at: null }, select: { id: true } })).map((row) => row.id)] : [categoryId];
+      await tx.shopping_products.updateMany({ where: { category_id: { in: ids }, deleted_at: null }, data: { category_id: null } });
+      const deleted = await tx.shopping_categories.updateMany({ where: { id: { in: ids }, deleted_at: null }, data: { deleted_at: deletedAt } });
+      if (deleted.count !== ids.length) throw ErrorUtil.conflict("The category changed before retirement committed.");
+    });
+  }
+  /** Lists products assigned directly to one live category. */
+  export async function categoryProducts(actor: ShoppingActor, categoryId: string, input: api.IShoppingProduct.IRequest): Promise<api.IPage<api.IShoppingProduct.ISummary>> {
+    if (actor.type !== "customer" && actor.type !== "seller") throw ErrorUtil.forbidden("Only commerce identities browse catalog categories.");
+    if (await db().shopping_categories.findFirst({ where: { id: categoryId, deleted_at: null } }) === null) throw ErrorUtil.notFound("The category does not exist.");
+    return productPage({ categoryId }, input);
+  }
+  function categoryDto(row: { id: string; name: string; description: string }, parent: { id: string; name: string; description: string } | null, children: api.IShoppingCategory.ISummary[]): api.IShoppingCategory {
+    return { id: row.id, name: row.name, description: row.description, parent: parent === null ? null : { ...parent }, children };
+  }
+
+  /** Creates an approved seller product with no variants or images. */
+  export async function createProduct(actor: ShoppingActor, body: api.IShoppingProduct.ICreate): Promise<api.IShoppingProduct> {
+    await requireSellerCatalog(actor);
+    const row = await db().$transaction(async (tx) => {
+      const seller = await tx.shopping_sellers.findFirst({ where: { id: actor.id, deleted_at: null, login_state: "active", approval_state: "approved", suspended: false } });
+      if (seller === null) throw ErrorUtil.forbidden("The seller is not eligible for catalog changes.");
+      const category = await tx.shopping_categories.findFirst({ where: { id: body.categoryId, deleted_at: null } });
+      if (category === null) throw ErrorUtil.unprocessable("The category does not exist.");
+      return tx.shopping_products.create({ data: { id: id(), seller_id: actor.id, category_id: category.id, name: text(body.name, "name"), description: text(body.description, "description"), base_price: nonnegative(body.basePrice, "basePrice"), created_at: now(), deleted_at: null } });
+    });
+    return product(actor, row.id, false);
+  }
+  /** Replaces product catalog fields and records complete evidence. */
+  export async function updateProduct(actor: ShoppingActor, productId: string, body: api.IShoppingProduct.IUpdate): Promise<api.IShoppingProduct> {
+    await requireSellerCatalog(actor);
+    const changedAt = now();
+    await db().$transaction(async (tx) => {
+      const seller = await tx.shopping_sellers.findFirst({ where: { id: actor.id, deleted_at: null, login_state: "active", approval_state: "approved", suspended: false } });
+      if (seller === null) throw ErrorUtil.forbidden("The seller is not eligible for catalog changes.");
+      const existing = await tx.shopping_products.findFirst({ where: { id: productId, seller_id: actor.id, deleted_at: null } });
+      if (existing === null) throw ErrorUtil.notFound("The product does not exist.");
+      const category = await tx.shopping_categories.findFirst({ where: { id: body.categoryId, deleted_at: null } });
+      if (category === null) throw ErrorUtil.unprocessable("The category does not exist.");
+      const before = await productSnapshotData(tx, productId);
+      const afterFields = { name: text(body.name, "name"), description: text(body.description, "description"), categoryId: category.id, basePrice: nonnegative(body.basePrice, "basePrice") };
+      const changed = [before.name === afterFields.name ? null : "name", before.description === afterFields.description ? null : "description", before.categoryId === afterFields.categoryId ? null : "categoryId", before.basePrice === afterFields.basePrice ? null : "basePrice"].filter((field): field is string => field !== null);
+      const updated = await tx.shopping_products.updateMany({ where: { id: productId, seller_id: actor.id, deleted_at: null }, data: { name: afterFields.name, description: afterFields.description, category_id: afterFields.categoryId, base_price: afterFields.basePrice } });
+      if (updated.count !== 1) throw ErrorUtil.conflict("The product changed before the edit committed.");
+      const after = await tx.shopping_products.findUnique({ where: { id: productId } });
+      const [images, variants] = await Promise.all([tx.shopping_product_images.findMany({ where: { product_id: productId }, orderBy: { display_order: "asc" } }), tx.shopping_variants.findMany({ where: { product_id: productId, deleted_at: null } })]);
+      await tx.shopping_snapshots.create({ data: { id: id(), kind: "product", subject_type: "product", subject_id: existing.id, changed: JSON.stringify(changed), before_data: JSON.stringify(before), after_data: JSON.stringify({ name: after?.name, description: after?.description, categoryId: after?.category_id, basePrice: after?.base_price, images: images.map((image) => ({ id: image.id, url: image.url, order: image.display_order })), variants: variants.map((variant) => ({ id: variant.id, sku: variant.sku, options: JSON.parse(variant.options), priceOverride: variant.price_override })) }), created_at: changedAt } });
+    });
+    return product(actor, productId, false);
+  }
+  /** Deletes an owned product after live order/request blockers clear. */
+  export async function deleteProduct(actor: ShoppingActor, productId: string): Promise<void> {
+    await requireSellerCatalog(actor);
+    const existing = await ownedProduct(actor, productId);
+    await assertProductClear(existing.id);
+    await retireProduct(existing.id, undefined, true, actor);
+  }
+  /** Retires any live product for an administrator policy reason. */
+  export async function policyDeleteProduct(actor: ShoppingActor, productId: string, body: api.IShoppingModeration): Promise<void> {
+    await requireAdmin(actor); const reason = text(body.reason, "reason");
+    const productRow = await db().shopping_products.findFirst({ where: { id: productId, deleted_at: null } });
+    if (productRow === null) throw ErrorUtil.notFound("The product does not exist.");
+    await retireProduct(productId, { actorId: actor.id, actorType: actor.type, reason });
+  }
+  async function retireProduct(productId: string, action?: { actorId: string; actorType: ShoppingActor["type"]; reason: string }, enforceClear = false, owner?: ShoppingActor): Promise<void> {
+    const retiredAt = now();
+    await db().$transaction(async (tx) => {
+      if (action !== undefined) await requireAdminAtCommit({ id: action.actorId, type: action.actorType, sessionId: "" }, tx);
+      const product = await tx.shopping_products.findFirst({ where: { id: productId, deleted_at: null } });
+      if (product === null) throw ErrorUtil.notFound("The product does not exist.");
+      if (owner !== undefined) {
+        await requireSellerAtCommit(owner, tx, true);
+        if (product.seller_id !== owner.id) throw ErrorUtil.forbidden("Only the product owner may retire this product.");
+      }
+      const variants = await tx.shopping_variants.findMany({ where: { product_id: productId, deleted_at: null }, select: { id: true } });
+      const variantIds = variants.map((variant) => variant.id);
+      if (enforceClear && variantIds.length > 0) {
+        if (await tx.shopping_order_items.findFirst({ where: { variant_id: { in: variantIds }, status: { in: ["paid", "shipped"] } } })) throw ErrorUtil.conflict("The product has active fulfillment obligations.");
+        const itemIds = (await tx.shopping_order_items.findMany({ where: { variant_id: { in: variantIds } }, select: { id: true } })).map((item) => item.id);
+        if (await tx.shopping_cancellation_requests.findFirst({ where: { order_item_id: { in: itemIds }, status: "pending" } })) throw ErrorUtil.conflict("The product has a pending cancellation.");
+        if (await tx.shopping_refund_requests.findFirst({ where: { order_item_id: { in: itemIds }, status: "pending" } })) throw ErrorUtil.conflict("The product has a pending refund.");
+      }
+      const before = await productSnapshotData(tx, productId);
+      await tx.shopping_product_images.deleteMany({ where: { product_id: productId } });
+      await tx.shopping_inventory_movements.deleteMany({ where: { variant_id: { in: variantIds } } });
+      await tx.shopping_variants.updateMany({ where: { product_id: productId, deleted_at: null }, data: { deleted_at: retiredAt } });
+      const updated = await tx.shopping_products.updateMany({ where: { id: productId, deleted_at: null }, data: { deleted_at: retiredAt, category_id: null } });
+      if (updated.count !== 1) throw ErrorUtil.conflict("The product changed before retirement committed.");
+      await tx.shopping_snapshots.create({ data: { id: id(), kind: "productDelete", subject_type: "product", subject_id: productId, changed: JSON.stringify(["deletedAt"]), before_data: JSON.stringify(before), after_data: JSON.stringify({ name: product.name, description: product.description, categoryId: null, basePrice: product.base_price, images: [], variants: [] }), created_at: retiredAt } });
+      await tx.shopping_wishlist_entries.deleteMany({ where: { product_id: productId } });
+      if (action !== undefined) await tx.shopping_admin_actions.create({ data: { id: id(), kind: "productDeletion", actor_id: action.actorId, target_id: productId, reason: action.reason, created_at: retiredAt } });
+    });
+  }
+  async function assertProductClear(productId: string): Promise<void> {
+    const variants = await db().shopping_variants.findMany({ where: { product_id: productId }, select: { id: true } });
+    const ids = variants.map((row) => row.id);
+    if (ids.length === 0) return;
+    if (await db().shopping_order_items.findFirst({ where: { variant_id: { in: ids }, status: { in: ["paid", "shipped"] } } })) throw ErrorUtil.conflict("The product has active fulfillment obligations.");
+    if (await db().shopping_cancellation_requests.findFirst({ where: { order_item_id: { in: (await db().shopping_order_items.findMany({ where: { variant_id: { in: ids } }, select: { id: true } })).map((row) => row.id) }, status: "pending" } })) throw ErrorUtil.conflict("The product has a pending cancellation.");
+    if (await db().shopping_refund_requests.findFirst({ where: { order_item_id: { in: (await db().shopping_order_items.findMany({ where: { variant_id: { in: ids } }, select: { id: true } })).map((row) => row.id) }, status: "pending" } })) throw ErrorUtil.conflict("The product has a pending refund.");
+  }
+
+  /** Searches visible customer catalog products. */
+  export async function products(actor: ShoppingActor, input: api.IShoppingProduct.IRequest): Promise<api.IPage<api.IShoppingProduct.ISummary>> { if (actor.type !== "customer") throw ErrorUtil.forbidden("Only customers browse products."); return productPage({ categoryId: input.categoryId ?? undefined }, input); }
+  /** Lists live products across seller boundaries for administrators. */
+  export async function adminProducts(actor: ShoppingActor, input: api.IShoppingProduct.IRequest): Promise<api.IPage<api.IShoppingProduct.ISummary>> { await requireAdmin(actor); return productPage({ categoryId: input.categoryId ?? undefined }, input, true); }
+  /** Opens a live product detail, including unavailable moderated products. */
+  export async function product(actor: ShoppingActor, productId: string, admin: boolean): Promise<api.IShoppingProduct> {
+    const row = await db().shopping_products.findFirst({ where: { id: productId, ...(admin ? {} : { deleted_at: null }) } });
+    if (row === null) throw ErrorUtil.notFound("The product does not exist.");
+    const seller = await db().shopping_sellers.findUnique({ where: { id: row.seller_id } });
+    const profile = await db().shopping_seller_profiles.findUnique({ where: { seller_id: row.seller_id } });
+    if (seller === null || profile === null) throw ErrorUtil.notFound("The seller no longer exists.");
+    const [images, variants, reviews, category] = await Promise.all([
+      db().shopping_product_images.findMany({ where: { product_id: row.id }, orderBy: { display_order: "asc" } }),
+      db().shopping_variants.findMany({ where: { product_id: row.id, deleted_at: null } }),
+      db().shopping_reviews.findMany({ where: { product_id: row.id, deleted_at: null }, orderBy: [{ published_at: "desc" }, { id: "desc" }] }),
+      row.category_id === null ? null : db().shopping_categories.findFirst({ where: { id: row.category_id, deleted_at: null } }),
+    ]);
+    const stock = await stocks(variants.map((variant) => variant.id));
+    const variantDtos = variants.map((variant) => variantDto(variant, row.base_price, stock.get(variant.id) ?? 0));
+    const prices = variantDtos.map((variant) => variant.price); const average = reviews.length === 0 ? null : Math.round((reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length) * 10) / 10; const displayedPrice: number | { min: number; max: number } = prices.length === 0 ? row.base_price : prices.every((price) => price === (prices[0] ?? row.base_price)) ? (prices[0] ?? row.base_price) : { min: Math.min(...prices), max: Math.max(...prices) };
+    const reviewDtos = await Promise.all(reviews.map(async (review) => reviewDto(review, await customerName(review.customer_id ?? ""))));
+    const productDtoValue: api.IShoppingProduct = { id: row.id, name: row.name, description: row.description, basePrice: row.base_price, category: category === null ? null : { id: category.id, name: category.name, description: category.description }, seller: { id: row.seller_id, shopName: profile.shop_name, shopDescription: profile.shop_description, logo: profile.logo }, moderation: admin ? { approvalState: seller.approval_state as "pending"|"approved"|"rejected", suspended: seller.suspended, banned: seller.login_state === "banned" } : undefined, images: images.map((image) => ({ id: image.id, url: image.url, order: image.display_order })), variants: variantDtos, displayedPrice, averageRating: average, reviewCount: reviews.length, reviews: reviewDtos, available: seller.approval_state === "approved" && seller.suspended === false && seller.login_state === "active" && variantDtos.some((variant) => variant.available), createdAt: row.created_at.toISOString() };
+    return productDtoValue;
+  }
+  async function productPage(filter: { categoryId?: string }, input: api.IShoppingProduct.IRequest, admin = false): Promise<api.IPage<api.IShoppingProduct.ISummary>> {
+    if (input.minPrice !== undefined && input.minPrice !== null && (!Number.isFinite(input.minPrice) || input.minPrice < 0)) throw ErrorUtil.unprocessable("minPrice must be nonnegative.");
+    if (input.maxPrice !== undefined && input.maxPrice !== null && (!Number.isFinite(input.maxPrice) || input.maxPrice < 0)) throw ErrorUtil.unprocessable("maxPrice must be nonnegative.");
+    if (input.minPrice !== undefined && input.minPrice !== null && input.maxPrice !== undefined && input.maxPrice !== null && input.minPrice > input.maxPrice) throw ErrorUtil.unprocessable("minPrice must not exceed maxPrice.");
+    if (input.sort !== undefined && input.sort !== null && !["createdAt", "priceAsc", "priceDesc"].includes(input.sort)) throw ErrorUtil.unprocessable("Unsupported product sort.");
+    if (filter.categoryId !== undefined && await db().shopping_categories.findFirst({ where: { id: filter.categoryId, deleted_at: null } }) === null) throw ErrorUtil.notFound("The category does not exist.");
+    const rows = await db().shopping_products.findMany({ where: { ...(filter.categoryId === undefined ? {} : { category_id: filter.categoryId }), deleted_at: null }, orderBy: [{ created_at: "desc" }, { id: "desc" }] });
+    const visible: api.IShoppingProduct[] = [];
+    for (const row of rows) {
+      const seller = await db().shopping_sellers.findUnique({ where: { id: row.seller_id } });
+      if (seller === null || seller.deleted_at !== null || (!admin && (seller.login_state !== "active" || seller.approval_state !== "approved" || seller.suspended))) continue;
+      if (input.search !== undefined && input.search !== null && !row.name.toLowerCase().includes(input.search.trim().toLowerCase())) continue;
+      const value = await product({ id: "", type: "customer", sessionId: "" }, row.id, admin);
+      const effectivePrices = value.variants.length === 0 ? [value.basePrice] : value.variants.map((variant) => variant.price);
+      if (input.minPrice !== undefined && input.minPrice !== null && !effectivePrices.some((price) => price >= input.minPrice!)) continue;
+      if (input.maxPrice !== undefined && input.maxPrice !== null && !effectivePrices.some((price) => price <= input.maxPrice!)) continue;
+      if (input.minPrice !== undefined && input.minPrice !== null && input.maxPrice !== undefined && input.maxPrice !== null && !effectivePrices.some((price) => price >= input.minPrice! && price <= input.maxPrice!)) continue;
+      if (input.inStock === true && value.variants.every((variant) => variant.stock <= 0)) continue;
+      visible.push(value);
+    }
+    if (input.sort === "priceAsc" || input.sort === "priceDesc") visible.sort((a, b) => priceValue(a) - priceValue(b) || a.id.localeCompare(b.id));
+    if (input.sort === "priceDesc") visible.reverse();
+    return page(visible.map(productSummary), input);
+  }
+  const priceValue = (value: api.IShoppingProduct): number => typeof value.displayedPrice === "number" ? value.displayedPrice : value.displayedPrice.min;
+  function productSummary(value: api.IShoppingProduct): api.IShoppingProduct.ISummary {
+    return { id: value.id, name: value.name, basePrice: value.basePrice, category: value.category, seller: { id: value.seller.id, shopName: value.seller.shopName, logo: value.seller.logo }, thumbnail: value.images[0] ?? null, displayedPrice: value.displayedPrice, averageRating: value.averageRating, reviewCount: value.reviewCount, available: value.available, createdAt: value.createdAt, moderation: value.moderation };
+  }
+  function nonnegative(value: number, label: string): number { if (!Number.isFinite(value) || value < 0) throw ErrorUtil.unprocessable(`${label} must be nonnegative.`); return value; }
+  function optionalNonnegative(value: number | null | undefined, label: string): number | null { return value === undefined || value === null ? null : nonnegative(value, label); }
+  function variantDto(row: { id: string; sku: string; options: string; price_override: number | null }, base: number, currentStock: number): api.IShoppingVariant {
+    const options = JSON.parse(row.options) as Record<string, string>; const price = row.price_override ?? base;
+    return { id: row.id, sku: row.sku, options, price, priceOverride: row.price_override, stock: currentStock, available: currentStock > 0 };
+  }
+  async function productSnapshotData(first: string | SnapshotClient, second?: string | SnapshotClient): Promise<api.IShoppingProduct.ISnapshot.IState> {
+    const client: SnapshotClient = typeof first === "string" ? (second as SnapshotClient | undefined) ?? db() : first;
+    const productId: string = typeof first === "string" ? first : second as string;
+    const row = await client.shopping_products.findUnique({ where: { id: productId } }); if (row === null) throw ErrorUtil.notFound("The product does not exist.");
+    const [images, variants] = await Promise.all([client.shopping_product_images.findMany({ where: { product_id: productId }, orderBy: { display_order: "asc" } }), client.shopping_variants.findMany({ where: { product_id: productId, deleted_at: null } })]);
+    return { name: row.name, description: row.description, categoryId: row.category_id, basePrice: row.base_price, images: images.map((image) => ({ id: image.id, url: image.url, order: image.display_order })), variants: variants.map((variant) => ({ id: variant.id, sku: variant.sku, options: JSON.parse(variant.options) as Record<string, string>, priceOverride: variant.price_override })) };
+  }
+  async function ownedProduct(actor: ShoppingActor, productId: string) { const row = await db().shopping_products.findFirst({ where: { id: productId, seller_id: actor.id, deleted_at: null } }); if (row === null) throw ErrorUtil.notFound("The product does not exist."); return row; }
+  async function requireSeller(actor: ShoppingActor): Promise<void> { if (actor.type !== "seller") throw ErrorUtil.forbidden("Seller authority is required."); const seller = await db().shopping_sellers.findUnique({ where: { id: actor.id } }); if (seller === null || seller.deleted_at !== null || seller.login_state !== "active") throw ErrorUtil.forbidden("The seller account is unavailable."); }
+  async function requireSellerCatalog(actor: ShoppingActor): Promise<void> { await requireSeller(actor); const seller = await db().shopping_sellers.findUnique({ where: { id: actor.id } }); if (seller === null || seller.approval_state !== "approved" || seller.suspended) throw ErrorUtil.forbidden("The seller is not eligible for catalog changes."); }
+
+  /** Appends product images and captures aggregate evidence. */
+  export async function uploadImages(actor: ShoppingActor, productId: string, body: api.IShoppingProduct.IImages): Promise<api.IShoppingProduct> {
+    await requireSellerCatalog(actor); const urls = body.urls.map((url) => text(url, "url")); const changedAt = now();
+    await db().$transaction(async (tx) => {
+      const seller = await tx.shopping_sellers.findFirst({ where: { id: actor.id, deleted_at: null, login_state: "active", approval_state: "approved", suspended: false } });
+      const product = await tx.shopping_products.findFirst({ where: { id: productId, seller_id: actor.id, deleted_at: null } });
+      if (seller === null) throw ErrorUtil.forbidden("The seller is not eligible for catalog changes.");
+      if (product === null) throw ErrorUtil.notFound("The product does not exist.");
+      const before = await productSnapshotData(tx, productId); const count = await tx.shopping_product_images.count({ where: { product_id: productId } });
+      for (const [index, url] of urls.entries()) await tx.shopping_product_images.create({ data: { id: id(), product_id: productId, url, display_order: count + index, created_at: changedAt } });
+      const [images, variants] = await Promise.all([tx.shopping_product_images.findMany({ where: { product_id: productId }, orderBy: { display_order: "asc" } }), tx.shopping_variants.findMany({ where: { product_id: productId, deleted_at: null } })]);
+      await tx.shopping_snapshots.create({ data: { id: id(), kind: "productImages", subject_type: "product", subject_id: productId, changed: JSON.stringify(["images"]), before_data: JSON.stringify(before), after_data: JSON.stringify({ name: product.name, description: product.description, categoryId: product.category_id, basePrice: product.base_price, images: images.map((image) => ({ id: image.id, url: image.url, order: image.display_order })), variants: variants.map((variant) => ({ id: variant.id, sku: variant.sku, options: JSON.parse(variant.options), priceOverride: variant.price_override })) }), created_at: changedAt } });
+    });
+    return product(actor, productId, false);
+  }
+  /** Reorders every retained product image. */
+  export async function reorderImages(actor: ShoppingActor, productId: string, body: api.IShoppingProduct.IImageOrder): Promise<api.IShoppingProduct> {
+    await requireSellerCatalog(actor); const changedAt = now(); await db().$transaction(async (tx) => {
+      const seller = await tx.shopping_sellers.findFirst({ where: { id: actor.id, deleted_at: null, login_state: "active", approval_state: "approved", suspended: false } });
+      const row = await tx.shopping_products.findFirst({ where: { id: productId, seller_id: actor.id, deleted_at: null } });
+      if (seller === null) throw ErrorUtil.forbidden("The seller is not eligible for catalog changes.");
+      if (row === null) throw ErrorUtil.notFound("The product does not exist.");
+      const current = await tx.shopping_product_images.findMany({ where: { product_id: productId } });
+      if (body.imageIds.length !== current.length || new Set(body.imageIds).size !== current.length || current.some((image) => !body.imageIds.includes(image.id))) throw ErrorUtil.unprocessable("The image order must contain each retained image exactly once.");
+      const before = await productSnapshotData(tx, productId); for (const [index, imageId] of body.imageIds.entries()) await tx.shopping_product_images.update({ where: { id: imageId }, data: { display_order: index } });
+      const [images, variants] = await Promise.all([tx.shopping_product_images.findMany({ where: { product_id: productId }, orderBy: { display_order: "asc" } }), tx.shopping_variants.findMany({ where: { product_id: productId, deleted_at: null } })]);
+      await tx.shopping_snapshots.create({ data: { id: id(), kind: "productImageOrder", subject_type: "product", subject_id: productId, changed: JSON.stringify(["images"]), before_data: JSON.stringify(before), after_data: JSON.stringify({ name: row.name, description: row.description, categoryId: row.category_id, basePrice: row.base_price, images: images.map((image) => ({ id: image.id, url: image.url, order: image.display_order })), variants: variants.map((variant) => ({ id: variant.id, sku: variant.sku, options: JSON.parse(variant.options), priceOverride: variant.price_override })) }), created_at: changedAt } });
+    });
+    return product(actor, productId, false);
+  }
+  /** Deletes one product image. */
+  export async function deleteImage(actor: ShoppingActor, productId: string, imageId: string): Promise<api.IShoppingProduct> {
+    await requireSellerCatalog(actor); const changedAt = now(); await db().$transaction(async (tx) => {
+      const seller = await tx.shopping_sellers.findFirst({ where: { id: actor.id, deleted_at: null, login_state: "active", approval_state: "approved", suspended: false } });
+      const row = await tx.shopping_products.findFirst({ where: { id: productId, seller_id: actor.id, deleted_at: null } });
+      if (seller === null) throw ErrorUtil.forbidden("The seller is not eligible for catalog changes.");
+      if (row === null) throw ErrorUtil.notFound("The product does not exist.");
+      const image = await tx.shopping_product_images.findFirst({ where: { id: imageId, product_id: productId } }); if (image === null) throw ErrorUtil.notFound("The product image does not exist.");
+      const before = await productSnapshotData(tx, productId); const deleted = await tx.shopping_product_images.deleteMany({ where: { id: imageId, product_id: productId } }); if (deleted.count !== 1) throw ErrorUtil.conflict("The product image changed before deletion committed.");
+      const rest = await tx.shopping_product_images.findMany({ where: { product_id: productId }, orderBy: { display_order: "asc" } }); for (const [index, current] of rest.entries()) await tx.shopping_product_images.update({ where: { id: current.id }, data: { display_order: index } });
+      const [images, variants] = await Promise.all([tx.shopping_product_images.findMany({ where: { product_id: productId }, orderBy: { display_order: "asc" } }), tx.shopping_variants.findMany({ where: { product_id: productId, deleted_at: null } })]);
+      await tx.shopping_snapshots.create({ data: { id: id(), kind: "productImageDelete", subject_type: "product", subject_id: productId, changed: JSON.stringify(["images"]), before_data: JSON.stringify(before), after_data: JSON.stringify({ name: row.name, description: row.description, categoryId: row.category_id, basePrice: row.base_price, images: images.map((current) => ({ id: current.id, url: current.url, order: current.display_order })), variants: variants.map((variant) => ({ id: variant.id, sku: variant.sku, options: JSON.parse(variant.options), priceOverride: variant.price_override })) }), created_at: changedAt } });
+    });
+    return product(actor, productId, false);
+  }
+  /** Adds one unique option combination variant. */
+  export async function createVariant(actor: ShoppingActor, productId: string, body: api.IShoppingVariant.ICreate): Promise<api.IShoppingVariant> {
+    await requireSellerCatalog(actor); const options = normalizeOptions(body.options); const sku = text(body.sku, "sku"); const normalized = sku.toLowerCase(); const serializedOptions = JSON.stringify(options); const priceOverride = optionalNonnegative(body.priceOverride, "priceOverride");
+    const changedAt = now(); const result = await db().$transaction(async (tx) => {
+      const seller = await tx.shopping_sellers.findFirst({ where: { id: actor.id, deleted_at: null, login_state: "active", approval_state: "approved", suspended: false } });
+      const parent = await tx.shopping_products.findFirst({ where: { id: productId, seller_id: actor.id, deleted_at: null } });
+      if (seller === null) throw ErrorUtil.forbidden("The seller is not eligible for catalog changes.");
+      if (parent === null) throw ErrorUtil.notFound("The product does not exist.");
+      if (await tx.shopping_variants.findUnique({ where: { sku_normalized: normalized } })) throw ErrorUtil.conflict("The SKU is already reserved.");
+      const siblings = await tx.shopping_variants.findMany({ where: { product_id: productId, deleted_at: null } }); if (siblings.some((variant) => optionSignature(JSON.parse(variant.options) as Record<string, string>) === optionSignature(options))) throw ErrorUtil.conflict("The option combination already exists.");
+      const before = await productSnapshotData(tx, productId); const created = await tx.shopping_variants.create({ data: { id: id(), product_id: productId, seller_id: actor.id, sku, sku_normalized: normalized, options: serializedOptions, price_override: priceOverride, deleted_at: null, created_at: changedAt } }); const [images, variants] = await Promise.all([tx.shopping_product_images.findMany({ where: { product_id: productId }, orderBy: { display_order: "asc" } }), tx.shopping_variants.findMany({ where: { product_id: productId, deleted_at: null } })]); await tx.shopping_snapshots.create({ data: { id: id(), kind: "variantCreate", subject_type: "product", subject_id: productId, changed: JSON.stringify(["variants"]), before_data: JSON.stringify(before), after_data: JSON.stringify({ name: parent.name, description: parent.description, categoryId: parent.category_id, basePrice: parent.base_price, images: images.map((image) => ({ id: image.id, url: image.url, order: image.display_order })), variants: variants.map((variant) => ({ id: variant.id, sku: variant.sku, options: JSON.parse(variant.options), priceOverride: variant.price_override })) }), created_at: changedAt } }); return { created, parent };
+    }); return variantDto(result.created, result.parent.base_price, 0);
+  }
+  /** Edits one variant and creates a complete product snapshot. */
+  export async function updateVariant(actor: ShoppingActor, variantId: string, body: api.IShoppingVariant.IUpdate): Promise<api.IShoppingVariant> {
+    await requireSellerCatalog(actor); const options = normalizeOptions(body.options); const sku = text(body.sku, "sku"); const normalized = sku.toLowerCase(); const serializedOptions = JSON.stringify(options); const priceOverride = optionalNonnegative(body.priceOverride, "priceOverride");
+    const changedAt = now(); const result = await db().$transaction(async (tx) => {
+      const seller = await tx.shopping_sellers.findFirst({ where: { id: actor.id, deleted_at: null, login_state: "active", approval_state: "approved", suspended: false } });
+      const variant = await tx.shopping_variants.findFirst({ where: { id: variantId, seller_id: actor.id, deleted_at: null } });
+      if (seller === null) throw ErrorUtil.forbidden("The seller is not eligible for catalog changes.");
+      if (variant === null) throw ErrorUtil.notFound("The variant does not exist.");
+      const parent = await tx.shopping_products.findFirst({ where: { id: variant.product_id, seller_id: actor.id, deleted_at: null } });
+      if (parent === null) throw ErrorUtil.notFound("The product does not exist.");
+      const duplicate = await tx.shopping_variants.findFirst({ where: { sku_normalized: normalized, id: { not: variantId } } }); if (duplicate !== null) throw ErrorUtil.conflict("The SKU is already reserved.");
+      const siblings = await tx.shopping_variants.findMany({ where: { product_id: parent.id, deleted_at: null, id: { not: variantId } } }); if (siblings.some((sibling) => optionSignature(JSON.parse(sibling.options) as Record<string, string>) === optionSignature(options))) throw ErrorUtil.conflict("The option combination already exists.");
+      const before = await productSnapshotData(tx, parent.id); const updated = await tx.shopping_variants.updateMany({ where: { id: variantId, seller_id: actor.id, deleted_at: null }, data: { sku, sku_normalized: normalized, options: serializedOptions, price_override: priceOverride } }); if (updated.count !== 1) throw ErrorUtil.conflict("The variant changed before the edit committed.");
+      const [images, variants] = await Promise.all([tx.shopping_product_images.findMany({ where: { product_id: parent.id }, orderBy: { display_order: "asc" } }), tx.shopping_variants.findMany({ where: { product_id: parent.id, deleted_at: null } })]); await tx.shopping_snapshots.create({ data: { id: id(), kind: "variantUpdate", subject_type: "product", subject_id: parent.id, changed: JSON.stringify(["variants"]), before_data: JSON.stringify(before), after_data: JSON.stringify({ name: parent.name, description: parent.description, categoryId: parent.category_id, basePrice: parent.base_price, images: images.map((image) => ({ id: image.id, url: image.url, order: image.display_order })), variants: variants.map((variant) => ({ id: variant.id, sku: variant.sku, options: JSON.parse(variant.options), priceOverride: variant.price_override })) }), created_at: changedAt } }); return { variant: await tx.shopping_variants.findUnique({ where: { id: variantId } }), parent };
+    }); return variantDto(result.variant!, result.parent.base_price, await stockOf(variantId));
+  }
+  /** Deletes a variant after its fulfillment blockers clear. */
+  export async function deleteVariant(actor: ShoppingActor, variantId: string): Promise<void> {
+    await requireSellerCatalog(actor);
+    const variant = await db().shopping_variants.findFirst({ where: { id: variantId, seller_id: actor.id, deleted_at: null } });
+    if (variant === null) throw ErrorUtil.notFound("The variant does not exist.");
+    if (await db().shopping_order_items.findFirst({ where: { variant_id: variantId, status: { in: ["paid", "shipped"] } } })) throw ErrorUtil.conflict("The variant has active fulfillment obligations.");
+    const itemIds = (await db().shopping_order_items.findMany({ where: { variant_id: variantId }, select: { id: true } })).map((row) => row.id);
+    if (await db().shopping_cancellation_requests.findFirst({ where: { order_item_id: { in: itemIds }, status: "pending" } })) throw ErrorUtil.conflict("The variant has a pending cancellation.");
+    if (await db().shopping_refund_requests.findFirst({ where: { order_item_id: { in: itemIds }, status: "pending" } })) throw ErrorUtil.conflict("The variant has a pending refund.");
+    const deletedAt = now();
+    await db().$transaction(async (tx) => {
+      const seller = await tx.shopping_sellers.findFirst({ where: { id: actor.id, deleted_at: null, login_state: "active", approval_state: "approved", suspended: false } });
+      const currentVariant = await tx.shopping_variants.findFirst({ where: { id: variantId, seller_id: actor.id, deleted_at: null } });
+      if (seller === null) throw ErrorUtil.forbidden("The seller is not eligible for catalog changes.");
+      if (currentVariant === null) throw ErrorUtil.notFound("The variant does not exist.");
+      const before = await productSnapshotData(tx, variant.product_id);
+      if (await tx.shopping_order_items.findFirst({ where: { variant_id: variantId, status: { in: ["paid", "shipped"] } } })) throw ErrorUtil.conflict("The variant has active fulfillment obligations.");
+      const itemIdsAtCommit = (await tx.shopping_order_items.findMany({ where: { variant_id: variantId }, select: { id: true } })).map((row) => row.id);
+      if (await tx.shopping_cancellation_requests.findFirst({ where: { order_item_id: { in: itemIdsAtCommit }, status: "pending" } })) throw ErrorUtil.conflict("The variant has a pending cancellation.");
+      if (await tx.shopping_refund_requests.findFirst({ where: { order_item_id: { in: itemIdsAtCommit }, status: "pending" } })) throw ErrorUtil.conflict("The variant has a pending refund.");
+      const updated = await tx.shopping_variants.updateMany({ where: { id: variantId, seller_id: actor.id, deleted_at: null }, data: { deleted_at: deletedAt } });
+      if (updated.count !== 1) throw ErrorUtil.notFound("The variant does not exist.");
+      await tx.shopping_inventory_movements.deleteMany({ where: { variant_id: variantId } });
+      const [productRow, images, variants] = await Promise.all([tx.shopping_products.findUnique({ where: { id: variant.product_id } }), tx.shopping_product_images.findMany({ where: { product_id: variant.product_id }, orderBy: { display_order: "asc" } }), tx.shopping_variants.findMany({ where: { product_id: variant.product_id, deleted_at: null } })]);
+      if (productRow !== null) await tx.shopping_snapshots.create({ data: { id: id(), kind: "variantDelete", subject_type: "product", subject_id: variant.product_id, changed: JSON.stringify(["variants"]), before_data: JSON.stringify(before), after_data: JSON.stringify({ name: productRow.name, description: productRow.description, categoryId: productRow.category_id, basePrice: productRow.base_price, images: images.map((image) => ({ id: image.id, url: image.url, order: image.display_order })), variants: variants.map((current) => ({ id: current.id, sku: current.sku, options: JSON.parse(current.options), priceOverride: current.price_override })) }), created_at: deletedAt } });
+    });
+  }
+  function normalizeOptions(options: Record<string, string>): Record<string, string> { const entries = Object.entries(options).map(([name, value]) => [text(name, "option name"), text(value, "option value")] as const); const names = entries.map(([name]) => name.toLowerCase()); if (entries.length === 0 || new Set(names).size !== names.length) throw ErrorUtil.unprocessable("A variant needs unique nonblank option pairs."); return Object.fromEntries(entries.sort(([left], [right]) => left.toLowerCase().localeCompare(right.toLowerCase()))); }
+  function optionSignature(options: Record<string, string>): string { return JSON.stringify(Object.entries(options).map(([name, value]) => [name.trim().toLowerCase(), value.trim()] as const).sort((left, right) => left[0]!.localeCompare(right[0]!))); }
+  /** Adds positive restock inventory. */
+  export async function restock(actor: ShoppingActor, variantId: string, body: api.IShoppingVariant.IInventory): Promise<api.IShoppingVariant> { await requireSeller(actor); const quantity = wholePositive(body.quantity, "quantity"); const reason = text(body.reason, "reason"); const variant = await db().$transaction(async (tx) => { const seller = await tx.shopping_sellers.findFirst({ where: { id: actor.id, deleted_at: null, login_state: "active" } }); if (seller === null) throw ErrorUtil.forbidden("The seller account is unavailable."); const current = await tx.shopping_variants.findFirst({ where: { id: variantId, seller_id: actor.id, deleted_at: null } }); if (current === null) throw ErrorUtil.notFound("The variant does not exist."); await tx.shopping_inventory_movements.create({ data: { id: id(), variant_id: variantId, quantity_change: quantity, reason, order_item_id: null, created_at: now() } }); return current; }); return variantView(variant); }
+  /** Adds negative seller inventory adjustment. */
+  export async function subtract(actor: ShoppingActor, variantId: string, body: api.IShoppingVariant.IInventory): Promise<api.IShoppingVariant> { await requireSeller(actor); const quantity = wholePositive(body.quantity, "quantity"); const reason = text(body.reason, "reason"); const variant = await db().$transaction(async (tx) => { const seller = await tx.shopping_sellers.findFirst({ where: { id: actor.id, deleted_at: null, login_state: "active" } }); if (seller === null) throw ErrorUtil.forbidden("The seller account is unavailable."); const current = await tx.shopping_variants.findFirst({ where: { id: variantId, seller_id: actor.id, deleted_at: null } }); if (current === null) throw ErrorUtil.notFound("The variant does not exist."); const movements = await tx.shopping_inventory_movements.findMany({ where: { variant_id: variantId }, select: { quantity_change: true } }); const holds = await tx.shopping_checkout_holds.findMany({ where: { variant_id: variantId }, select: { quantity: true } }); const stock = movements.reduce((sum, movement) => sum + movement.quantity_change, 0); const held = holds.reduce((sum, hold) => sum + hold.quantity, 0); if (stock - held < quantity) throw ErrorUtil.conflict("The adjustment would consume reserved or unavailable stock."); await tx.shopping_inventory_movements.create({ data: { id: id(), variant_id: variantId, quantity_change: -quantity, reason, order_item_id: null, created_at: now() } }); return current; }); return variantView(variant); }
+  /** Lists the complete inventory ledger newest first. */
+  export async function inventory(actor: ShoppingActor, variantId: string, input: api.IPage.IRequest): Promise<api.IPage<{ id: string; quantityChange: number; reason: string; createdAt: string }>> { await requireSeller(actor); await ownedVariant(actor, variantId); const rows = await db().shopping_inventory_movements.findMany({ where: { variant_id: variantId }, orderBy: [{ created_at: "desc" }, { id: "desc" }] }); return page(rows.map((row) => ({ id: row.id, quantityChange: row.quantity_change, reason: row.reason, createdAt: row.created_at.toISOString() })), input); }
+  async function ownedVariant(actor: ShoppingActor, variantId: string) { const row = await db().shopping_variants.findFirst({ where: { id: variantId, seller_id: actor.id, deleted_at: null } }); if (row === null) throw ErrorUtil.notFound("The variant does not exist."); return row; }
+  async function variantView(row: { id: string; sku: string; options: string; price_override: number | null; product_id: string }): Promise<api.IShoppingVariant> { const parent = await db().shopping_products.findUnique({ where: { id: row.product_id } }); if (parent === null) throw ErrorUtil.notFound("The product does not exist."); return variantDto(row, parent.base_price, await stockOf(row.id)); }
+  async function stockOf(variantId: string): Promise<number> { const rows = await db().shopping_inventory_movements.findMany({ where: { variant_id: variantId }, select: { quantity_change: true } }); return rows.reduce((sum, row) => sum + row.quantity_change, 0); }
+  async function stocks(variantIds: string[]): Promise<Map<string, number>> { const rows = await db().shopping_inventory_movements.findMany({ where: { variant_id: { in: variantIds } }, select: { variant_id: true, quantity_change: true } }); const result = new Map<string, number>(); for (const row of rows) result.set(row.variant_id, (result.get(row.variant_id) ?? 0) + row.quantity_change); return result; }
+  async function isPurchasableVariant(variant: { product_id: string; deleted_at: Date | null }): Promise<boolean> { if (variant.deleted_at !== null) return false; const parent = await db().shopping_products.findUnique({ where: { id: variant.product_id } }); if (parent === null || parent.deleted_at !== null) return false; const seller = await db().shopping_sellers.findUnique({ where: { id: parent.seller_id } }); return seller !== null && seller.deleted_at === null && seller.approval_state === "approved" && seller.suspended === false && seller.login_state === "active"; }
+  function wholePositive(value: number, label: string): number { if (!Number.isInteger(value) || value < 1) throw ErrorUtil.unprocessable(`${label} must be a positive whole number.`); return value; }
+
+  /** Adds or merges one wishlist product. */
+  export async function addWishlist(actor: ShoppingActor, productId: string): Promise<api.IShoppingWishlistEntry> { const row = await db().$transaction(async (tx) => { const customer = await tx.shopping_customers.findFirst({ where: { id: actor.id, deleted_at: null, login_state: "active" } }); if (customer === null) throw ErrorUtil.forbidden("The customer account is no longer available."); const productRow = await tx.shopping_products.findFirst({ where: { id: productId, deleted_at: null } }); if (productRow === null) throw ErrorUtil.notFound("The product does not exist."); return tx.shopping_wishlist_entries.upsert({ where: { customer_id_product_id: { customer_id: actor.id, product_id: productId } }, create: { id: id(), customer_id: actor.id, product_id: productId, created_at: now() }, update: {} }); }); return { id: row.id, product: productSummary(await product({ id: "", type: "customer", sessionId: "" }, productId, false)), savedAt: row.created_at.toISOString() };
+  }
+  /** Lists one customer's wishlist. */
+  export async function wishlist(actor: ShoppingActor, input: api.IPage.IRequest): Promise<api.IPage<api.IShoppingWishlistEntry>> { const rows = await db().shopping_wishlist_entries.findMany({ where: { customer_id: actor.id }, orderBy: [{ created_at: "desc" }, { id: "desc" }] }); const values: api.IShoppingWishlistEntry[] = []; for (const row of rows) { try { values.push({ id: row.id, product: productSummary(await product(actor, row.product_id, false)), savedAt: row.created_at.toISOString() }); } catch { /* a concurrent retirement removes the entry below */ } } return page(values, input); }
+  /** Removes one wishlist relation. */
+  export async function removeWishlist(actor: ShoppingActor, productId: string): Promise<void> { await db().$transaction(async (tx) => { const customer = await tx.shopping_customers.findFirst({ where: { id: actor.id, deleted_at: null, login_state: "active" } }); if (customer === null) throw ErrorUtil.forbidden("The customer account is no longer available."); const deleted = await tx.shopping_wishlist_entries.deleteMany({ where: { customer_id: actor.id, product_id: productId } }); if (deleted.count !== 1) throw ErrorUtil.notFound("The wishlist entry does not exist."); }); }
+  /** Adds or merges one cart line when the variant is currently purchasable. */
+  export async function addCart(actor: ShoppingActor, variantId: string, quantity: number): Promise<api.IShoppingCart> { const qty = wholePositive(quantity, "quantity"); await db().$transaction(async (tx) => { const customer = await tx.shopping_customers.findFirst({ where: { id: actor.id, deleted_at: null, login_state: "active" } }); if (customer === null) throw ErrorUtil.forbidden("The customer account is no longer available."); const variant = await tx.shopping_variants.findFirst({ where: { id: variantId, deleted_at: null } }); if (variant === null) throw ErrorUtil.conflict("The variant is not currently purchasable."); const movements = await tx.shopping_inventory_movements.findMany({ where: { variant_id: variantId }, select: { quantity_change: true } }); if (movements.reduce((sum, movement) => sum + movement.quantity_change, 0) <= 0) throw ErrorUtil.conflict("The variant is not currently purchasable."); const productRow = await tx.shopping_products.findFirst({ where: { id: variant.product_id, deleted_at: null } }); const seller = productRow === null ? null : await tx.shopping_sellers.findFirst({ where: { id: productRow.seller_id, deleted_at: null, approval_state: "approved", suspended: false, login_state: "active" } }); if (productRow === null || seller === null) throw ErrorUtil.conflict("The variant is not currently purchasable."); await tx.shopping_cart_lines.upsert({ where: { customer_id_variant_id: { customer_id: actor.id, variant_id: variantId } }, create: { id: id(), customer_id: actor.id, variant_id: variantId, quantity: qty, created_at: now() }, update: { quantity: { increment: qty } } }); }); return cart(actor); }
+  /** Returns current cart prices and availability. */
+  export async function cart(actor: ShoppingActor): Promise<api.IShoppingCart> { const rows = await db().shopping_cart_lines.findMany({ where: { customer_id: actor.id }, orderBy: [{ created_at: "asc" }, { id: "asc" }] }); const lines: api.IShoppingCartLine[] = []; for (const row of rows) { const variant = await db().shopping_variants.findUnique({ where: { id: row.variant_id } }); if (variant === null) continue; const parent = await db().shopping_products.findUnique({ where: { id: variant.product_id } }); if (parent === null) continue; let value: api.IShoppingVariant; let summary: api.IShoppingProduct.ISummary; try { const detail = await product(actor, parent.id, true); value = detail.variants.find((item) => item.id === variant.id) ?? variantDto(variant, parent.base_price, await stockOf(variant.id)); summary = productSummary(detail); } catch { value = variantDto(variant, parent.base_price, await stockOf(variant.id)); summary = { id: parent.id, name: parent.name, basePrice: parent.base_price, category: null, seller: { id: parent.seller_id, shopName: "deleted shop", logo: null }, thumbnail: null, displayedPrice: value.price, averageRating: null, reviewCount: 0, available: false, createdAt: parent.created_at.toISOString() }; } const available = variant.deleted_at === null && parent.deleted_at === null && value.stock > 0 && await isPurchasableVariant(variant); lines.push({ id: row.id, variant: { ...value, product: summary }, quantity: row.quantity, subtotal: value.price * row.quantity, available, shortage: available && value.stock < row.quantity }); } return { lines, total: lines.reduce((sum, line) => sum + line.subtotal, 0) }; }
+  /** Replaces one owned cart quantity. */
+  export async function updateCart(actor: ShoppingActor, lineId: string, quantity: number): Promise<api.IShoppingCart> { const qty = wholePositive(quantity, "quantity"); await db().$transaction(async (tx) => { const customer = await tx.shopping_customers.findFirst({ where: { id: actor.id, deleted_at: null, login_state: "active" } }); if (customer === null) throw ErrorUtil.forbidden("The customer account is no longer available."); const changed = await tx.shopping_cart_lines.updateMany({ where: { id: lineId, customer_id: actor.id }, data: { quantity: qty } }); if (changed.count !== 1) throw ErrorUtil.notFound("The cart line does not exist."); }); return cart(actor); }
+  /** Removes one owned cart line. */
+  export async function removeCart(actor: ShoppingActor, lineId: string): Promise<void> { await db().$transaction(async (tx) => { const customer = await tx.shopping_customers.findFirst({ where: { id: actor.id, deleted_at: null, login_state: "active" } }); if (customer === null) throw ErrorUtil.forbidden("The customer account is no longer available."); const deleted = await tx.shopping_cart_lines.deleteMany({ where: { id: lineId, customer_id: actor.id } }); if (deleted.count !== 1) throw ErrorUtil.notFound("The cart line does not exist."); }); }
+
+  /** Returns seller approval and restriction state. */
+  export async function sellerStatus(actor: ShoppingActor): Promise<api.IShoppingSeller.IStatus> { const seller = await db().shopping_sellers.findUnique({ where: { id: actor.id } }); if (seller === null) throw ErrorUtil.notFound("The seller does not exist."); return { approvalState: seller.approval_state as api.IShoppingSeller["approvalState"], rejectionReason: seller.rejection_reason, suspended: seller.suspended, banned: seller.login_state === "banned" }; }
+  /** Resubmits a rejected seller approval request. */
+  export async function resubmitSeller(actor: ShoppingActor): Promise<api.IShoppingSeller.IStatus> { const seller = await db().shopping_sellers.findUnique({ where: { id: actor.id } }); if (seller === null || seller.deleted_at !== null || seller.login_state !== "active" || seller.approval_state !== "rejected") throw ErrorUtil.conflict("Only a rejected seller may reapply."); const createdAt = now(); await db().$transaction(async (tx) => { const current = await tx.shopping_sellers.findFirst({ where: { id: actor.id, approval_state: "rejected", deleted_at: null, login_state: "active" } }); if (current === null) throw ErrorUtil.conflict("Only a rejected seller may reapply."); const updated = await tx.shopping_sellers.updateMany({ where: { id: actor.id, approval_state: "rejected", deleted_at: null, login_state: "active" }, data: { approval_state: "pending", rejection_reason: null } }); if (updated.count !== 1) throw ErrorUtil.conflict("Only a rejected seller may reapply."); await tx.shopping_seller_approval_requests.create({ data: { id: id(), seller_id: actor.id, status: "pending", pending_key: actor.id, reason: null, decided_by: null, decided_at: null, created_at: createdAt } }); }); return sellerStatus(actor); }
+  /** Lists pending seller approvals for administrators. */
+  export async function sellerApprovals(actor: ShoppingActor, input: api.IPage.IRequest): Promise<api.IPage<IShoppingApproval>> { await requireAdmin(actor); const rows = await db().shopping_seller_approval_requests.findMany({ where: { status: "pending" }, orderBy: [{ created_at: "asc" }, { id: "asc" }] }); const values: IShoppingApproval[] = []; for (const row of rows) { const seller = await db().shopping_sellers.findUnique({ where: { id: row.seller_id } }); const profile = await db().shopping_seller_profiles.findUnique({ where: { seller_id: row.seller_id } }); if (seller !== null && profile !== null) values.push({ id: row.id, sellerId: seller.id, shopName: profile.shop_name, createdAt: row.created_at.toISOString() }); } return page(values, input); }
+  /** Approves one seller application. */
+  export async function approveSeller(actor: ShoppingActor, requestId: string): Promise<api.IShoppingSeller.IStatus> {
+    await requireAdmin(actor);
+    const request = await db().shopping_seller_approval_requests.findFirst({ where: { id: requestId, status: "pending" } });
+    if (request === null) throw ErrorUtil.notFound("The seller approval request is not pending.");
+    const decidedAt = now();
+    await db().$transaction(async (tx) => {
+      await requireAdminAtCommit(actor, tx);
+      const seller = await tx.shopping_sellers.findFirst({ where: { id: request.seller_id, deleted_at: null, login_state: "active", approval_state: "pending" } });
+      if (seller === null) throw ErrorUtil.conflict("The seller identity is unavailable.");
+      const changed = await tx.shopping_sellers.updateMany({ where: { id: request.seller_id, deleted_at: null, login_state: "active", approval_state: "pending" }, data: { approval_state: "approved", rejection_reason: null } });
+      if (changed.count !== 1) throw ErrorUtil.conflict("The seller identity is unavailable.");
+      const updated = await tx.shopping_seller_approval_requests.updateMany({ where: { id: requestId, status: "pending" }, data: { status: "approved", pending_key: null, decided_by: actor.id, decided_at: decidedAt } });
+      if (updated.count !== 1) throw ErrorUtil.conflict("The seller approval request is no longer pending.");
+      await tx.shopping_admin_actions.create({ data: { id: id(), kind: "sellerApproval", actor_id: actor.id, target_id: request.seller_id, reason: "approved", created_at: decidedAt } });
+    });
+    return sellerStatus({ id: request.seller_id, type: "seller", sessionId: "" });
+  }
+  /** Rejects one seller application with a reason. */
+  export async function rejectSeller(actor: ShoppingActor, requestId: string, body: api.IShoppingModeration): Promise<api.IShoppingSeller.IStatus> {
+    await requireAdmin(actor);
+    const reason = text(body.reason, "reason");
+    const request = await db().shopping_seller_approval_requests.findFirst({ where: { id: requestId, status: "pending" } });
+    if (request === null) throw ErrorUtil.notFound("The seller approval request is not pending.");
+    const decidedAt = now();
+    await db().$transaction(async (tx) => {
+      await requireAdminAtCommit(actor, tx);
+      const seller = await tx.shopping_sellers.findFirst({ where: { id: request.seller_id, deleted_at: null, login_state: "active", approval_state: "pending" } });
+      if (seller === null) throw ErrorUtil.conflict("The seller identity is unavailable.");
+      const changed = await tx.shopping_sellers.updateMany({ where: { id: request.seller_id, deleted_at: null, login_state: "active", approval_state: "pending" }, data: { approval_state: "rejected", rejection_reason: reason } });
+      if (changed.count !== 1) throw ErrorUtil.conflict("The seller identity is unavailable.");
+      const updated = await tx.shopping_seller_approval_requests.updateMany({ where: { id: requestId, status: "pending" }, data: { status: "rejected", pending_key: null, reason, decided_by: actor.id, decided_at: decidedAt } });
+      if (updated.count !== 1) throw ErrorUtil.conflict("The seller approval request is no longer pending.");
+      await tx.shopping_admin_actions.create({ data: { id: id(), kind: "sellerApproval", actor_id: actor.id, target_id: request.seller_id, reason: `rejected: ${reason}`, created_at: decidedAt } });
+    });
+    return sellerStatus({ id: request.seller_id, type: "seller", sessionId: "" });
+  }
+  /** Suspends an approved seller's catalog. */
+  export async function suspendSeller(actor: ShoppingActor, sellerId: string): Promise<void> { await requireAdmin(actor); await requireTargetModeration(actor, "seller", sellerId); const seller = await db().shopping_sellers.findFirst({ where: { id: sellerId, deleted_at: null, approval_state: "approved", suspended: false } }); if (seller === null) throw ErrorUtil.conflict("The seller is not eligible for suspension."); const changedAt = now(); await db().$transaction(async (tx) => { await requireAdminAtCommit(actor, tx); await requireTargetModerationAtCommit(actor, "seller", sellerId, tx); const current = await tx.shopping_sellers.findFirst({ where: { id: sellerId, deleted_at: null, approval_state: "approved", suspended: false } }); if (current === null) throw ErrorUtil.conflict("The seller is not eligible for suspension."); const updated = await tx.shopping_sellers.updateMany({ where: { id: sellerId, deleted_at: null, approval_state: "approved", suspended: false }, data: { suspended: true } }); if (updated.count !== 1) throw ErrorUtil.conflict("The seller is not eligible for suspension."); await tx.shopping_admin_actions.create({ data: { id: id(), kind: "sellerSuspension", actor_id: actor.id, target_id: sellerId, reason: "suspended", before_state: "active", after_state: "suspended", created_at: changedAt } }); }); }
+  /** Clears one seller catalog suspension. */
+  export async function unsuspendSeller(actor: ShoppingActor, sellerId: string): Promise<void> { await requireAdmin(actor); await requireTargetModeration(actor, "seller", sellerId); const seller = await db().shopping_sellers.findFirst({ where: { id: sellerId, deleted_at: null, suspended: true } }); if (seller === null) throw ErrorUtil.conflict("The seller is not suspended."); const changedAt = now(); await db().$transaction(async (tx) => { await requireAdminAtCommit(actor, tx); await requireTargetModerationAtCommit(actor, "seller", sellerId, tx); const current = await tx.shopping_sellers.findFirst({ where: { id: sellerId, deleted_at: null, suspended: true } }); if (current === null) throw ErrorUtil.conflict("The seller is not suspended."); const updated = await tx.shopping_sellers.updateMany({ where: { id: sellerId, deleted_at: null, suspended: true }, data: { suspended: false } }); if (updated.count !== 1) throw ErrorUtil.conflict("The seller is not suspended."); await tx.shopping_admin_actions.create({ data: { id: id(), kind: "sellerSuspension", actor_id: actor.id, target_id: sellerId, reason: "unsuspended", before_state: "suspended", after_state: "active", created_at: changedAt } }); }); }
+
+  /** Starts a checkout review from all currently eligible cart lines. */
+  export async function checkoutStart(actor: ShoppingActor, body: api.IShoppingOrder.ICheckout): Promise<api.IShoppingOrder.ICheckoutSummary> {
+    const address = body.addressId === undefined ? await db().shopping_shipping_addresses.findFirst({ where: { customer_id: actor.id, is_default: true } }) : await db().shopping_shipping_addresses.findFirst({ where: { id: body.addressId, customer_id: actor.id } });
+    if (address === null) throw ErrorUtil.unprocessable("A retained owned shipping address is required."); const cartValue = await cart(actor); const eligible = cartValue.lines.filter((line) => line.available && !line.shortage); if (eligible.length === 0) throw ErrorUtil.conflict("The cart has no eligible line.");
+    if (await db().shopping_checkout_attempts.findFirst({ where: { customer_id: actor.id, status: "unknown" } }) !== null) throw ErrorUtil.conflict("An unresolved payment attempt must be reconciled before starting another checkout.");
+    const attemptId = id(); const items = await Promise.all(eligible.map((line) => orderItemPreview(line))); const total = items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0); await db().$transaction(async (tx) => { const customer = await tx.shopping_customers.findFirst({ where: { id: actor.id, deleted_at: null, login_state: "active" } }); if (customer === null) throw ErrorUtil.forbidden("The customer account is no longer available."); const currentAddress = await tx.shopping_shipping_addresses.findFirst({ where: { id: address.id, customer_id: actor.id, recipient_name: address.recipient_name, recipient_phone: address.recipient_phone, street_address: address.street_address, city: address.city, state_or_province: address.state_or_province, postal_code: address.postal_code, country: address.country } }); if (currentAddress === null) throw ErrorUtil.conflict("Checkout facts are stale; refresh the summary."); if (await tx.shopping_checkout_attempts.findFirst({ where: { customer_id: actor.id, status: "unknown" } }) !== null) throw ErrorUtil.conflict("An unresolved payment attempt must be reconciled before starting another checkout."); await tx.shopping_checkout_attempts.create({ data: { id: id(), attempt_id: attemptId, customer_id: actor.id, lines: JSON.stringify(eligible.map((line) => ({ variantId: line.variant.id, lineId: line.id, quantity: line.quantity, unitPrice: line.variant.price }))), address: JSON.stringify(address), amount: total, status: "pending", order_id: null, created_at: now() } }); }); return { attemptId, address: addressDto(address), items, totalPrice: total };
+  }
+  /** Confirms or fails one payment attempt idempotently. */
+  export async function payment(actor: ShoppingActor, body: api.IShoppingOrder.IPayment): Promise<api.IShoppingOrder | { status: "failed" | "unknown" }> {
+    const attempt = await db().shopping_checkout_attempts.findFirst({ where: { attempt_id: body.attemptId, customer_id: actor.id } });
+    if (attempt === null) throw ErrorUtil.notFound("The payment attempt does not exist.");
+    if (attempt.status === "succeeded" && attempt.order_id !== null) {
+      if (body.success !== true || body.amount !== attempt.amount)
+        throw ErrorUtil.conflict("The payment attempt already has an incompatible terminal outcome.");
+      return order(actor, attempt.order_id);
+    }
+    if (attempt.status === "failed") {
+      if (body.success === false) return { status: "failed" };
+      throw ErrorUtil.conflict("The payment attempt is already final.");
+    }
+    if (attempt.status === "unknown" && body.success === "unknown") return { status: "unknown" };
+    if (!body.success) {
+      await db().$transaction(async (tx) => {
+        await requireCustomerAtCommit(actor, tx);
+        const current = await tx.shopping_checkout_attempts.findUnique({ where: { id: attempt.id } });
+        if (current === null || !["pending", "unknown"].includes(current.status)) throw ErrorUtil.conflict("The payment attempt is already final.");
+        await tx.shopping_checkout_holds.deleteMany({ where: { attempt_id: attempt.attempt_id } });
+        const updated = await tx.shopping_checkout_attempts.updateMany({ where: { id: attempt.id, status: { in: ["pending", "unknown"] } }, data: { status: "failed" } });
+        if (updated.count !== 1) throw ErrorUtil.conflict("The payment attempt is already final.");
+      });
+      return { status: "failed" };
+    }
+    if (body.success === "unknown") {
+      if (attempt.status === "pending") await preparePaymentAttempt(actor, attempt);
+      const updated = await db().$transaction(async (tx) => { await requireCustomerAtCommit(actor, tx); return tx.shopping_checkout_attempts.updateMany({ where: { id: attempt.id, status: "pending" }, data: { status: "unknown" } }); });
+      if (updated.count !== 1) throw ErrorUtil.conflict("The payment attempt is already final.");
+      return { status: "unknown" };
+    }
+    if (body.amount !== attempt.amount) throw ErrorUtil.conflict("The charged amount does not match the reviewed total.");
+    const lines = JSON.parse(attempt.lines) as Array<{ variantId: string; lineId: string; quantity: number; unitPrice: number }>;
+    const address = JSON.parse(attempt.address) as { id: string; recipient_name: string; recipient_phone: string; street_address: string; city: string; state_or_province: string; postal_code: string; country: string };
+    const orderId = await db().$transaction(async (tx) => {
+      await requireCustomerAtCommit(actor, tx);
+      const currentAttempt = await tx.shopping_checkout_attempts.findUnique({ where: { id: attempt.id } });
+      if (currentAttempt === null) throw ErrorUtil.notFound("The payment attempt does not exist.");
+      if (currentAttempt.status === "succeeded" && currentAttempt.order_id !== null) return currentAttempt.order_id;
+      if (!["pending", "unknown"].includes(currentAttempt.status)) throw ErrorUtil.conflict("The payment attempt is already final.");
+      const customer = await tx.shopping_customers.findFirst({ where: { id: actor.id, deleted_at: null, login_state: "active" } });
+      if (customer === null) throw ErrorUtil.forbidden("The customer account is no longer available.");
+      const createdAt = now();
+      const orderId = id();
+      const orderNumber = `ORD-${createdAt.getTime()}-${orderId.slice(0, 8).toUpperCase()}`;
+      const orderItems: Array<{ line: typeof lines[number]; variant: { id: string; product_id: string; sku: string; options: string; price_override: number | null }; product: { id: string; seller_id: string; name: string; description: string; base_price: number }; profile: { shop_name: string; logo: string | null }; price: number }> = [];
+      const addressRow = await tx.shopping_shipping_addresses.findFirst({ where: { id: address.id, customer_id: actor.id, recipient_name: address.recipient_name, recipient_phone: address.recipient_phone, street_address: address.street_address, city: address.city, state_or_province: address.state_or_province, postal_code: address.postal_code, country: address.country } });
+      if (addressRow === null) throw ErrorUtil.conflict("Checkout facts are stale; refresh the summary.");
+      for (const line of lines) {
+        const cartLine = await tx.shopping_cart_lines.findFirst({ where: { id: line.lineId, customer_id: actor.id, variant_id: line.variantId } });
+        const variant = await tx.shopping_variants.findFirst({ where: { id: line.variantId, deleted_at: null } });
+        if (cartLine === null || cartLine.quantity !== line.quantity || variant === null) throw ErrorUtil.conflict("Checkout facts are stale; refresh the summary.");
+        const productRow = await tx.shopping_products.findFirst({ where: { id: variant.product_id, deleted_at: null } });
+        if (productRow === null) throw ErrorUtil.conflict("Checkout facts are stale; refresh the summary.");
+        const seller = await tx.shopping_sellers.findUnique({ where: { id: productRow.seller_id } });
+        const profile = await tx.shopping_seller_profiles.findUnique({ where: { seller_id: productRow.seller_id } });
+        if (seller === null || profile === null || seller.approval_state !== "approved" || seller.suspended || seller.login_state !== "active") throw ErrorUtil.conflict("Checkout facts are stale; refresh the summary.");
+        const movements = await tx.shopping_inventory_movements.findMany({ where: { variant_id: variant.id }, select: { quantity_change: true } });
+        const holds = await tx.shopping_checkout_holds.findMany({ where: { variant_id: variant.id, attempt_id: { not: attempt.attempt_id } }, select: { quantity: true } });
+        const stock = movements.reduce((sum, movement) => sum + movement.quantity_change, 0) - holds.reduce((sum, hold) => sum + hold.quantity, 0);
+        if (stock < line.quantity) throw ErrorUtil.conflict("Checkout facts are stale; refresh the summary.");
+        const price = variant.price_override ?? productRow.base_price;
+        if (price !== line.unitPrice) throw ErrorUtil.conflict("Checkout facts are stale; refresh the summary.");
+        orderItems.push({ line, variant, product: productRow, profile, price });
+        const existingHold = await tx.shopping_checkout_holds.findUnique({ where: { attempt_id_variant_id: { attempt_id: attempt.attempt_id, variant_id: variant.id } } });
+        if (existingHold === null) await tx.shopping_checkout_holds.create({ data: { id: id(), attempt_id: attempt.attempt_id, variant_id: variant.id, quantity: line.quantity, created_at: createdAt } });
+        else if (existingHold.quantity !== line.quantity) throw ErrorUtil.conflict("Checkout facts are stale; refresh the summary.");
+      }
+      const total = orderItems.reduce((sum, item) => sum + item.price * item.line.quantity, 0);
+      if (total !== attempt.amount) throw ErrorUtil.conflict("Checkout facts are stale; refresh the summary.");
+      const created = await tx.shopping_orders.create({ data: { id: orderId, order_number: orderNumber, customer_id: actor.id, purchased_at: createdAt, total_price: total, recipient_name: address.recipient_name, recipient_phone: address.recipient_phone, street_address: address.street_address, city: address.city, state_or_province: address.state_or_province, postal_code: address.postal_code, country: address.country, status: "paid", created_at: createdAt } });
+      for (const item of orderItems) {
+        const orderItemId = id();
+        await tx.shopping_order_items.create({ data: { id: orderItemId, order_id: created.id, variant_id: item.variant.id, seller_id: item.product.seller_id, product_name: item.product.name, product_description: item.product.description, variant_sku: item.variant.sku, variant_options: item.variant.options, seller_shop_name: item.profile.shop_name, seller_logo: item.profile.logo, unit_price: item.price, quantity: item.line.quantity, status: "paid", delivered_at: null, shipment_id: null, purchased_at: createdAt } });
+        await tx.shopping_inventory_movements.create({ data: { id: id(), variant_id: item.variant.id, quantity_change: -item.line.quantity, reason: "purchase", order_item_id: orderItemId, created_at: createdAt } });
+        await tx.shopping_cart_lines.deleteMany({ where: { id: item.line.lineId, customer_id: actor.id } });
+      }
+      await tx.shopping_payment_transactions.create({ data: { id: id(), reference_id: attempt.attempt_id, kind: "payment", order_id: created.id, order_item_id: null, amount: total, created_at: createdAt } });
+      await tx.shopping_checkout_holds.deleteMany({ where: { attempt_id: attempt.attempt_id } });
+      const updatedAttempt = await tx.shopping_checkout_attempts.updateMany({ where: { id: attempt.id, status: { in: ["pending", "unknown"] } }, data: { status: "succeeded", order_id: created.id } });
+      if (updatedAttempt.count !== 1) throw ErrorUtil.conflict("The payment attempt is already final.");
+      return created.id;
+    });
+    return order(actor, orderId);
+  }
+  async function preparePaymentAttempt(
+    actor: ShoppingActor,
+    attempt: { attempt_id: string; amount: number; lines: string; address: string },
+  ): Promise<void> {
+    const lines = JSON.parse(attempt.lines) as Array<{ variantId: string; lineId: string; quantity: number; unitPrice: number }>;
+    const address = JSON.parse(attempt.address) as { id: string; recipient_name: string; recipient_phone: string; street_address: string; city: string; state_or_province: string; postal_code: string; country: string };
+    await db().$transaction(async (tx) => {
+      await requireCustomerAtCommit(actor, tx);
+      const currentAttempt = await tx.shopping_checkout_attempts.findUnique({ where: { attempt_id: attempt.attempt_id } });
+      if (currentAttempt === null || currentAttempt.status !== "pending") throw ErrorUtil.conflict("The payment attempt is already final.");
+      const addressRow = await tx.shopping_shipping_addresses.findFirst({ where: { id: address.id, customer_id: actor.id, recipient_name: address.recipient_name, recipient_phone: address.recipient_phone, street_address: address.street_address, city: address.city, state_or_province: address.state_or_province, postal_code: address.postal_code, country: address.country } });
+      if (addressRow === null) throw ErrorUtil.conflict("Checkout facts are stale; refresh the summary.");
+      for (const line of lines) {
+        const cartLine = await tx.shopping_cart_lines.findFirst({ where: { id: line.lineId, customer_id: actor.id, variant_id: line.variantId } });
+        const variant = await tx.shopping_variants.findFirst({ where: { id: line.variantId, deleted_at: null } });
+        if (cartLine === null || cartLine.quantity !== line.quantity || variant === null) throw ErrorUtil.conflict("Checkout facts are stale; refresh the summary.");
+        const productRow = await tx.shopping_products.findFirst({ where: { id: variant.product_id, deleted_at: null } });
+        if (productRow === null) throw ErrorUtil.conflict("Checkout facts are stale; refresh the summary.");
+        const seller = await tx.shopping_sellers.findUnique({ where: { id: productRow.seller_id } });
+        const profile = await tx.shopping_seller_profiles.findUnique({ where: { seller_id: productRow.seller_id } });
+        if (seller === null || profile === null || seller.approval_state !== "approved" || seller.suspended || seller.login_state !== "active") throw ErrorUtil.conflict("Checkout facts are stale; refresh the summary.");
+        const movements = await tx.shopping_inventory_movements.findMany({ where: { variant_id: variant.id }, select: { quantity_change: true } });
+        const holds = await tx.shopping_checkout_holds.findMany({ where: { variant_id: variant.id }, select: { quantity: true } });
+        const stock = movements.reduce((sum, movement) => sum + movement.quantity_change, 0) - holds.reduce((sum, hold) => sum + hold.quantity, 0);
+        if (stock < line.quantity) throw ErrorUtil.conflict("Checkout facts are stale; refresh the summary.");
+        const price = variant.price_override ?? productRow.base_price;
+        if (!Number.isFinite(price)) throw ErrorUtil.conflict("Checkout facts are stale; refresh the summary.");
+        if (price !== line.unitPrice) throw ErrorUtil.conflict("Checkout facts are stale; refresh the summary.");
+        await tx.shopping_checkout_holds.create({ data: { id: id(), attempt_id: attempt.attempt_id, variant_id: variant.id, quantity: line.quantity, created_at: now() } });
+      }
+      const total = await tx.shopping_checkout_holds.findMany({ where: { attempt_id: attempt.attempt_id } });
+      if (total.reduce((sum, hold) => sum + hold.quantity, 0) <= 0 || lines.reduce((sum, line) => sum + line.quantity, 0) <= 0) throw ErrorUtil.conflict("Checkout facts are stale; refresh the summary.");
+      const prices = await Promise.all(lines.map(async (line) => {
+        const variant = await tx.shopping_variants.findUnique({ where: { id: line.variantId } });
+        const productRow = variant === null ? null : await tx.shopping_products.findUnique({ where: { id: variant.product_id } });
+        return variant === null || productRow === null || variant.price_override !== null && variant.price_override !== undefined && variant.price_override !== line.unitPrice || variant !== null && productRow !== null && variant.price_override === null && productRow.base_price !== line.unitPrice ? NaN : (variant.price_override ?? productRow.base_price) * line.quantity;
+      }));
+      if (prices.reduce((sum, price) => sum + price, 0) !== attempt.amount) throw ErrorUtil.conflict("Checkout facts are stale; refresh the summary.");
+    });
+  }
+  async function orderItemPreview(line: api.IShoppingCartLine): Promise<api.IShoppingOrderItem> { const productRow = await db().shopping_products.findUnique({ where: { id: line.variant.product.id } }); if (productRow === null) throw ErrorUtil.conflict("Checkout facts are stale; refresh the summary."); return { id: line.id, productName: line.variant.product.name, productDescription: productRow.description, variantSku: line.variant.sku, variantOptions: line.variant.options, seller: { id: line.variant.product.seller.id, shopName: line.variant.product.seller.shopName, logo: line.variant.product.seller.logo }, unitPrice: line.variant.price, quantity: line.quantity, status: "paid", deliveredAt: null, shipmentId: null }; }
+
+  /** Lists customer orders or administrator orders according to caller scope. */
+  export function orders(actor: ShoppingActor, input: api.IPage.IRequest, all?: false): Promise<api.IPage<api.IShoppingOrder.ISummary>>;
+  /** Lists the filtered platform order directory. */
+  export function orders(actor: ShoppingActor, input: api.IShoppingOrder.IAdminRequest, all: true): Promise<api.IPage<api.IShoppingOrder.IAdminSummary>>;
+  export async function orders(actor: ShoppingActor, input: api.IPage.IRequest | api.IShoppingOrder.IAdminRequest, all = false): Promise<api.IPage<api.IShoppingOrder.ISummary | api.IShoppingOrder.IAdminSummary>> {
+    await autoDeliverExpired();
+    if (!all && actor.type !== "customer") throw ErrorUtil.forbidden("Customer authority is required.");
+    if (all) await requireAdmin(actor);
+    const adminInput = input as api.IShoppingOrder.IAdminRequest;
+    const createdFrom = all && adminInput.createdFrom !== undefined && adminInput.createdFrom !== null ? new Date(adminInput.createdFrom) : undefined;
+    const createdTo = all && adminInput.createdTo !== undefined && adminInput.createdTo !== null ? new Date(adminInput.createdTo) : undefined;
+    if ((createdFrom !== undefined && Number.isNaN(createdFrom.getTime())) || (createdTo !== undefined && Number.isNaN(createdTo.getTime())) || (createdFrom !== undefined && createdTo !== undefined && createdFrom > createdTo)) throw ErrorUtil.unprocessable("Invalid order date range.");
+    if (all && adminInput.status !== undefined && adminInput.status !== null && !["paid", "shipped", "delivered", "cancelled", "refunded", "partially completed"].includes(adminInput.status)) throw ErrorUtil.unprocessable("Unsupported order status.");
+    const rows = await db().shopping_orders.findMany({ where: all ? { ...(adminInput.customerId ? { customer_id: adminInput.customerId } : {}), ...(createdFrom || createdTo ? { created_at: { ...(createdFrom ? { gte: createdFrom } : {}), ...(createdTo ? { lte: createdTo } : {}) } } : {}) } : { customer_id: actor.id }, orderBy: [{ purchased_at: "desc" }, { order_number: "desc" }] });
+    const values: (api.IShoppingOrder.ISummary | api.IShoppingOrder.IAdminSummary)[] = [];
+    for (const row of rows) {
+      if (all && adminInput.status !== undefined && adminInput.status !== null && row.status !== adminInput.status) continue;
+      const items = all ? await db().shopping_order_items.findMany({ where: { order_id: row.id }, select: { seller_id: true } }) : [];
+      if (all && adminInput.sellerId !== undefined && adminInput.sellerId !== null && !items.some((item) => item.seller_id === adminInput.sellerId)) continue;
+      if (all) {
+        const customer = await db().shopping_customers.findUnique({ where: { id: row.customer_id }, select: { login_state: true } });
+        values.push({ id: row.id, orderNumber: row.order_number, purchasedAt: row.purchased_at.toISOString(), totalPrice: row.total_price, status: row.status as api.IShoppingOrder["status"], customerId: customer?.login_state === "deleted" ? null : row.customer_id, itemCount: items.length, sellerCount: new Set(items.map((item) => item.seller_id)).size });
+      } else values.push({ id: row.id, orderNumber: row.order_number, purchasedAt: row.purchased_at.toISOString(), totalPrice: row.total_price, status: row.status as api.IShoppingOrder["status"] });
+    }
+    return page(values, input);
+  }
+  /** Opens one retained order detail. */
+  export async function order(actor: ShoppingActor, orderId: string, admin = false): Promise<api.IShoppingOrder> { await autoDeliverExpired(); const row = await db().shopping_orders.findUnique({ where: { id: orderId } }); if (row === null) throw ErrorUtil.notFound("The order does not exist."); if (admin) await requireAdmin(actor); else if (actor.type !== "customer" || row.customer_id !== actor.id) throw ErrorUtil.forbidden("The order belongs to another customer."); return hydrateOrder(row); }
+  async function hydrateOrder(row: { id: string; order_number: string; purchased_at: Date; total_price: number; status: string; recipient_name: string; recipient_phone: string; street_address: string; city: string; state_or_province: string; postal_code: string; country: string }): Promise<api.IShoppingOrder> { const items = await db().shopping_order_items.findMany({ where: { order_id: row.id }, orderBy: { id: "asc" } }); const itemIds = items.map((item) => item.id); const cancellations = await db().shopping_cancellation_requests.findMany({ where: { order_item_id: { in: itemIds } }, orderBy: [{ created_at: "asc" }, { id: "asc" }] }); const refunds = await db().shopping_refund_requests.findMany({ where: { order_item_id: { in: itemIds } }, orderBy: [{ created_at: "asc" }, { id: "asc" }] }); const restorations = await db().shopping_inventory_movements.findMany({ where: { order_item_id: { in: itemIds }, quantity_change: { gt: 0 } }, orderBy: [{ created_at: "asc" }, { id: "asc" }] }); const actions = await db().shopping_admin_actions.findMany({ where: { target_id: { in: itemIds } }, orderBy: [{ created_at: "asc" }, { id: "asc" }] }); const shipments = await db().shopping_shipments.findMany({ where: { order_id: row.id }, orderBy: [{ shipped_at: "asc" }, { id: "asc" }] }); const shipmentDtos: api.IShoppingShipment[] = []; for (const shipment of shipments) { const profile = await db().shopping_seller_profiles.findUnique({ where: { seller_id: shipment.seller_id } }); const members = await db().shopping_order_items.findMany({ where: { shipment_id: shipment.id }, select: { id: true } }); shipmentDtos.push({ id: shipment.id, seller: { id: shipment.seller_id, shopName: profile?.shop_name ?? "deleted shop" }, carrier: shipment.carrier, trackingNumber: shipment.tracking_number, shippedAt: shipment.shipped_at.toISOString(), deliveredAt: date(shipment.delivered_at), itemIds: members.map((member) => member.id) }); }
+    return { id: row.id, orderNumber: row.order_number, purchasedAt: row.purchased_at.toISOString(), totalPrice: row.total_price, status: row.status as api.IShoppingOrder["status"], address: { recipientName: row.recipient_name, recipientPhone: row.recipient_phone, streetAddress: row.street_address, city: row.city, stateOrProvince: row.state_or_province, postalCode: row.postal_code, country: row.country }, items: items.map((item) => ({ id: item.id, productName: item.product_name, productDescription: item.product_description, variantSku: item.variant_sku, variantOptions: JSON.parse(item.variant_options) as Record<string, string>, seller: { id: item.seller_id, shopName: item.seller_shop_name, logo: item.seller_logo }, unitPrice: item.unit_price, quantity: item.quantity, status: item.status as api.IShoppingOrderItem["status"], deliveredAt: date(item.delivered_at), shipmentId: item.shipment_id, purchasedAt: item.purchased_at.toISOString(), cancellationRequests: cancellations.filter((request) => request.order_item_id === item.id).map(requestDto), refundRequests: refunds.filter((request) => request.order_item_id === item.id).map(requestDto), restorations: restorations.filter((movement) => movement.order_item_id === item.id).map((movement) => ({ id: movement.id, quantityChange: movement.quantity_change, reason: movement.reason, createdAt: movement.created_at.toISOString() })) })), shipments: shipmentDtos, forcedActions: actions.map((action) => ({ id: action.id, kind: action.kind, actorId: action.actor_id, reason: action.reason, beforeStatus: (action.before_state ?? "paid") as api.IShoppingOrderItem["status"], afterStatus: (action.after_state ?? "paid") as api.IShoppingOrderItem["status"], createdAt: action.created_at.toISOString() })) };
+  }
+  /** Lists paid order items awaiting shipment for one seller. */
+  export async function shippingQueue(actor: ShoppingActor, input: api.IPage.IRequest): Promise<api.IPage<api.IShoppingOrderItem>> { await requireSeller(actor); const rows = await db().shopping_order_items.findMany({ where: { seller_id: actor.id, status: "paid", shipment_id: null }, orderBy: [{ purchased_at: "asc" }, { id: "asc" }] }); return page(await Promise.all(rows.map(sellerOrderItemDto)), input); }
+  /** Creates one same-seller shipment and transitions all selected items. */
+  export async function createShipment(actor: ShoppingActor, body: api.IShoppingShipment.ICreate): Promise<api.IShoppingShipment> { await requireSeller(actor); const itemIds = body.itemIds; if (itemIds.length === 0 || new Set(itemIds).size !== itemIds.length) throw ErrorUtil.unprocessable("At least one unique item is required."); const rows = await db().shopping_order_items.findMany({ where: { id: { in: itemIds } } }); const orderId = rows[0]?.order_id; if (rows.length !== itemIds.length || orderId === undefined || rows.some((row) => row.order_id !== orderId || row.seller_id !== actor.id || row.status !== "paid" || row.shipment_id !== null)) throw ErrorUtil.conflict("Every selected item must be an unshipped paid item from one order owned by this seller."); const carrier = text(body.carrier, "carrier"); const trackingNumber = text(body.trackingNumber, "trackingNumber"); const shipmentId = id(); const shippedAt = now(); await db().$transaction(async (tx) => { await requireSellerAtCommit(actor, tx); const pending = await tx.shopping_cancellation_requests.findFirst({ where: { order_item_id: { in: itemIds }, status: "pending" } }); if (pending !== null) throw ErrorUtil.conflict("A pending cancellation must be decided before shipping."); const shipment = await tx.shopping_shipments.create({ data: { id: shipmentId, order_id: orderId, seller_id: actor.id, carrier, tracking_number: trackingNumber, shipped_at: shippedAt, delivered_at: null, created_at: shippedAt } }); const updated = await tx.shopping_order_items.updateMany({ where: { id: { in: itemIds }, seller_id: actor.id, status: "paid", shipment_id: null }, data: { status: "shipped", shipment_id: shipment.id } }); if (updated.count !== itemIds.length) throw ErrorUtil.conflict("The selected items changed before shipment commit."); const statuses = (await tx.shopping_order_items.findMany({ where: { order_id: orderId }, select: { status: true } })).map((item) => item.status); await tx.shopping_orders.update({ where: { id: orderId }, data: { status: deriveStatus(statuses) } }); }); return hydrateShipment(shipmentId); }
+  /** Customer confirms one currently shipped package. */
+  export async function deliverShipment(actor: ShoppingActor, shipmentId: string): Promise<api.IShoppingShipment> { if (actor.type !== "customer") throw ErrorUtil.forbidden("Customer authority is required."); const shipment = await db().shopping_shipments.findUnique({ where: { id: shipmentId } }); if (shipment === null) throw ErrorUtil.notFound("The shipment does not exist."); const orderRow = await db().shopping_orders.findUnique({ where: { id: shipment.order_id } }); if (orderRow === null || orderRow.customer_id !== actor.id) throw ErrorUtil.forbidden("The shipment belongs to another customer."); const items = await db().shopping_order_items.findMany({ where: { shipment_id: shipmentId } }); if (items.length === 0 || shipment.delivered_at !== null || !items.every((item) => item.status === "shipped")) throw ErrorUtil.conflict("The shipment is not currently awaiting delivery."); const delivered = now(); await db().$transaction(async (tx) => { await requireCustomerAtCommit(actor, tx); const currentShipment = await tx.shopping_shipments.findUnique({ where: { id: shipmentId } }); const currentOrder = currentShipment === null ? null : await tx.shopping_orders.findUnique({ where: { id: currentShipment.order_id } }); if (currentShipment === null || currentOrder === null || currentOrder.customer_id !== actor.id) throw ErrorUtil.forbidden("The shipment belongs to another customer."); const currentItems = await tx.shopping_order_items.findMany({ where: { shipment_id: shipmentId }, select: { id: true, status: true } }); if (currentItems.length === 0 || currentShipment.delivered_at !== null || currentItems.some((item) => item.status !== "shipped")) throw ErrorUtil.conflict("The shipment is not currently awaiting delivery."); const claimed = await tx.shopping_shipments.updateMany({ where: { id: shipmentId, delivered_at: null }, data: { delivered_at: delivered } }); if (claimed.count !== 1) throw ErrorUtil.conflict("The shipment is no longer awaiting delivery."); const updatedItems = await tx.shopping_order_items.updateMany({ where: { shipment_id: shipmentId, status: "shipped" }, data: { status: "delivered", delivered_at: delivered } }); if (updatedItems.count !== currentItems.length) throw ErrorUtil.conflict("The shipment changed before delivery commit."); const statuses = (await tx.shopping_order_items.findMany({ where: { order_id: currentShipment.order_id }, select: { status: true } })).map((item) => item.status); await tx.shopping_orders.update({ where: { id: currentShipment.order_id }, data: { status: deriveStatus(statuses) } }); }); return hydrateShipment(shipmentId); }
+  async function hydrateShipment(shipmentId: string): Promise<api.IShoppingShipment> { const row = await db().shopping_shipments.findUnique({ where: { id: shipmentId } }); if (row === null) throw ErrorUtil.notFound("The shipment does not exist."); const profile = await db().shopping_seller_profiles.findUnique({ where: { seller_id: row.seller_id } }); const members = await db().shopping_order_items.findMany({ where: { shipment_id: row.id }, select: { id: true } }); return { id: row.id, seller: { id: row.seller_id, shopName: profile?.shop_name ?? "deleted shop" }, carrier: row.carrier, trackingNumber: row.tracking_number, shippedAt: row.shipped_at.toISOString(), deliveredAt: date(row.delivered_at), itemIds: members.map((member) => member.id) }; }
+  /** Applies the deadline-based delivery transition for the resident worker. */
+  export async function autoDeliverExpired(): Promise<void> {
+    const cutoff = new Date(Date.now() - 14 * 86_400_000);
+    const shipments = await db().shopping_shipments.findMany({ where: { delivered_at: null, shipped_at: { lte: cutoff } }, select: { id: true, order_id: true, shipped_at: true } });
+    for (const shipment of shipments) {
+      const delivered = new Date(shipment.shipped_at.getTime() + 14 * 86_400_000);
+      await db().$transaction(async (tx) => {
+        const claimed = await tx.shopping_shipments.updateMany({ where: { id: shipment.id, delivered_at: null }, data: { delivered_at: delivered } });
+        if (claimed.count !== 1) return;
+        await tx.shopping_order_items.updateMany({ where: { shipment_id: shipment.id, status: "shipped" }, data: { status: "delivered", delivered_at: delivered } });
+        const items = await tx.shopping_order_items.findMany({ where: { order_id: shipment.order_id }, select: { status: true } });
+        await tx.shopping_orders.update({ where: { id: shipment.order_id }, data: { status: deriveStatus(items.map((item) => item.status)) } });
+      });
+    }
+  }
+  async function recalculate(orderId: string): Promise<void> { const items = await db().shopping_order_items.findMany({ where: { order_id: orderId }, select: { status: true } }); await db().shopping_orders.update({ where: { id: orderId }, data: { status: deriveStatus(items.map((item) => item.status)) } }); }
+  function deriveStatus(statuses: string[]): string { return statuses.every((value) => value === "paid") ? "paid" : statuses.every((value) => value === "delivered") ? "delivered" : statuses.every((value) => value === "cancelled") ? "cancelled" : statuses.every((value) => value === "refunded") ? "refunded" : statuses.some((value) => value === "shipped") && !statuses.some((value) => value === "delivered") ? "shipped" : "partially completed"; }
+
+  /** Force-cancels one eligible item under an administrator policy reason. */
+  export async function forceCancelItem(actor: ShoppingActor, itemId: string, body: api.IShoppingOrder.IForce): Promise<api.IShoppingOrder> {
+    await requireAdmin(actor);
+    const reason = text(body.reason, "reason");
+    const item = await db().shopping_order_items.findUnique({ where: { id: itemId } });
+    if (item === null) throw ErrorUtil.notFound("The order item does not exist.");
+    if (item.status !== "paid" && item.status !== "shipped") throw ErrorUtil.conflict("The order item is not eligible for force cancellation.");
+    const actionAt = now();
+    await db().$transaction(async (tx) => {
+      await requireAdminAtCommit(actor, tx);
+      const currentItem = await tx.shopping_order_items.findUnique({ where: { id: item.id } });
+      if (currentItem === null || (currentItem.status !== "paid" && currentItem.status !== "shipped")) throw ErrorUtil.conflict("The order item is no longer eligible for force cancellation.");
+      const pending = await tx.shopping_cancellation_requests.findFirst({ where: { order_item_id: currentItem.id, status: "pending" } });
+      if (pending !== null) {
+        const decided = await tx.shopping_cancellation_requests.updateMany({ where: { id: pending.id, status: "pending" }, data: { status: "approved", pending_key: null, decided_by: actor.id, decided_at: actionAt } });
+        if (decided.count !== 1) throw ErrorUtil.conflict("The cancellation request is no longer pending.");
+        await tx.shopping_snapshots.create({ data: { id: id(), kind: "forceCancellationDecision", subject_type: "cancellation", subject_id: pending.id, changed: JSON.stringify(["status"]), before_data: JSON.stringify({ status: "pending" }), after_data: JSON.stringify({ status: "approved", reason }), created_at: actionAt } });
+      }
+      const statuses = (await tx.shopping_order_items.findMany({ where: { order_id: currentItem.order_id }, select: { id: true, status: true } })).map((current) => current.id === currentItem.id ? "cancelled" : current.status);
+      const updated = await tx.shopping_order_items.updateMany({ where: { id: currentItem.id, status: { in: ["paid", "shipped"] } }, data: { status: "cancelled" } });
+      if (updated.count !== 1) throw ErrorUtil.conflict("The order item is no longer eligible for force cancellation.");
+      await tx.shopping_inventory_movements.create({ data: { id: id(), variant_id: currentItem.variant_id, quantity_change: currentItem.quantity, reason: `administrator cancellation: ${reason}`, order_item_id: currentItem.id, created_at: actionAt } });
+      await tx.shopping_payment_transactions.create({ data: { id: id(), reference_id: `cancellation:${currentItem.id}`, kind: "refund", order_id: currentItem.order_id, order_item_id: currentItem.id, amount: currentItem.unit_price * currentItem.quantity, created_at: actionAt } });
+      await tx.shopping_admin_actions.create({ data: { id: id(), kind: "forceCancellation", actor_id: actor.id, target_id: currentItem.id, reason, before_state: currentItem.status, after_state: "cancelled", created_at: actionAt } });
+      await tx.shopping_orders.update({ where: { id: currentItem.order_id }, data: { status: deriveStatus(statuses) } });
+    });
+    return order(actor, item.order_id, true);
+  }
+
+  /** Force-cancels every currently eligible item in one order. */
+  export async function forceCancelOrder(actor: ShoppingActor, orderId: string, body: api.IShoppingOrder.IForce): Promise<api.IShoppingOrder> {
+    await requireAdmin(actor);
+    const reason = text(body.reason, "reason");
+    if (await db().shopping_order_items.findFirst({ where: { order_id: orderId, status: { in: ["paid", "shipped"] } } }) === null) throw ErrorUtil.conflict("The order has no item eligible for force cancellation.");
+    const actionAt = now();
+    await db().$transaction(async (tx) => {
+      await requireAdminAtCommit(actor, tx);
+      const items = await tx.shopping_order_items.findMany({ where: { order_id: orderId, status: { in: ["paid", "shipped"] } } });
+      if (items.length === 0) throw ErrorUtil.conflict("The order has no item eligible for force cancellation.");
+      for (const item of items) {
+        const pending = await tx.shopping_cancellation_requests.findFirst({ where: { order_item_id: item.id, status: "pending" } });
+        if (pending !== null) {
+          await tx.shopping_cancellation_requests.update({ where: { id: pending.id, status: "pending" }, data: { status: "approved", pending_key: null, decided_by: actor.id, decided_at: actionAt } });
+          await tx.shopping_snapshots.create({ data: { id: id(), kind: "forceCancellationDecision", subject_type: "cancellation", subject_id: pending.id, changed: JSON.stringify(["status"]), before_data: JSON.stringify({ status: "pending" }), after_data: JSON.stringify({ status: "approved", reason }), created_at: actionAt } });
+        }
+        const updated = await tx.shopping_order_items.updateMany({ where: { id: item.id, status: { in: ["paid", "shipped"] } }, data: { status: "cancelled" } });
+        if (updated.count !== 1) throw ErrorUtil.conflict("The order item is no longer eligible for force cancellation.");
+        await tx.shopping_inventory_movements.create({ data: { id: id(), variant_id: item.variant_id, quantity_change: item.quantity, reason: `administrator cancellation: ${reason}`, order_item_id: item.id, created_at: actionAt } });
+        await tx.shopping_payment_transactions.create({ data: { id: id(), reference_id: `cancellation:${item.id}`, kind: "refund", order_id: orderId, order_item_id: item.id, amount: item.unit_price * item.quantity, created_at: actionAt } });
+        await tx.shopping_admin_actions.create({ data: { id: id(), kind: "forceCancellation", actor_id: actor.id, target_id: item.id, reason, before_state: item.status, after_state: "cancelled", created_at: actionAt } });
+      }
+      const statuses = (await tx.shopping_order_items.findMany({ where: { order_id: orderId }, select: { status: true } })).map((item) => item.status);
+      await tx.shopping_orders.update({ where: { id: orderId }, data: { status: deriveStatus(statuses) } });
+    });
+    return order(actor, orderId, true);
+  }
+
+  /** Force-refunds one eligible item under an administrator policy reason. */
+  export async function forceRefundItem(actor: ShoppingActor, itemId: string, body: api.IShoppingOrder.IForce): Promise<api.IShoppingOrder> {
+    await requireAdmin(actor);
+    const reason = text(body.reason, "reason");
+    const item = await db().shopping_order_items.findUnique({ where: { id: itemId } });
+    if (item === null) throw ErrorUtil.notFound("The order item does not exist.");
+    if (!["paid", "shipped", "delivered"].includes(item.status)) throw ErrorUtil.conflict("The order item is not eligible for force refund.");
+    if (await db().shopping_cancellation_requests.findFirst({ where: { order_item_id: item.id, status: "pending" } })) throw ErrorUtil.conflict("A pending cancellation blocks force refund.");
+    const actionAt = now();
+    await db().$transaction(async (tx) => {
+      await requireAdminAtCommit(actor, tx);
+      if (await tx.shopping_cancellation_requests.findFirst({ where: { order_item_id: item.id, status: "pending" } })) throw ErrorUtil.conflict("A pending cancellation blocks force refund.");
+      const currentItem = await tx.shopping_order_items.findUnique({ where: { id: item.id } });
+      if (currentItem === null || !["paid", "shipped", "delivered"].includes(currentItem.status)) throw ErrorUtil.conflict("The order item is no longer eligible for force refund.");
+      const pending = await tx.shopping_refund_requests.findFirst({ where: { order_item_id: currentItem.id, status: "pending" } });
+      if (pending !== null) {
+        const decided = await tx.shopping_refund_requests.updateMany({ where: { id: pending.id, status: "pending" }, data: { status: "approved", pending_key: null, decided_by: actor.id, decided_at: actionAt } });
+        if (decided.count !== 1) throw ErrorUtil.conflict("The refund request is no longer pending.");
+        await tx.shopping_snapshots.create({ data: { id: id(), kind: "forceRefundDecision", subject_type: "refund", subject_id: pending.id, changed: JSON.stringify(["status"]), before_data: JSON.stringify({ status: "pending" }), after_data: JSON.stringify({ status: "approved", reason }), created_at: actionAt } });
+      }
+      const statuses = (await tx.shopping_order_items.findMany({ where: { order_id: currentItem.order_id }, select: { id: true, status: true } })).map((current) => current.id === currentItem.id ? "refunded" : current.status);
+      const updated = await tx.shopping_order_items.updateMany({ where: { id: currentItem.id, status: { in: ["paid", "shipped", "delivered"] } }, data: { status: "refunded" } });
+      if (updated.count !== 1) throw ErrorUtil.conflict("The order item is no longer eligible for force refund.");
+      await tx.shopping_inventory_movements.create({ data: { id: id(), variant_id: currentItem.variant_id, quantity_change: currentItem.quantity, reason: `administrator refund: ${reason}`, order_item_id: currentItem.id, created_at: actionAt } });
+      await tx.shopping_payment_transactions.create({ data: { id: id(), reference_id: `refund:${currentItem.id}`, kind: "refund", order_id: currentItem.order_id, order_item_id: currentItem.id, amount: currentItem.unit_price * currentItem.quantity, created_at: actionAt } });
+      await tx.shopping_admin_actions.create({ data: { id: id(), kind: "forceRefund", actor_id: actor.id, target_id: currentItem.id, reason, before_state: currentItem.status, after_state: "refunded", created_at: actionAt } });
+      await tx.shopping_orders.update({ where: { id: currentItem.order_id }, data: { status: deriveStatus(statuses) } });
+    });
+    return order(actor, item.order_id, true);
+  }
+
+  /** Force-refunds every currently eligible item in one order. */
+  export async function forceRefundOrder(actor: ShoppingActor, orderId: string, body: api.IShoppingOrder.IForce): Promise<api.IShoppingOrder> {
+    await requireAdmin(actor);
+    const reason = text(body.reason, "reason");
+    if (await db().shopping_order_items.findFirst({ where: { order_id: orderId, status: { in: ["paid", "shipped", "delivered"] } } }) === null) throw ErrorUtil.conflict("The order has no item eligible for force refund.");
+    const actionAt = now();
+    await db().$transaction(async (tx) => {
+      await requireAdminAtCommit(actor, tx);
+      const items = await tx.shopping_order_items.findMany({ where: { order_id: orderId, status: { in: ["paid", "shipped", "delivered"] } } });
+      if (items.length === 0) throw ErrorUtil.conflict("The order has no item eligible for force refund.");
+      for (const item of items) {
+        if (await tx.shopping_cancellation_requests.findFirst({ where: { order_item_id: item.id, status: "pending" } })) throw ErrorUtil.conflict("A pending cancellation blocks force refund.");
+        const pending = await tx.shopping_refund_requests.findFirst({ where: { order_item_id: item.id, status: "pending" } });
+        if (pending !== null) {
+          await tx.shopping_refund_requests.update({ where: { id: pending.id, status: "pending" }, data: { status: "approved", pending_key: null, decided_by: actor.id, decided_at: actionAt } });
+          await tx.shopping_snapshots.create({ data: { id: id(), kind: "forceRefundDecision", subject_type: "refund", subject_id: pending.id, changed: JSON.stringify(["status"]), before_data: JSON.stringify({ status: "pending" }), after_data: JSON.stringify({ status: "approved", reason }), created_at: actionAt } });
+        }
+        const updated = await tx.shopping_order_items.updateMany({ where: { id: item.id, status: { in: ["paid", "shipped", "delivered"] } }, data: { status: "refunded" } });
+        if (updated.count !== 1) throw ErrorUtil.conflict("The order item is no longer eligible for force refund.");
+        await tx.shopping_inventory_movements.create({ data: { id: id(), variant_id: item.variant_id, quantity_change: item.quantity, reason: `administrator refund: ${reason}`, order_item_id: item.id, created_at: actionAt } });
+        await tx.shopping_payment_transactions.create({ data: { id: id(), reference_id: `refund:${item.id}`, kind: "refund", order_id: orderId, order_item_id: item.id, amount: item.unit_price * item.quantity, created_at: actionAt } });
+        await tx.shopping_admin_actions.create({ data: { id: id(), kind: "forceRefund", actor_id: actor.id, target_id: item.id, reason, before_state: item.status, after_state: "refunded", created_at: actionAt } });
+      }
+      const statuses = (await tx.shopping_order_items.findMany({ where: { order_id: orderId }, select: { status: true } })).map((item) => item.status);
+      await tx.shopping_orders.update({ where: { id: orderId }, data: { status: deriveStatus(statuses) } });
+    });
+    return order(actor, orderId, true);
+  }
+  type OrderItemRow = { id: string; product_name: string; product_description: string; variant_sku: string; variant_options: string; seller_id: string; seller_shop_name: string; seller_logo: string | null; unit_price: number; quantity: number; status: string; delivered_at: Date | null; shipment_id: string | null };
+  type SellerOrderItemRow = OrderItemRow & { order_id: string };
+  function orderItemDto(item: OrderItemRow): api.IShoppingOrderItem { return { id: item.id, productName: item.product_name, productDescription: item.product_description, variantSku: item.variant_sku, variantOptions: JSON.parse(item.variant_options) as Record<string, string>, seller: { id: item.seller_id, shopName: item.seller_shop_name, logo: item.seller_logo }, unitPrice: item.unit_price, quantity: item.quantity, status: item.status as api.IShoppingOrderItem["status"], deliveredAt: date(item.delivered_at), shipmentId: item.shipment_id }; }
+  async function sellerOrderItemDto(item: SellerOrderItemRow): Promise<api.IShoppingOrderItem> { const order = await db().shopping_orders.findUnique({ where: { id: item.order_id } }); if (order === null) throw ErrorUtil.notFound("The order does not exist."); return { ...orderItemDto(item), orderId: order.id, customerId: order.customer_id, address: { recipientName: order.recipient_name, recipientPhone: order.recipient_phone, streetAddress: order.street_address, city: order.city, stateOrProvince: order.state_or_province, postalCode: order.postal_code, country: order.country } }; }
+
+  /** Creates a pending cancellation request for one paid item. */
+  export async function requestCancellation(actor: ShoppingActor, itemId: string, body: api.IShoppingRequest.ICreate): Promise<api.IShoppingRequest> { await customerItem(actor, itemId, "paid"); const reason = text(body.reason, "reason"); const row = await db().$transaction(async (tx) => { const customer = await tx.shopping_customers.findFirst({ where: { id: actor.id, deleted_at: null, login_state: "active" } }); if (customer === null) throw ErrorUtil.forbidden("The customer account is no longer available."); const current = await tx.shopping_order_items.findUnique({ where: { id: itemId } }); const order = current === null ? null : await tx.shopping_orders.findUnique({ where: { id: current.order_id } }); if (current === null || order === null || order.customer_id !== actor.id) throw ErrorUtil.forbidden("The order item belongs to another customer."); if (current.status !== "paid" || current.shipment_id !== null) throw ErrorUtil.conflict("A shipped item cannot be cancelled."); return tx.shopping_cancellation_requests.create({ data: { id: id(), order_item_id: itemId, customer_id: actor.id, seller_id: current.seller_id, reason, status: "pending", pending_key: itemId, decided_by: null, decided_at: null, created_at: now() } }); }); return requestDto(row); }
+  /** Lists a seller's pending cancellations. */
+  export async function cancellationQueue(actor: ShoppingActor, input: api.IPage.IRequest): Promise<api.IPage<api.IShoppingRequest>> { await requireSeller(actor); const rows = await db().shopping_cancellation_requests.findMany({ where: { seller_id: actor.id, status: "pending" }, orderBy: [{ created_at: "asc" }, { id: "asc" }] }); return page(await Promise.all(rows.map(sellerRequestDto)), input); }
+  /** Approves or rejects one cancellation as its item seller. */
+  export async function decideCancellation(actor: ShoppingActor, requestId: string, approve: boolean): Promise<api.IShoppingRequest> {
+    await requireSeller(actor);
+    const row = await db().shopping_cancellation_requests.findFirst({ where: { id: requestId, seller_id: actor.id, status: "pending" } });
+    if (row === null) throw ErrorUtil.notFound("The cancellation request is not pending.");
+    const item = await db().shopping_order_items.findUnique({ where: { id: row.order_item_id } });
+    if (item === null || item.status !== "paid") throw ErrorUtil.conflict("The order item is no longer cancellable.");
+    const status = approve ? "approved" : "rejected";
+    const decidedAt = now();
+    await db().$transaction(async (tx) => {
+      await requireSellerAtCommit(actor, tx);
+      const currentRequest = await tx.shopping_cancellation_requests.findFirst({ where: { id: requestId, seller_id: actor.id, status: "pending" } });
+      if (currentRequest === null) throw ErrorUtil.conflict("The cancellation request is no longer pending.");
+      const currentItem = await tx.shopping_order_items.findUnique({ where: { id: row.order_item_id } });
+      if (currentItem === null || currentItem.status !== "paid") throw ErrorUtil.conflict("The order item is no longer cancellable.");
+      const updatedRequest = await tx.shopping_cancellation_requests.updateMany({ where: { id: requestId, seller_id: actor.id, status: "pending" }, data: { status, pending_key: null, decided_by: actor.id, decided_at: decidedAt } });
+      if (updatedRequest.count !== 1) throw ErrorUtil.conflict("The cancellation request is no longer pending.");
+      await tx.shopping_snapshots.create({ data: { id: id(), kind: "cancellationDecision", subject_type: "cancellation", subject_id: row.id, changed: JSON.stringify(["status"]), before_data: JSON.stringify({ status: "pending", reason: row.reason }), after_data: JSON.stringify({ status, reason: row.reason }), created_at: decidedAt } });
+      if (approve) {
+        const statuses = (await tx.shopping_order_items.findMany({ where: { order_id: currentItem.order_id }, select: { id: true, status: true } })).map((current) => current.id === currentItem.id ? "cancelled" : current.status);
+        const updatedItem = await tx.shopping_order_items.updateMany({ where: { id: currentItem.id, status: "paid" }, data: { status: "cancelled" } });
+        if (updatedItem.count !== 1) throw ErrorUtil.conflict("The order item is no longer cancellable.");
+        await tx.shopping_inventory_movements.create({ data: { id: id(), variant_id: currentItem.variant_id, quantity_change: currentItem.quantity, reason: "cancellation restoration", order_item_id: currentItem.id, created_at: decidedAt } });
+        await tx.shopping_payment_transactions.create({ data: { id: id(), reference_id: `cancellation:${currentItem.id}`, kind: "refund", order_id: currentItem.order_id, order_item_id: currentItem.id, amount: currentItem.unit_price * currentItem.quantity, created_at: decidedAt } });
+        await tx.shopping_orders.update({ where: { id: currentItem.order_id }, data: { status: deriveStatus(statuses) } });
+      }
+    });
+    return requestDto((await db().shopping_cancellation_requests.findUnique({ where: { id: row.id } }))!);
+  }
+  /** Creates a pending refund request for one delivered item. */
+  export async function requestRefund(actor: ShoppingActor, itemId: string, body: api.IShoppingRequest.ICreate): Promise<api.IShoppingRequest> { await customerItem(actor, itemId, "delivered"); const reason = text(body.reason, "reason"); const row = await db().$transaction(async (tx) => { const customer = await tx.shopping_customers.findFirst({ where: { id: actor.id, deleted_at: null, login_state: "active" } }); if (customer === null) throw ErrorUtil.forbidden("The customer account is no longer available."); const current = await tx.shopping_order_items.findUnique({ where: { id: itemId } }); const order = current === null ? null : await tx.shopping_orders.findUnique({ where: { id: current.order_id } }); if (current === null || order === null || order.customer_id !== actor.id) throw ErrorUtil.forbidden("The order item belongs to another customer."); if (current.status !== "delivered" || current.delivered_at === null || current.delivered_at.getTime() + 7 * 86_400_000 < Date.now()) throw ErrorUtil.conflict("The refund window has expired."); return tx.shopping_refund_requests.create({ data: { id: id(), order_item_id: itemId, customer_id: actor.id, seller_id: current.seller_id, reason, status: "pending", pending_key: itemId, decided_by: null, decided_at: null, created_at: now() } }); }); return requestDto(row); }
+  /** Lists a seller's pending refunds. */
+  export async function refundQueue(actor: ShoppingActor, input: api.IPage.IRequest): Promise<api.IPage<api.IShoppingRequest>> { await requireSeller(actor); const rows = await db().shopping_refund_requests.findMany({ where: { seller_id: actor.id, status: "pending" }, orderBy: [{ created_at: "asc" }, { id: "asc" }] }); return page(await Promise.all(rows.map(sellerRequestDto)), input); }
+  /** Approves or rejects one refund as its item seller. */
+  export async function decideRefund(actor: ShoppingActor, requestId: string, approve: boolean): Promise<api.IShoppingRequest> {
+    await requireSeller(actor);
+    const row = await db().shopping_refund_requests.findFirst({ where: { id: requestId, seller_id: actor.id, status: "pending" } });
+    if (row === null) throw ErrorUtil.notFound("The refund request is not pending.");
+    const item = await db().shopping_order_items.findUnique({ where: { id: row.order_item_id } });
+    if (item === null || item.status !== "delivered") throw ErrorUtil.conflict("The order item is no longer refundable.");
+    const status = approve ? "approved" : "rejected";
+    const decidedAt = now();
+    await db().$transaction(async (tx) => {
+      await requireSellerAtCommit(actor, tx);
+      const currentRequest = await tx.shopping_refund_requests.findFirst({ where: { id: requestId, seller_id: actor.id, status: "pending" } });
+      if (currentRequest === null) throw ErrorUtil.conflict("The refund request is no longer pending.");
+      const currentItem = await tx.shopping_order_items.findUnique({ where: { id: row.order_item_id } });
+      if (currentItem === null || currentItem.status !== "delivered") throw ErrorUtil.conflict("The order item is no longer refundable.");
+      const updatedRequest = await tx.shopping_refund_requests.updateMany({ where: { id: requestId, seller_id: actor.id, status: "pending" }, data: { status, pending_key: null, decided_by: actor.id, decided_at: decidedAt } });
+      if (updatedRequest.count !== 1) throw ErrorUtil.conflict("The refund request is no longer pending.");
+      await tx.shopping_snapshots.create({ data: { id: id(), kind: "refundDecision", subject_type: "refund", subject_id: row.id, changed: JSON.stringify(["status"]), before_data: JSON.stringify({ status: "pending", reason: row.reason }), after_data: JSON.stringify({ status, reason: row.reason }), created_at: decidedAt } });
+      if (approve) {
+        const statuses = (await tx.shopping_order_items.findMany({ where: { order_id: currentItem.order_id }, select: { id: true, status: true } })).map((current) => current.id === currentItem.id ? "refunded" : current.status);
+        const updatedItem = await tx.shopping_order_items.updateMany({ where: { id: currentItem.id, status: "delivered" }, data: { status: "refunded" } });
+        if (updatedItem.count !== 1) throw ErrorUtil.conflict("The order item is no longer refundable.");
+        await tx.shopping_inventory_movements.create({ data: { id: id(), variant_id: currentItem.variant_id, quantity_change: currentItem.quantity, reason: "refund restoration", order_item_id: currentItem.id, created_at: decidedAt } });
+        await tx.shopping_payment_transactions.create({ data: { id: id(), reference_id: `refund:${currentItem.id}`, kind: "refund", order_id: currentItem.order_id, order_item_id: currentItem.id, amount: currentItem.unit_price * currentItem.quantity, created_at: decidedAt } });
+        await tx.shopping_orders.update({ where: { id: currentItem.order_id }, data: { status: deriveStatus(statuses) } });
+      }
+    });
+    return requestDto((await db().shopping_refund_requests.findUnique({ where: { id: row.id } }))!);
+  }
+  async function customerItem(actor: ShoppingActor, itemId: string, status: string) { if (actor.type !== "customer") throw ErrorUtil.forbidden("Customer authority is required."); const item = await db().shopping_order_items.findUnique({ where: { id: itemId } }); if (item === null) throw ErrorUtil.notFound("The order item does not exist."); const orderRow = await db().shopping_orders.findUnique({ where: { id: item.order_id } }); if (orderRow === null || orderRow.customer_id !== actor.id) throw ErrorUtil.forbidden("The order item belongs to another customer."); if (item.status !== status) throw ErrorUtil.conflict("The order item is not in the required state."); return item; }
+  function requestDto(row: { id: string; reason: string; status: string; order_item_id: string; created_at: Date; decided_at: Date | null }): api.IShoppingRequest { return { id: row.id, reason: row.reason, status: row.status as api.IShoppingRequest["status"], orderItemId: row.order_item_id, createdAt: row.created_at.toISOString(), decidedAt: date(row.decided_at) }; }
+  async function sellerRequestDto(row: Parameters<typeof requestDto>[0]): Promise<api.IShoppingRequest> { const item = await db().shopping_order_items.findUnique({ where: { id: row.order_item_id } }); if (item === null) throw ErrorUtil.notFound("The order item does not exist."); const order = await db().shopping_orders.findUnique({ where: { id: item.order_id } }); if (order === null) throw ErrorUtil.notFound("The order does not exist."); return { ...requestDto(row), orderId: order.id, customerId: order.customer_id, productName: item.product_name, variantSku: item.variant_sku, quantity: item.quantity, deliveredAt: date(item.delivered_at), address: { recipientName: order.recipient_name, recipientPhone: order.recipient_phone, streetAddress: order.street_address, city: order.city, stateOrProvince: order.state_or_province, postalCode: order.postal_code, country: order.country } }; }
+
+  /** Publishes one review after a delivered purchase. */
+  export async function createReview(actor: ShoppingActor, productId: string, orderId: string, body: api.IShoppingReview.ICreate): Promise<api.IShoppingReview> {
+    if (actor.type !== "customer") throw ErrorUtil.forbidden("Customer authority is required.");
+    if (body.rating < 1 || body.rating > 5 || !Number.isInteger(body.rating)) throw ErrorUtil.unprocessable("Rating must be an integer from one through five.");
+    const row = await db().$transaction(async (tx) => {
+      await requireCustomerAtCommit(actor, tx);
+      const productRow = await tx.shopping_products.findFirst({ where: { id: productId, deleted_at: null } });
+      const orderRow = await tx.shopping_orders.findFirst({ where: { id: orderId, customer_id: actor.id } });
+      if (productRow === null || orderRow === null) throw ErrorUtil.forbidden("The qualifying purchase does not exist.");
+      const variants = await tx.shopping_variants.findMany({ where: { product_id: productId }, select: { id: true } });
+      const items = await tx.shopping_order_items.findMany({ where: { order_id: orderId, variant_id: { in: variants.map((variant) => variant.id) }, status: "delivered" } });
+      if (items.length === 0) throw ErrorUtil.conflict("A delivered qualifying item is required.");
+      if (await tx.shopping_reviews.findFirst({ where: { customer_id: actor.id, product_id: productId, order_id: orderId } }) !== null) throw ErrorUtil.conflict("This purchase already has a review.");
+      return tx.shopping_reviews.create({ data: { id: id(), customer_id: actor.id, product_id: productId, order_id: orderId, rating: body.rating, text: body.text ?? null, published_at: now(), deleted_at: null } });
+    });
+    return reviewDto(row, await customerName(actor.id));
+  }
+  /** Edits one authored live review and retains before/after evidence. */
+  export async function updateReview(actor: ShoppingActor, reviewId: string, body: api.IShoppingReview.IUpdate): Promise<api.IShoppingReview> {
+    const row = await db().shopping_reviews.findFirst({ where: { id: reviewId, customer_id: actor.id, deleted_at: null } });
+    if (row === null) throw ErrorUtil.notFound("The review does not exist.");
+    if (!Number.isInteger(body.rating) || body.rating < 1 || body.rating > 5) throw ErrorUtil.unprocessable("Rating must be an integer from one through five.");
+    const changedAt = now();
+    const updated = await db().$transaction(async (tx) => {
+      await requireCustomerAtCommit(actor, tx);
+      const current = await tx.shopping_reviews.findFirst({ where: { id: reviewId, customer_id: actor.id, deleted_at: null } });
+      if (current === null) throw ErrorUtil.notFound("The review does not exist.");
+      if (await tx.shopping_products.findFirst({ where: { id: current.product_id, deleted_at: null } }) === null) throw ErrorUtil.conflict("Reviews for a deleted product cannot be edited.");
+      const nextText = body.text ?? null;
+      const changedFields = [current.rating === body.rating ? null : "rating", current.text === nextText ? null : "text"].filter((field): field is string => field !== null);
+      const changed = await tx.shopping_reviews.updateMany({ where: { id: reviewId, customer_id: actor.id, deleted_at: null }, data: { rating: body.rating, text: nextText } });
+      if (changed.count !== 1) throw ErrorUtil.conflict("The review is no longer editable.");
+      const result = await tx.shopping_reviews.findUnique({ where: { id: reviewId } });
+      await tx.shopping_snapshots.create({ data: { id: id(), kind: "review", subject_type: "review", subject_id: reviewId, changed: JSON.stringify(changedFields), before_data: JSON.stringify({ rating: current.rating, text: current.text }), after_data: JSON.stringify({ rating: body.rating, text: nextText }), created_at: changedAt } });
+      return result!;
+    });
+    return reviewDto(updated, await customerName(actor.id));
+  }
+  /** Retires one authored live review without deleting its evidence. */
+  export async function deleteReview(actor: ShoppingActor, reviewId: string): Promise<void> {
+    const row = await db().shopping_reviews.findFirst({ where: { id: reviewId, customer_id: actor.id, deleted_at: null } });
+    if (row === null) throw ErrorUtil.notFound("The review does not exist.");
+    const deletedAt = now();
+    await db().$transaction(async (tx) => {
+      await requireCustomerAtCommit(actor, tx);
+      const current = await tx.shopping_reviews.findFirst({ where: { id: reviewId, customer_id: actor.id, deleted_at: null } });
+      if (current === null) throw ErrorUtil.notFound("The review does not exist.");
+      if (await tx.shopping_products.findFirst({ where: { id: current.product_id, deleted_at: null } }) === null) throw ErrorUtil.conflict("Reviews for a deleted product cannot be edited.");
+      const deleted = await tx.shopping_reviews.updateMany({ where: { id: reviewId, customer_id: actor.id, deleted_at: null }, data: { deleted_at: deletedAt } });
+      if (deleted.count !== 1) throw ErrorUtil.conflict("The review is no longer available.");
+      await tx.shopping_snapshots.create({ data: { id: id(), kind: "reviewDelete", subject_type: "review", subject_id: reviewId, changed: JSON.stringify(["deleted_at"]), before_data: JSON.stringify({ rating: current.rating, text: current.text, deleted: false }), after_data: JSON.stringify({ rating: current.rating, text: current.text, deleted: true }), created_at: deletedAt } });
+    });
+  }
+  async function customerName(customerId: string): Promise<string> { const profile = await db().shopping_customer_profiles.findUnique({ where: { customer_id: customerId } }); return profile?.display_name ?? "deleted user"; }
+  function reviewDto(row: { id: string; customer_id: string | null; rating: number; text: string | null; published_at: Date }, displayName: string): api.IShoppingReview { return { id: row.id, rating: row.rating as 1|2|3|4|5, text: row.text, author: { id: row.customer_id, displayName }, publishedAt: row.published_at.toISOString() }; }
+
+  /** Submits an administrator application for an ordinary actor. */
+  export async function applyAdministrator(actor: ShoppingActor, body: api.IShoppingAdministratorApplication.ICreate): Promise<api.IShoppingAdministratorApplication> { const reason = text(body.reason, "reason"); const row = await db().$transaction(async (tx) => { const usable = actor.type === "customer" ? await tx.shopping_customers.findFirst({ where: { id: actor.id, deleted_at: null, login_state: "active" } }) : await tx.shopping_sellers.findFirst({ where: { id: actor.id, deleted_at: null, login_state: "active" } }); if (usable === null) throw ErrorUtil.forbidden("The account is no longer available."); if (await tx.shopping_administrator_grades.findFirst({ where: { actor_type: actor.type, actor_id: actor.id } })) throw ErrorUtil.conflict("An administrator cannot apply again."); if (await tx.shopping_administrator_applications.findFirst({ where: { actor_type: actor.type, actor_id: actor.id, status: "pending" } })) throw ErrorUtil.conflict("An application is already pending."); return tx.shopping_administrator_applications.create({ data: { id: id(), actor_type: actor.type, actor_id: actor.id, reason, status: "pending", pending_key: `${actor.type}:${actor.id}`, decided_by: null, decided_at: null, created_at: now() } }); }); return applicationDto(row); }
+  /** Lists the acting identity's administrator applications. */
+  export async function applications(actor: ShoppingActor, input: api.IPage.IRequest): Promise<api.IPage<api.IShoppingAdministratorApplication>> { const rows = await db().shopping_administrator_applications.findMany({ where: { actor_type: actor.type, actor_id: actor.id }, orderBy: [{ created_at: "desc" }, { id: "desc" }] }); return page(rows.map(applicationDto), input); }
+  /** Lists pending applications for super administrators. */
+  export async function pendingApplications(actor: ShoppingActor, input: api.IPage.IRequest): Promise<api.IPage<api.IShoppingAdministratorApplication>> { await requireAdmin(actor, true); const rows = await db().shopping_administrator_applications.findMany({ where: { status: "pending" }, orderBy: [{ created_at: "asc" }, { id: "asc" }] }); return page(rows.map(applicationDto), input); }
+  /** Approves one administrator application and grants regular authority. */
+  export async function approveApplication(actor: ShoppingActor, applicationId: string): Promise<api.IShoppingAdministratorApplication> { await requireAdmin(actor, true); const row = await db().shopping_administrator_applications.findFirst({ where: { id: applicationId, status: "pending" } }); if (row === null) throw ErrorUtil.notFound("The application is not pending."); const decidedAt = now(); await db().$transaction(async (tx) => { await requireAdminAtCommit(actor, tx, true); const usable = row.actor_type === "customer" ? await tx.shopping_customers.findFirst({ where: { id: row.actor_id, deleted_at: null, login_state: "active" } }) : await tx.shopping_sellers.findFirst({ where: { id: row.actor_id, deleted_at: null, login_state: "active" } }); if (usable === null) throw ErrorUtil.conflict("The applicant identity is unavailable."); const grade = await tx.shopping_administrator_grades.findFirst({ where: { actor_type: row.actor_type, actor_id: row.actor_id, grade: "regularAdministrator" } }); await tx.shopping_administrator_applications.update({ where: { id: applicationId, status: "pending" }, data: { status: "approved", pending_key: null, decided_by: actor.id, decided_at: decidedAt } }); if (grade === null) await tx.shopping_administrator_grades.create({ data: { id: id(), actor_type: row.actor_type, actor_id: row.actor_id, grade: "regularAdministrator", created_at: decidedAt } }); await tx.shopping_admin_actions.create({ data: { id: id(), kind: "administratorApproval", actor_id: actor.id, target_id: row.actor_id, reason: "approved", created_at: decidedAt } }); }); return applicationDto((await db().shopping_administrator_applications.findUnique({ where: { id: applicationId } }))!); }
+  /** Rejects one administrator application. */
+  export async function rejectApplication(actor: ShoppingActor, applicationId: string): Promise<api.IShoppingAdministratorApplication> { await requireAdmin(actor, true); const row = await db().shopping_administrator_applications.findFirst({ where: { id: applicationId, status: "pending" } }); if (row === null) throw ErrorUtil.notFound("The application is not pending."); const decidedAt = now(); await db().$transaction(async (tx) => { await requireAdminAtCommit(actor, tx, true); await tx.shopping_administrator_applications.update({ where: { id: applicationId, status: "pending" }, data: { status: "rejected", pending_key: null, decided_by: actor.id, decided_at: decidedAt } }); await tx.shopping_admin_actions.create({ data: { id: id(), kind: "administratorApproval", actor_id: actor.id, target_id: row.actor_id, reason: "rejected", created_at: decidedAt } }); }); return applicationDto((await db().shopping_administrator_applications.findUnique({ where: { id: applicationId } }))!); }
+  /** Promotes a regular administrator to super administrator. */
+  export async function promote(actor: ShoppingActor, targetId: string, targetType: ShoppingActor["type"]): Promise<void> { await requireAdmin(actor, true); const createdAt = now(); await db().$transaction(async (tx) => { await requireAdminAtCommit(actor, tx, true); const regular = await tx.shopping_administrator_grades.findFirst({ where: { actor_type: targetType, actor_id: targetId, grade: "regularAdministrator" } }); const superGrade = await tx.shopping_administrator_grades.findFirst({ where: { actor_type: targetType, actor_id: targetId, grade: "superAdministrator" } }); const usable = targetType === "customer" ? await tx.shopping_customers.findFirst({ where: { id: targetId, deleted_at: null, login_state: "active" } }) : await tx.shopping_sellers.findFirst({ where: { id: targetId, deleted_at: null, login_state: "active" } }); if (regular === null || superGrade !== null) throw ErrorUtil.conflict("The target is not a current regular administrator."); if (usable === null) throw ErrorUtil.conflict("The target identity is unavailable."); await tx.shopping_administrator_grades.create({ data: { id: id(), actor_type: targetType, actor_id: targetId, grade: "superAdministrator", created_at: createdAt } }); await tx.shopping_admin_actions.create({ data: { id: id(), kind: "promotion", actor_id: actor.id, target_id: targetId, reason: targetType, created_at: createdAt } }); }); }
+  /** Demotes another super administrator while preserving regular authority. */
+  export async function demote(actor: ShoppingActor, targetId: string, targetType: ShoppingActor["type"]): Promise<void> { await requireAdmin(actor, true); if (actor.id === targetId && actor.type === targetType) throw ErrorUtil.forbidden("Self-demotion is not allowed."); const createdAt = now(); await db().$transaction(async (tx) => { await requireAdminAtCommit(actor, tx, true); const grade = await tx.shopping_administrator_grades.findFirst({ where: { actor_type: targetType, actor_id: targetId, grade: "superAdministrator" } }); const usable = targetType === "customer" ? await tx.shopping_customers.findFirst({ where: { id: targetId, deleted_at: null } }) : await tx.shopping_sellers.findFirst({ where: { id: targetId, deleted_at: null } }); if (grade === null || usable === null) throw ErrorUtil.conflict("The target is not a super administrator."); const deleted = await tx.shopping_administrator_grades.deleteMany({ where: { id: grade.id, grade: "superAdministrator" } }); if (deleted.count !== 1) throw ErrorUtil.conflict("The target is no longer a super administrator."); await tx.shopping_admin_actions.create({ data: { id: id(), kind: "demotion", actor_id: actor.id, target_id: targetId, reason: targetType, created_at: createdAt } }); }); }
+  async function usableIdentity(type: ShoppingActor["type"], actorId: string, allowBanned = false): Promise<boolean> { if (type === "customer") { const row = await db().shopping_customers.findUnique({ where: { id: actorId } }); return row !== null && row.deleted_at === null && (allowBanned || row.login_state === "active"); } const row = await db().shopping_sellers.findUnique({ where: { id: actorId } }); return row !== null && row.deleted_at === null && (allowBanned || row.login_state === "active"); }
+  function applicationDto(row: { id: string; actor_type: string; actor_id: string; reason: string; status: string; created_at: Date; decided_at: Date | null }): api.IShoppingAdministratorApplication { return { id: row.id, actorType: row.actor_type as "customer"|"seller", actorId: row.actor_id, reason: row.reason, status: row.status as "pending"|"approved"|"rejected", createdAt: row.created_at.toISOString(), decidedAt: date(row.decided_at) }; }
+
+  /** Returns seller dashboard counts at one read moment. */
+  export async function dashboard(actor: ShoppingActor): Promise<api.IShoppingDashboard> { await requireSeller(actor); const [products, orderItems, pendingCancellations, pendingRefunds] = await db().$transaction([db().shopping_products.count({ where: { seller_id: actor.id, deleted_at: null } }), db().shopping_order_items.count({ where: { seller_id: actor.id } }), db().shopping_cancellation_requests.count({ where: { seller_id: actor.id, status: "pending" } }), db().shopping_refund_requests.count({ where: { seller_id: actor.id, status: "pending" } })]); return { products, orderItems, pendingCancellations, pendingRefunds }; }
+  /** Lists seller-attributed historical order items. */
+  export async function sellerOrderItems(actor: ShoppingActor, input: api.IPage.IRequest, status?: string): Promise<api.IPage<api.IShoppingOrderItem>> { await requireSeller(actor); if (status !== undefined && !["paid", "shipped", "delivered", "cancelled", "refunded"].includes(status)) throw ErrorUtil.unprocessable("Unsupported order-item status."); const rows = await db().shopping_order_items.findMany({ where: { seller_id: actor.id, ...(status === undefined ? {} : { status }) }, orderBy: [{ purchased_at: "desc" }, { id: "desc" }] }); return page(await Promise.all(rows.map(sellerOrderItemDto)), input); }
+
+  /** Bans one customer and terminates every session. */
+  export async function banCustomer(actor: ShoppingActor, targetId: string): Promise<void> { await requireAdmin(actor); await requireTargetModeration(actor, "customer", targetId); const target = await db().shopping_customers.findFirst({ where: { id: targetId, deleted_at: null, login_state: "active" } }); if (target === null) throw ErrorUtil.conflict("The customer is not eligible for banning."); const createdAt = now(); await db().$transaction(async (tx) => { await requireAdminAtCommit(actor, tx); await requireTargetModerationAtCommit(actor, "customer", targetId, tx); const current = await tx.shopping_customers.findFirst({ where: { id: targetId, deleted_at: null, login_state: "active" } }); if (current === null) throw ErrorUtil.conflict("The customer is not eligible for banning."); const changed = await tx.shopping_customers.updateMany({ where: { id: targetId, deleted_at: null, login_state: "active" }, data: { login_state: "banned" } }); if (changed.count !== 1) throw ErrorUtil.conflict("The customer is not eligible for banning."); await tx.shopping_customer_sessions.updateMany({ where: { customer_id: targetId, revoked_at: null }, data: { revoked_at: createdAt } }); await tx.shopping_admin_actions.create({ data: { id: id(), kind: "customerBan", actor_id: actor.id, target_id: targetId, reason: "active to banned", before_state: current.login_state, after_state: "banned", created_at: createdAt } }); }); }
+  /** Removes a customer ban. */
+  export async function unbanCustomer(actor: ShoppingActor, targetId: string): Promise<void> { await requireAdmin(actor); await requireTargetModeration(actor, "customer", targetId); const target = await db().shopping_customers.findFirst({ where: { id: targetId, login_state: "banned", deleted_at: null } }); if (target === null) throw ErrorUtil.conflict("The customer is not banned."); const createdAt = now(); await db().$transaction(async (tx) => { await requireAdminAtCommit(actor, tx); await requireTargetModerationAtCommit(actor, "customer", targetId, tx); const current = await tx.shopping_customers.findFirst({ where: { id: targetId, login_state: "banned", deleted_at: null } }); if (current === null) throw ErrorUtil.conflict("The customer is not banned."); const changed = await tx.shopping_customers.updateMany({ where: { id: targetId, login_state: "banned", deleted_at: null }, data: { login_state: "active" } }); if (changed.count !== 1) throw ErrorUtil.conflict("The customer is not banned."); await tx.shopping_admin_actions.create({ data: { id: id(), kind: "customerUnban", actor_id: actor.id, target_id: targetId, reason: "banned to active", before_state: current.login_state, after_state: "active", created_at: createdAt } }); }); }
+  /** Bans one seller and terminates every session. */
+  export async function banSeller(actor: ShoppingActor, targetId: string): Promise<void> { await requireAdmin(actor); await requireTargetModeration(actor, "seller", targetId); const target = await db().shopping_sellers.findFirst({ where: { id: targetId, deleted_at: null, login_state: "active" } }); if (target === null) throw ErrorUtil.conflict("The seller is not eligible for banning."); const createdAt = now(); await db().$transaction(async (tx) => { await requireAdminAtCommit(actor, tx); await requireTargetModerationAtCommit(actor, "seller", targetId, tx); const current = await tx.shopping_sellers.findFirst({ where: { id: targetId, deleted_at: null, login_state: "active" } }); if (current === null) throw ErrorUtil.conflict("The seller is not eligible for banning."); const changed = await tx.shopping_sellers.updateMany({ where: { id: targetId, deleted_at: null, login_state: "active" }, data: { login_state: "banned" } }); if (changed.count !== 1) throw ErrorUtil.conflict("The seller is not eligible for banning."); await tx.shopping_seller_sessions.updateMany({ where: { seller_id: targetId, revoked_at: null }, data: { revoked_at: createdAt } }); await tx.shopping_admin_actions.create({ data: { id: id(), kind: "sellerBan", actor_id: actor.id, target_id: targetId, reason: "active to banned", before_state: current.login_state, after_state: "banned", created_at: createdAt } }); }); }
+  /** Removes a seller ban. */
+  export async function unbanSeller(actor: ShoppingActor, targetId: string): Promise<void> { await requireAdmin(actor); await requireTargetModeration(actor, "seller", targetId); const target = await db().shopping_sellers.findFirst({ where: { id: targetId, login_state: "banned", deleted_at: null } }); if (target === null) throw ErrorUtil.conflict("The seller is not banned."); const createdAt = now(); await db().$transaction(async (tx) => { await requireAdminAtCommit(actor, tx); await requireTargetModerationAtCommit(actor, "seller", targetId, tx); const current = await tx.shopping_sellers.findFirst({ where: { id: targetId, login_state: "banned", deleted_at: null } }); if (current === null) throw ErrorUtil.conflict("The seller is not banned."); const changed = await tx.shopping_sellers.updateMany({ where: { id: targetId, login_state: "banned", deleted_at: null }, data: { login_state: "active" } }); if (changed.count !== 1) throw ErrorUtil.conflict("The seller is not banned."); await tx.shopping_admin_actions.create({ data: { id: id(), kind: "sellerUnban", actor_id: actor.id, target_id: targetId, reason: "banned to active", before_state: current.login_state, after_state: "active", created_at: createdAt } }); }); }
+  /** Deletes a customer working identity while retaining commercial rows. */
+  export async function deleteCustomer(actor: ShoppingActor, body: api.IShoppingCustomer.IDelete): Promise<void> { const customer = await db().shopping_customers.findUnique({ where: { id: actor.id } }); const passwordHash = hash(body.password); if (customer === null || customer.login_state !== "active" || customer.password_hash !== passwordHash) throw ErrorUtil.forbidden("The current password is incorrect."); const deletedAt = now(); await db().$transaction(async (tx) => { const current = await tx.shopping_customers.findFirst({ where: { id: actor.id, deleted_at: null, login_state: "active" } }); if (current === null || current.password_hash !== passwordHash) throw ErrorUtil.forbidden("The current password is incorrect."); await requireSessionAtCommit(actor, tx); const superGrades = await tx.shopping_administrator_grades.findMany({ where: { grade: "superAdministrator" } }); const activeSuperCount = (await Promise.all(superGrades.map(async (grade) => grade.actor_type === "customer" ? (await tx.shopping_customers.findFirst({ where: { id: grade.actor_id, deleted_at: null, login_state: "active" } })) !== null : (await tx.shopping_sellers.findFirst({ where: { id: grade.actor_id, deleted_at: null, login_state: "active" } })) !== null))).filter(Boolean).length; const isSuper = superGrades.some((grade) => grade.actor_type === "customer" && grade.actor_id === actor.id); if (activeSuperCount <= 1 && isSuper) throw ErrorUtil.conflict("The final super administrator cannot be deleted."); const updated = await tx.shopping_customers.updateMany({ where: { id: actor.id, deleted_at: null, login_state: "active", password_hash: passwordHash }, data: { email: "deleted", email_normalized: `${actor.id}:deleted`, login_state: "deleted", deleted_at: deletedAt, password_hash: "deleted" } }); if (updated.count !== 1) throw ErrorUtil.forbidden("The customer account is no longer available."); await tx.shopping_customer_profiles.deleteMany({ where: { customer_id: actor.id } }); await tx.shopping_shipping_addresses.deleteMany({ where: { customer_id: actor.id } }); await tx.shopping_wishlist_entries.deleteMany({ where: { customer_id: actor.id } }); await tx.shopping_cart_lines.deleteMany({ where: { customer_id: actor.id } }); await tx.shopping_customer_sessions.updateMany({ where: { customer_id: actor.id }, data: { revoked_at: deletedAt } }); await tx.shopping_reviews.updateMany({ where: { customer_id: actor.id, deleted_at: null }, data: { customer_id: null } }); await tx.shopping_administrator_grades.deleteMany({ where: { actor_type: "customer", actor_id: actor.id } }); }); }
+  /** Deletes a seller after active order/request blockers clear. */
+  export async function deleteSeller(actor: ShoppingActor, body: api.IShoppingSeller.IDelete): Promise<void> {
+    const seller = await db().shopping_sellers.findUnique({ where: { id: actor.id } });
+    const passwordHash = hash(body.password);
+    if (seller === null || seller.login_state !== "active" || seller.password_hash !== passwordHash) throw ErrorUtil.forbidden("The current password is incorrect.");
+    const deletedAt = now();
+    await db().$transaction(async (tx) => {
+      const current = await tx.shopping_sellers.findFirst({ where: { id: actor.id, deleted_at: null, login_state: "active" } });
+      if (current === null || current.password_hash !== passwordHash) throw ErrorUtil.forbidden("The current password is incorrect.");
+      await requireSessionAtCommit(actor, tx);
+      if (await tx.shopping_order_items.findFirst({ where: { seller_id: actor.id, status: { in: ["paid", "shipped"] } } })) throw ErrorUtil.conflict("Active fulfillment obligations prevent deletion.");
+      if (await tx.shopping_cancellation_requests.findFirst({ where: { seller_id: actor.id, status: "pending" } }) || await tx.shopping_refund_requests.findFirst({ where: { seller_id: actor.id, status: "pending" } })) throw ErrorUtil.conflict("Pending requests prevent deletion.");
+      const superGrades = await tx.shopping_administrator_grades.findMany({ where: { grade: "superAdministrator" } });
+      const activeSuperCount = (await Promise.all(superGrades.map(async (grade) => grade.actor_type === "customer" ? (await tx.shopping_customers.findFirst({ where: { id: grade.actor_id, deleted_at: null, login_state: "active" } })) !== null : (await tx.shopping_sellers.findFirst({ where: { id: grade.actor_id, deleted_at: null, login_state: "active" } })) !== null))).filter(Boolean).length;
+      const isSuper = superGrades.some((grade) => grade.actor_type === "seller" && grade.actor_id === actor.id);
+      if (activeSuperCount <= 1 && isSuper) throw ErrorUtil.conflict("The final super administrator cannot be deleted.");
+      const productsRows = await tx.shopping_products.findMany({ where: { seller_id: actor.id, deleted_at: null }, select: { id: true, name: true, description: true, category_id: true, base_price: true } });
+      const productEvidence = await Promise.all(productsRows.map(async (product) => ({ product, before: await productSnapshotData(tx, product.id) })));
+      const productIds = productsRows.map((row) => row.id);
+      const variantIds = (await tx.shopping_variants.findMany({ where: { product_id: { in: productIds }, deleted_at: null }, select: { id: true } })).map((row) => row.id);
+      await tx.shopping_product_images.deleteMany({ where: { product_id: { in: productIds } } });
+      await tx.shopping_inventory_movements.deleteMany({ where: { variant_id: { in: variantIds } } });
+      await tx.shopping_variants.updateMany({ where: { product_id: { in: productIds }, deleted_at: null }, data: { deleted_at: deletedAt } });
+      await tx.shopping_products.updateMany({ where: { seller_id: actor.id, deleted_at: null }, data: { deleted_at: deletedAt, category_id: null } });
+      for (const evidence of productEvidence) await tx.shopping_snapshots.create({ data: { id: id(), kind: "productDelete", subject_type: "product", subject_id: evidence.product.id, changed: JSON.stringify(["deletedAt"]), before_data: JSON.stringify(evidence.before), after_data: JSON.stringify({ name: evidence.product.name, description: evidence.product.description, categoryId: null, basePrice: evidence.product.base_price, images: [], variants: [] }), created_at: deletedAt } });
+      await tx.shopping_wishlist_entries.deleteMany({ where: { product_id: { in: productIds } } });
+      const updated = await tx.shopping_sellers.updateMany({ where: { id: actor.id, deleted_at: null, login_state: "active", password_hash: passwordHash }, data: { email: "deleted", email_normalized: `${actor.id}:deleted`, login_state: "deleted", deleted_at: deletedAt, password_hash: "deleted" } });
+      if (updated.count !== 1) throw ErrorUtil.forbidden("The seller account is no longer available.");
+      await tx.shopping_seller_profiles.deleteMany({ where: { seller_id: actor.id } });
+      await tx.shopping_seller_sessions.updateMany({ where: { seller_id: actor.id }, data: { revoked_at: deletedAt } });
+      await tx.shopping_administrator_grades.deleteMany({ where: { actor_type: "seller", actor_id: actor.id } });
+    });
+  }
+  /** Lists administrators' current customers. */
+  export async function customerDirectory(actor: ShoppingActor, input: api.IPage.IRequest): Promise<api.IPage<api.IShoppingCustomer>> { await requireAdmin(actor); const rows = await db().shopping_customers.findMany({ where: { deleted_at: null }, orderBy: [{ created_at: "desc" }, { id: "desc" }] }); const values: api.IShoppingCustomer[] = []; for (const row of rows) values.push(await customerDto(row)); return page(values, input); }
+  /** Lists administrators' current sellers. */
+  export async function sellerDirectory(actor: ShoppingActor, input: api.IPage.IRequest): Promise<api.IPage<api.IShoppingSeller>> { await requireAdmin(actor); const rows = await db().shopping_sellers.findMany({ where: { deleted_at: null }, orderBy: [{ created_at: "desc" }, { id: "desc" }] }); const values: api.IShoppingSeller[] = []; for (const row of rows) values.push(await sellerDto(row)); return page(values, input); }
+  async function customerDto(row: { id: string; email: string; login_state: string; created_at: Date }): Promise<api.IShoppingCustomer> { const grades = (await db().shopping_administrator_grades.findMany({ where: { actor_type: "customer", actor_id: row.id } })).map((grade) => grade.grade); const profile = await db().shopping_customer_profiles.findUnique({ where: { customer_id: row.id } }); return { id: row.id, email: row.email, state: row.login_state as "active"|"banned", createdAt: row.created_at.toISOString(), grades, profile: profile === null ? null : { displayName: profile.display_name, phoneNumber: profile.phone_number } }; }
+  async function sellerDto(row: { id: string; email: string; approval_state: string; suspended: boolean; login_state: string; created_at: Date }): Promise<api.IShoppingSeller> { const grades = (await db().shopping_administrator_grades.findMany({ where: { actor_type: "seller", actor_id: row.id } })).map((grade) => grade.grade); const profile = await db().shopping_seller_profiles.findUnique({ where: { seller_id: row.id } }); return { id: row.id, email: row.email, approvalState: row.approval_state as api.IShoppingSeller["approvalState"], suspended: row.suspended, state: row.login_state as "active"|"banned", createdAt: row.created_at.toISOString(), grades, profile: profile === null ? null : { shopName: profile.shop_name, shopDescription: profile.shop_description, logo: profile.logo } }; }
+
+  interface IShoppingApproval { id: string; sellerId: string; shopName: string; createdAt: string; }
+  function page<T extends object>(values: T[], input: api.IPage.IRequest): api.IPage<T> { const limit = input.limit ?? 100; const current = input.page ?? 1; if (!Number.isInteger(limit) || limit < 0 || !Number.isInteger(current) || current < 1) throw ErrorUtil.unprocessable("Invalid pagination."); const records = values.length; const pages = limit === 0 ? 1 : Math.max(1, Math.ceil(records / limit)); if (current > pages) throw ErrorUtil.unprocessable("The requested page is outside the result set."); const data = limit === 0 ? values : values.slice((current - 1) * limit, current * limit); return { data, pagination: { current, limit, records, pages } }; }
+}

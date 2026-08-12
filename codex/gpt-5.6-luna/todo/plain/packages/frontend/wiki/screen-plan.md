@@ -1,19 +1,88 @@
 # Frontend screen plan
 
-The private todo workspace is a single responsive shell with route-owned views.
+Each requirement section is intentionally mapped to the smallest screen that
+exposes its user-visible behavior. The operation pages share a protected shell
+so account authority, loading, empty, refusal, and recovery states remain
+reachable while every API boundary stays behind a domain hook.
 
-| Screen | Requirement and actor | SDK operations | Journey |
-| --- | --- | --- | --- |
-| Sign in | REQ-AUTH-PROVISION-2, anonymous user | `login`, `refresh` | `journey_auth` |
-| Register | REQ-AUTH-PROVISION-1, anonymous user | `join` | `journey_auth` |
-| Recover | REQ-AUTH-MANAGE-2, anonymous user | `recoverStart`, `recover` | `journey_auth` |
-| Todo workspace | REQ-FUNC-TODO-1..7, authenticated user | `todo.create`, `todo.index`, `todo.at`, `todo.update`, `todo.complete`, `todo.incomplete`, `todo.erase` | `journey_todos` |
-| Todo history | REQ-FUNC-HISTORY-1, authenticated user | `todo.history` | `journey_todos` |
-| Trash | REQ-FUNC-TRASH-1..4, authenticated user | `trash.index`, `trash.at`, `trash.history`, `trash.restore`, `trash.erase` | `journey_todos` |
-| Profile and security | REQ-FUNC-PROFILE-1..2 and REQ-AUTH-MANAGE-1,3, authenticated user | `profile.at`, `profile.update`, `changePassword`, `deleteAccount` | `journey_account` |
-| Session controls | REQ-AUTH-SESSION-1..3, authenticated user | `refresh`, `logout`, `logoutAll` | `journey_account` |
-| Health boundary | REQ-NFR-INTEGRITY-1, infrastructure | `health.get` | `journey_health` |
+## Auth and account
 
-Every published accessor is consumed by a domain hook. The history and security
-operations are intentionally inline panels inside their owning screen because they
-are user actions on the same account, not separate resources.
+- REQ-AUTH-BOUNDARY auth-page.tsx
+- REQ-AUTH-BOUNDARY-1 auth-page.tsx
+- REQ-AUTH-BOUNDARY-2 auth-page.tsx
+- REQ-AUTH-MANAGE settings-page.tsx
+- REQ-AUTH-MANAGE-1 settings-page.tsx
+- REQ-AUTH-MANAGE-2 auth-page.tsx
+- REQ-AUTH-MANAGE-3 settings-page.tsx
+- REQ-AUTH-PROVISION auth-page.tsx
+- REQ-AUTH-PROVISION-1 auth-page.tsx
+- REQ-AUTH-PROVISION-2 auth-page.tsx
+- REQ-AUTH-SESSION settings-page.tsx
+- REQ-AUTH-SESSION-1 todo-page.tsx
+- REQ-AUTH-SESSION-2 settings-page.tsx
+- REQ-AUTH-SESSION-3 settings-page.tsx
+
+## Domain and operations
+
+- REQ-DOM-HISTORY todo-page.tsx
+- REQ-DOM-HISTORY-1 todo-page.tsx
+- REQ-DOM-HISTORY-2 todo-page.tsx
+- REQ-DOM-PROFILE settings-page.tsx
+- REQ-DOM-PROFILE-1 settings-page.tsx
+- REQ-DOM-PROFILE-2 settings-page.tsx
+- REQ-DOM-TODO todo-page.tsx
+- REQ-DOM-TODO-1 todo-page.tsx
+- REQ-DOM-TODO-2 todo-page.tsx
+- REQ-DOM-TODO-LIFE todo-page.tsx
+- REQ-DOM-TODO-LIFE-1 todo-page.tsx
+- REQ-DOM-TODO-LIFE-2 todo-page.tsx
+- REQ-DOM-TODO-LIFE-3 todo-page.tsx
+- REQ-DOM-TODO-LIFE-4 trash-page.tsx
+- REQ-DOM-TODO-LIFE-5 trash-page.tsx
+- REQ-FUNC-HISTORY todo-page.tsx
+- REQ-FUNC-HISTORY-1 todo-page.tsx
+- REQ-FUNC-PROFILE settings-page.tsx
+- REQ-FUNC-PROFILE-1 settings-page.tsx
+- REQ-FUNC-PROFILE-2 settings-page.tsx
+- REQ-FUNC-TODO todo-page.tsx
+- REQ-FUNC-TODO-1 todo-page.tsx
+- REQ-FUNC-TODO-2 todo-page.tsx
+- REQ-FUNC-TODO-3 todo-page.tsx
+- REQ-FUNC-TODO-4 todo-page.tsx
+- REQ-FUNC-TODO-5 todo-page.tsx
+- REQ-FUNC-TODO-6 todo-page.tsx
+- REQ-FUNC-TODO-7 todo-page.tsx
+- REQ-FUNC-TRASH trash-page.tsx
+- REQ-FUNC-TRASH-1 trash-page.tsx
+- REQ-FUNC-TRASH-2 trash-page.tsx
+- REQ-FUNC-TRASH-3 trash-page.tsx
+- REQ-FUNC-TRASH-4 trash-page.tsx
+
+## Rules and non-functional behavior
+
+- REQ-NFR-INTEGRITY todo-page.tsx
+- REQ-NFR-INTEGRITY-1 todo-page.tsx
+- REQ-NFR-INTEGRITY-2 trash-page.tsx
+- REQ-NFR-INTEGRITY-3 trash-page.tsx
+- REQ-NFR-PRIVACY settings-page.tsx
+- REQ-NFR-PRIVACY-1 settings-page.tsx
+- REQ-RULE-BROWSE todo-page.tsx
+- REQ-RULE-BROWSE-1 todo-page.tsx
+- REQ-RULE-BROWSE-2 todo-page.tsx
+- REQ-RULE-BROWSE-3 todo-page.tsx
+- REQ-RULE-BROWSE-4 todo-page.tsx
+- REQ-RULE-CONTENT todo-page.tsx
+- REQ-RULE-CONTENT-1 todo-page.tsx
+- REQ-RULE-CONTENT-2 todo-page.tsx
+- REQ-RULE-CREDENTIAL auth-page.tsx
+- REQ-RULE-CREDENTIAL-1 auth-page.tsx
+- REQ-RULE-CREDENTIAL-2 auth-page.tsx
+- REQ-RULE-CREDENTIAL-3 auth-page.tsx
+- REQ-RULE-CREDENTIAL-4 settings-page.tsx
+- REQ-RULE-PROFILE settings-page.tsx
+- REQ-RULE-PROFILE-1 settings-page.tsx
+- REQ-RULE-STATE todo-page.tsx
+- REQ-RULE-STATE-1 todo-page.tsx
+- REQ-RULE-STATE-2 todo-page.tsx
+- REQ-RULE-STATE-3 todo-page.tsx
+- REQ-RULE-STATE-4 todo-page.tsx

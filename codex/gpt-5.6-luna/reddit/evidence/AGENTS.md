@@ -1,6 +1,6 @@
 # AGENTS.md
 
-`benchmark-reddit2` is a TypeScript monorepo that implements a documented requirement set as a NestJS backend, a generated SDK, and a React frontend. The requirement documents under `docs/analysis/` are the specification; everything under `packages/` exists to realize them.
+`benchmark-reddit` is a TypeScript monorepo that implements a documented requirement set as a NestJS backend, a generated SDK, and a React frontend. The requirement documents under `docs/analysis/` are the specification; everything under `packages/` exists to realize them.
 
 ## Attitude
 
@@ -48,4 +48,4 @@ Which paths under `packages/api` are authored contract sources, which are genera
 
 ### Evidence Review
 
-`.agents/skills/review/SKILL.md` defines the review of `@evidence`, `@evidenceExclude`, their hosts, and the frozen graph configuration; its `backend.md`, `frontend.md`, and `overall.md` carry the per-scope configuration and gates. Read it only for a Backend, Frontend, or Overall Review objective.
+`.agents/skills/review/SKILL.md` defines the review of `@evidence`, `@evidenceExclude`, their hosts, and the frozen graph configuration; its `backend.md` and `frontend.md` carry the per-scope configuration and gates. Read it only for a Backend or Frontend Review objective.

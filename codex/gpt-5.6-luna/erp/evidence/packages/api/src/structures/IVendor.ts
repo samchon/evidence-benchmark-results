@@ -1,39 +1,73 @@
-import type { tags } from "typia";
-import type { IPage } from "../typings";
-/** Organization-scoped external vendor. */
+import { tags } from "typia";
+
+import type { IErpRecord } from "./IErpRecord";
+
 /**
- * @evidence prisma:vendors Exposes the persisted vendors record.
+ * Vendor public representation.
+ * @evidence docs/analysis/02-domain-model.md#req-dom-vendor-vendor-lifecycle Exposes the aggregate contract represented by this DTO.
+ * @evidenceReview docs/analysis/02-domain-model.md#req-dom-vendor-vendor-lifecycle Read the DTO declaration and checked its public and inherited fields against the cited requirement.
+ * @evidence prisma:vendors Represents the persisted vendors model.
+ * @evidenceReview prisma:vendors Read the DTO declaration and compared its concrete record shape with the cited Prisma model.
  */
-export interface IVendor {
-  /** @evidence prisma:vendors.id Carries the persisted id value. */
+export interface IVendor extends IErpRecord {
+  /** id.
+   * @evidence prisma:vendors.id Carries the persisted id value.
+   * @evidenceReview prisma:vendors.id Read the DTO property and compared its type with the cited Prisma column.
+   */
   id: string & tags.Format<"uuid">;
-  /** @evidence prisma:vendors.code Carries the persisted code value. */
-  code: string;
-/** @evidence prisma:vendors.legal_name Carries the persisted legalName value. */
-  legalName: string;
-/** @evidence prisma:vendors.display_name Carries the persisted displayName value. */
-  displayName: null | string;
-  /** @evidence prisma:vendors.email Carries the persisted email value. */
-  email: null | string;
-  /** @evidence prisma:vendors.phone Carries the persisted phone value. */
-  phone: null | string;
-/** @evidence prisma:vendors.tax_registration Carries the persisted taxRegistration value. */
-  taxRegistration: null | string;
-/** @evidence prisma:vendors.currency_id Carries the persisted currencyId value. */
-  currencyId: null | string;
-/** @evidence prisma:vendors.payment_term_id Carries the persisted paymentTermId value. */
-  paymentTermId: null | string;
-/** @evidence prisma:vendors.risk_classification Carries the persisted riskClassification value. */
-  riskClassification: null | string;
-  /** @evidence prisma:vendors.notes Carries the persisted notes value. */
-  notes: null | string;
-/** @evidence prisma:vendors.bank_account_reference Carries the persisted bankAccountReference value. */
-  bankAccountReference: null | string;
-  /** @evidence prisma:vendors.active Carries the persisted active value. */
-  active: boolean;
-/** @evidence prisma:vendors.created_at Carries the persisted createdAt value. */
+  /** organizationId.
+   * @evidence prisma:vendors.organization_id Carries the persisted organization_id value.
+   * @evidenceReview prisma:vendors.organization_id Read the DTO property and compared its type with the cited Prisma column.
+   */
+  organizationId: string & tags.Format<"uuid">;
+  /** name.
+   * @evidence prisma:vendors.name Carries the persisted name value.
+   * @evidenceReview prisma:vendors.name Read the DTO property and compared its type with the cited Prisma column.
+   */
+  name: null | string;
+  /** status.
+   * @evidence prisma:vendors.status Carries the persisted status value.
+   * @evidenceReview prisma:vendors.status Read the DTO property and compared its type with the cited Prisma column.
+   */
+  status: null | string;
+  /** description.
+   * @evidence prisma:vendors.description Carries the persisted description value.
+   * @evidenceReview prisma:vendors.description Read the DTO property and compared its type with the cited Prisma column.
+   */
+  description: null | string;
+  /** referenceId.
+   * @evidence prisma:vendors.reference_id Carries the persisted reference_id value.
+   * @evidenceReview prisma:vendors.reference_id Read the DTO property and compared its type with the cited Prisma column.
+   */
+  referenceId: null | string & tags.Format<"uuid">;
+  /** quantity.
+   * @evidence prisma:vendors.quantity Carries the persisted quantity value.
+   * @evidenceReview prisma:vendors.quantity Read the DTO property and compared its type with the cited Prisma column.
+   */
+  quantity: null | number;
+  /** amount.
+   * @evidence prisma:vendors.amount Carries the persisted amount value.
+   * @evidenceReview prisma:vendors.amount Read the DTO property and compared its type with the cited Prisma column.
+   */
+  amount: null | number;
+  /** createdAt.
+   * @evidence prisma:vendors.created_at Carries the persisted created_at value.
+   * @evidenceReview prisma:vendors.created_at Read the DTO property and compared its type with the cited Prisma column.
+   */
   createdAt: string & tags.Format<"date-time">;
-/** @evidence prisma:vendors.updated_at Carries the persisted updatedAt value. */
-  updatedAt: string & tags.Format<"date-time">;
+  /** updatedAt.
+   * @evidence prisma:vendors.updated_at Carries the persisted updated_at value.
+   * @evidenceReview prisma:vendors.updated_at Read the DTO property and compared its type with the cited Prisma column.
+   */
+  updatedAt: null | string & tags.Format<"date-time">;
+  /** deletedAt.
+   * @evidence prisma:vendors.deleted_at Carries the persisted deleted_at value.
+   * @evidenceReview prisma:vendors.deleted_at Read the DTO property and compared its type with the cited Prisma column.
+   */
+  deletedAt: null | string & tags.Format<"date-time">;
+  /** attributes.
+   * @evidence prisma:vendors.attributes Carries aggregate-specific persisted fields.
+   * @evidenceReview prisma:vendors.attributes Read the DTO property and compared its type with the cited Prisma column.
+   */
+  attributes: null | Record<string, unknown>;
 }
-export namespace IVendor { export interface ICreate { code: string & tags.MinLength<1>; legalName: string & tags.MinLength<1>; displayName?: null | string; email?: null | string; phone?: null | string; taxRegistration?: null | string; currencyId?: null | string; paymentTermId?: null | string; riskClassification?: null | string; notes?: null | string; } export interface IUpdate extends Partial<Omit<ICreate, "code">> {} export interface IRequest extends IPage.IRequest { search?: string; includeInactive?: boolean; } }

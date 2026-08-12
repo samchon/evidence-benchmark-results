@@ -1,8 +1,8 @@
 {
   "private": true,
-  "name": "benchmark-reddit2-config",
+  "name": "benchmark-reddit-config",
   "version": "0.1.0",
-  "description": "Shared TypeScript and @ttsc/lint configuration for benchmark-reddit2",
+  "description": "Shared TypeScript and @ttsc/lint configuration for benchmark-reddit",
   "files": [
     "lint.config.ts",
     "lint.config.frontend.ts",

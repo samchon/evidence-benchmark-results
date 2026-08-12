@@ -1,5 +1,6 @@
 /**
- * Frontend requirement exclusions are intentionally empty: every requirement
- * is acknowledged by the screen or journey that presents and walks it.
+ * Central exclusions for frontend screen evidence claims.
  */
-export const SCREEN_EVIDENCE_EXCLUDE = true;
+export function SCREEN_EVIDENCE_EXCLUDE(): true {
+  return true;
+}

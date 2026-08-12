@@ -1,2 +1,0 @@
-import * as core from "@nestia/core"; import { Controller } from "@nestjs/common"; import type { IAssetCategory, IAuth, IPage } from "@benchmark/erp-api"; import { AssetProvider } from "../providers/AssetProvider";
-/** Lists asset categories. */ @Controller("asset-category-search") export class AssetCategoryIndexController { @core.TypedRoute.Patch() public async index(@core.TypedHeaders() h: IAuth.IHeaders, @core.TypedBody() input: IAssetCategory.IRequest): Promise<IPage<IAssetCategory>> { return AssetProvider.categoryIndex(h, input); } }

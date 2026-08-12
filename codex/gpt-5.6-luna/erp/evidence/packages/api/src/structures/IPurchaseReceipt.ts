@@ -1,23 +1,73 @@
-import type { tags } from "typia"; import type { IPage } from "../typings";
+import { tags } from "typia";
+
+import type { IErpRecord } from "./IErpRecord";
+
 /**
- * @evidence prisma:purchase_receipts Exposes the persisted purchase_receipts record.
+ * PurchaseReceipt public representation.
+ * @evidence docs/analysis/02-domain-model.md#req-dom-purchase-receipt-purchase-receipt-lifecycle Exposes the aggregate contract represented by this DTO.
+ * @evidenceReview docs/analysis/02-domain-model.md#req-dom-purchase-receipt-purchase-receipt-lifecycle Read the DTO declaration and checked its public and inherited fields against the cited requirement.
+ * @evidence prisma:purchase_receipts Represents the persisted purchase_receipts model.
+ * @evidenceReview prisma:purchase_receipts Read the DTO declaration and compared its concrete record shape with the cited Prisma model.
  */
-export interface IPurchaseReceipt {
-  /** @evidence prisma:purchase_receipts.id Carries the persisted id value. */
+export interface IPurchaseReceipt extends IErpRecord {
+  /** id.
+   * @evidence prisma:purchase_receipts.id Carries the persisted id value.
+   * @evidenceReview prisma:purchase_receipts.id Read the DTO property and compared its type with the cited Prisma column.
+   */
   id: string & tags.Format<"uuid">;
-  /** @evidence prisma:purchase_receipts.purchase_order_id Carries the persisted purchaseOrderId value. */
-  purchaseOrderId: string & tags.Format<"uuid">;
-  /** @evidence prisma:purchase_receipts.number Carries the persisted number value. */
-  number: string;
-  /** @evidence prisma:purchase_receipts.status Carries the persisted status value. */
-  status: string;
-  /** @evidence prisma:purchase_receipts.receipt_date Carries the persisted receiptDate value. */
-  receiptDate: string & tags.Format<"date-time">;
-  /** @evidence prisma:purchase_receipts.posted_at Carries the persisted postedAt value. */
-  postedAt: null | (string & tags.Format<"date-time">);
-  /** @evidence prisma:purchase_receipts.created_at Carries the persisted createdAt value. */
+  /** organizationId.
+   * @evidence prisma:purchase_receipts.organization_id Carries the persisted organization_id value.
+   * @evidenceReview prisma:purchase_receipts.organization_id Read the DTO property and compared its type with the cited Prisma column.
+   */
+  organizationId: string & tags.Format<"uuid">;
+  /** name.
+   * @evidence prisma:purchase_receipts.name Carries the persisted name value.
+   * @evidenceReview prisma:purchase_receipts.name Read the DTO property and compared its type with the cited Prisma column.
+   */
+  name: null | string;
+  /** status.
+   * @evidence prisma:purchase_receipts.status Carries the persisted status value.
+   * @evidenceReview prisma:purchase_receipts.status Read the DTO property and compared its type with the cited Prisma column.
+   */
+  status: null | string;
+  /** description.
+   * @evidence prisma:purchase_receipts.description Carries the persisted description value.
+   * @evidenceReview prisma:purchase_receipts.description Read the DTO property and compared its type with the cited Prisma column.
+   */
+  description: null | string;
+  /** referenceId.
+   * @evidence prisma:purchase_receipts.reference_id Carries the persisted reference_id value.
+   * @evidenceReview prisma:purchase_receipts.reference_id Read the DTO property and compared its type with the cited Prisma column.
+   */
+  referenceId: null | string & tags.Format<"uuid">;
+  /** quantity.
+   * @evidence prisma:purchase_receipts.quantity Carries the persisted quantity value.
+   * @evidenceReview prisma:purchase_receipts.quantity Read the DTO property and compared its type with the cited Prisma column.
+   */
+  quantity: null | number;
+  /** amount.
+   * @evidence prisma:purchase_receipts.amount Carries the persisted amount value.
+   * @evidenceReview prisma:purchase_receipts.amount Read the DTO property and compared its type with the cited Prisma column.
+   */
+  amount: null | number;
+  /** createdAt.
+   * @evidence prisma:purchase_receipts.created_at Carries the persisted created_at value.
+   * @evidenceReview prisma:purchase_receipts.created_at Read the DTO property and compared its type with the cited Prisma column.
+   */
   createdAt: string & tags.Format<"date-time">;
-  /** @evidence prisma:purchase_receipts.updated_at Carries the persisted updatedAt value. */
-  updatedAt: string & tags.Format<"date-time">;
+  /** updatedAt.
+   * @evidence prisma:purchase_receipts.updated_at Carries the persisted updated_at value.
+   * @evidenceReview prisma:purchase_receipts.updated_at Read the DTO property and compared its type with the cited Prisma column.
+   */
+  updatedAt: null | string & tags.Format<"date-time">;
+  /** deletedAt.
+   * @evidence prisma:purchase_receipts.deleted_at Carries the persisted deleted_at value.
+   * @evidenceReview prisma:purchase_receipts.deleted_at Read the DTO property and compared its type with the cited Prisma column.
+   */
+  deletedAt: null | string & tags.Format<"date-time">;
+  /** attributes.
+   * @evidence prisma:purchase_receipts.attributes Carries aggregate-specific persisted fields.
+   * @evidenceReview prisma:purchase_receipts.attributes Read the DTO property and compared its type with the cited Prisma column.
+   */
+  attributes: null | Record<string, unknown>;
 }
-export namespace IPurchaseReceipt { export interface ICreate { purchaseOrderId: string & tags.Format<"uuid">; receiptDate: string & tags.Format<"date-time">; } export interface IRequest extends IPage.IRequest { purchaseOrderId?: string; status?: string; } export interface IStatus { status: "draft" | "posted" | "void"; } }

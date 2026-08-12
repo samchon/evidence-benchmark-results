@@ -1,5 +1,7 @@
 import type { IPage } from "@benchmark/shopping-api";
 
+import { ErrorUtil } from "./ErrorUtil";
+
 /** Builds paginated Prisma queries with stable response metadata. */
 export namespace PaginationUtil {
   /** Inputs needed to execute and transform one paginated query. */
@@ -45,7 +47,12 @@ export namespace PaginationUtil {
     async (input: IPage.IRequest): Promise<IPage<Output>> => {
       const limit = input.limit ?? 100;
       const current = input.page ?? 1;
+      if (!Number.isInteger(limit) || limit < 0 || !Number.isInteger(current) || current < 1)
+        throw ErrorUtil.unprocessable("Invalid pagination.");
       const records = await props.schema.count({ where: spec.where });
+      const pages = limit === 0 ? 1 : Math.max(1, Math.ceil(records / limit));
+      if (current > pages)
+        throw ErrorUtil.unprocessable("The requested page is outside the result set.");
       const data = await props.schema.findMany({
         ...props.payload,
         skip: (current - 1) * limit,
@@ -61,7 +68,7 @@ export namespace PaginationUtil {
           current,
           limit,
           records,
-          pages: limit === 0 ? 1 : Math.ceil(records / limit),
+          pages,
         },
       };
     };

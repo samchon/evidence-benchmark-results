@@ -1,13 +1,22 @@
 # Frontend verification
 
-Implementation verification completed 2026-08-06:
+Implementation verification for the first frontend pass. The backend and frontend resident development processes were started from their package directories and kept alive for live integration.
 
-- `pnpm lint` and `pnpm build` pass.
-- Simulated `pnpm test:e2e` passes all seven journeys.
-- Live `VITE_API_SIMULATE=false VITE_API_HOST=http://127.0.0.1:46050 pnpm test:e2e` passes all seven journeys.
-- `pnpm ui:review` passes mobile (390px), tablet (834px), and desktop (1440px) checks.
-- `pnpm readme:screens` passes and captures the landing screen.
-- Backend `pnpm test` passes all discovered feature and generated-operation tests after the explicit schema setup.
-- Backend health is `200 OK` on `http://127.0.0.1:46050/health`; frontend Vite serves on port 46052. Both dev processes remained running and Vite recorded clean page reloads after scoped changes.
+## Commands
 
-Journey coverage: anonymous redirect; customer registration/login, collection search/detail, cart entry, seller registration/workspace, authenticated operation inventory, checkout result, order history, account, seller, and administrator routes. Every generated SDK accessor is exposed through `src/hooks/use-shopping-sdk.ts` and an explicit domain hook in `src/lib/shopping/hooks.ts`; the operation workspace consumes the complete hook map through the shared connection.
+- `pnpm lint` from `packages/frontend`
+- `pnpm plan` from `packages/frontend`
+- `pnpm build` from `packages/frontend`
+- `pnpm test:contract` from `packages/frontend`
+- `pnpm test:e2e` from `packages/frontend`
+- `pnpm ui:review` from `packages/frontend`
+- `pnpm readme:screens` from `packages/frontend`
+- `pnpm test` from `packages/backend` (the backend package has no `test:e2e` script; the live harness ran on isolated `API_PORT=46054` while resident development stayed on 46050)
+
+## Runtime checks
+
+- Backend health: `http://127.0.0.1:46050/health`
+- Frontend shell: `http://127.0.0.1:46052/`
+- Browser journeys use the live backend connection supplied to Vite.
+- Any contract change is regenerated before frontend verification; generated accessors are consumed through `src/lib/shopping/hooks.ts`.
+- Results are refreshed after the frontend review corrections; final command evidence is recorded in the handoff, including lint, plan `427/427`, build, contract suite, expanded live journeys, responsive UI checks, README screenshot, and backend feature executions.

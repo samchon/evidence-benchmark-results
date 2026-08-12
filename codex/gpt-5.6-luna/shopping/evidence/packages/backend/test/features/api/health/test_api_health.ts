@@ -1,4 +1,4 @@
-import * as api from "@benchmark/shopping2-api";
+import * as api from "@benchmark/shopping-api";
 import typia from "typia";
 
 /**
@@ -15,6 +15,7 @@ import typia from "typia";
  *
  * @param connection Base connection supplied by the dynamic e2e runner.
  * @evidence {@link api.functional.health.get} Exercises the generated health operation.
+ * @evidenceReview {@link api.functional.health.get} Read the generated accessor and this test body; confirmed that the cited operation is the sole operation invoked and that the response contract assertion is the checked behavior.
  */
 export async function test_api_health(
   connection: api.IConnection,

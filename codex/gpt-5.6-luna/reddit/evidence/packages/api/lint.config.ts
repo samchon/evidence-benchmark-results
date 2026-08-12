@@ -1,7 +1,7 @@
 import {
   evidence,
-  type IEvidenceGraphConfig,
-} from "@samchon/lint-plugin-evidence";
+  type ITtscEvidenceGraphConfig,
+} from "@ttsc/evidence";
 import type { ITtscLintConfig } from "@ttsc/lint";
 
 /**
@@ -20,7 +20,7 @@ import type { ITtscLintConfig } from "@ttsc/lint";
  * their exclusions may be written in, so the carrier is declared rather than
  * conventional and an `@evidenceExclude` on a DTO itself is a compile error.
  */
-export const graph: IEvidenceGraphConfig = {
+export const graph: ITtscEvidenceGraphConfig = {
   claims: [
     // A DTO type answers to the requirement it serves and the table it
     // represents.
@@ -72,5 +72,11 @@ export default {
   },
   rules: {
     "evidence/graph": ["error", graph],
+    // A review states what was checked, which the reason does not. It ships
+    // "off" because a review is a record of a check, and the checks happen in
+    // Backend Review, which owns the DTO claims declared here. Set this to
+    // "error" there, and every acknowledgement reports itself as unreviewed
+    // until that Review reaches it.
+    "evidence/review": "error",
   },
 } satisfies ITtscLintConfig;

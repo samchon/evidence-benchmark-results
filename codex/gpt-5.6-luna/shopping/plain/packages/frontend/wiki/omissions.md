@@ -1,3 +1,3 @@
-# Frontend omissions
+# Omission register
 
-No requirement-backed operation is omitted. Low-frequency operations are available in the authenticated operation workspace through the generated SDK hooks; backend authorization, validation, and refusal rules remain authoritative for every invocation.
+No customer, seller, or administrator requirement is intentionally omitted from the first frontend implementation. Backend-only enforcement is represented by the corresponding screen's error, unavailable, and empty states and remains governed by the generated contract.

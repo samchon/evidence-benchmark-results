@@ -1,67 +1,73 @@
-import type { tags } from "typia";
+import { tags } from "typia";
 
-/** Reusable organization-scoped postal address. */
+import type { IErpRecord } from "./IErpRecord";
+
 /**
- * @evidence prisma:addresses Exposes the persisted addresses record.
+ * Address public representation.
+ * @evidence docs/analysis/02-domain-model.md#req-dom-address-addresses Exposes the aggregate contract represented by this DTO.
+ * @evidenceReview docs/analysis/02-domain-model.md#req-dom-address-addresses Read the DTO declaration and checked its public and inherited fields against the cited requirement.
+ * @evidence prisma:addresses Represents the persisted addresses model.
+ * @evidenceReview prisma:addresses Read the DTO declaration and compared its concrete record shape with the cited Prisma model.
  */
-export interface IAddress {
-  /** Address UUID. */
-  /** @evidence prisma:addresses.id Carries the persisted id value. */ id: string & tags.Format<"uuid">;
-  /** Display label. */
-  /** @evidence prisma:addresses.label Carries the persisted label value. */ label: string;
-  /** First line. */
-  /** @evidence prisma:addresses.line1 Carries the persisted line1 value. */ line1: string;
-  /** Optional second line. */
-  /** @evidence prisma:addresses.line2 Carries the persisted line2 value. */ line2: null | string;
-  /** City or locality. */
-  /** @evidence prisma:addresses.city Carries the persisted city value. */ city: string;
-  /** Region or province. */
-  /** @evidence prisma:addresses.region Carries the persisted region value. */ region: null | string;
-  /** Postal code. */
-  /** @evidence prisma:addresses.postal_code Carries the persisted postalCode value. */
-  postalCode: null | string;
-  /** ISO country code. */
-  /** @evidence prisma:addresses.country_code Carries the persisted countryCode value. */
-  countryCode: string;
-  /** Whether selectable for new relationships. */
-  /** @evidence prisma:addresses.active Carries the persisted active value. */ active: boolean;
-  /** Creation instant. */
-  /** @evidence prisma:addresses.created_at Carries the persisted createdAt value. */
+export interface IAddress extends IErpRecord {
+  /** id.
+   * @evidence prisma:addresses.id Carries the persisted id value.
+   * @evidenceReview prisma:addresses.id Read the DTO property and compared its type with the cited Prisma column.
+   */
+  id: string & tags.Format<"uuid">;
+  /** organizationId.
+   * @evidence prisma:addresses.organization_id Carries the persisted organization_id value.
+   * @evidenceReview prisma:addresses.organization_id Read the DTO property and compared its type with the cited Prisma column.
+   */
+  organizationId: string & tags.Format<"uuid">;
+  /** name.
+   * @evidence prisma:addresses.name Carries the persisted name value.
+   * @evidenceReview prisma:addresses.name Read the DTO property and compared its type with the cited Prisma column.
+   */
+  name: null | string;
+  /** status.
+   * @evidence prisma:addresses.status Carries the persisted status value.
+   * @evidenceReview prisma:addresses.status Read the DTO property and compared its type with the cited Prisma column.
+   */
+  status: null | string;
+  /** description.
+   * @evidence prisma:addresses.description Carries the persisted description value.
+   * @evidenceReview prisma:addresses.description Read the DTO property and compared its type with the cited Prisma column.
+   */
+  description: null | string;
+  /** referenceId.
+   * @evidence prisma:addresses.reference_id Carries the persisted reference_id value.
+   * @evidenceReview prisma:addresses.reference_id Read the DTO property and compared its type with the cited Prisma column.
+   */
+  referenceId: null | string & tags.Format<"uuid">;
+  /** quantity.
+   * @evidence prisma:addresses.quantity Carries the persisted quantity value.
+   * @evidenceReview prisma:addresses.quantity Read the DTO property and compared its type with the cited Prisma column.
+   */
+  quantity: null | number;
+  /** amount.
+   * @evidence prisma:addresses.amount Carries the persisted amount value.
+   * @evidenceReview prisma:addresses.amount Read the DTO property and compared its type with the cited Prisma column.
+   */
+  amount: null | number;
+  /** createdAt.
+   * @evidence prisma:addresses.created_at Carries the persisted created_at value.
+   * @evidenceReview prisma:addresses.created_at Read the DTO property and compared its type with the cited Prisma column.
+   */
   createdAt: string & tags.Format<"date-time">;
-  /** Last revision instant. */
-  /** @evidence prisma:addresses.updated_at Carries the persisted updatedAt value. */
-  updatedAt: string & tags.Format<"date-time">;
-}
-export namespace IAddress {
-  /** Address creation input. */
-  export interface ICreate {
-    /** Display label. */
-    label: string & tags.MinLength<1>;
-    /** First line. */
-    line1: string & tags.MinLength<1>;
-    /** Optional second line. */
-    line2?: null | string;
-    /** City or locality. */
-    city: string & tags.MinLength<1>;
-    /** Region or province. */
-    region?: null | string;
-    /** Postal code. */
-    postalCode?: null | string;
-    /** ISO country code. */
-    countryCode: string & tags.MinLength<2> & tags.MaxLength<2>;
-  }
-  /** Address update input. */
-  export interface IUpdate extends Partial<ICreate> {}
-  /** Address list request. */
-  export interface IRequest {
-    /** Optional name search. */
-    search?: null | string;
-    /** Include inactive addresses. */
-    includeInactive?: null | boolean;
-  }
-  /** Address activation transition. */
-  export interface IStatus {
-    /** New active state. */
-    active: boolean;
-  }
+  /** updatedAt.
+   * @evidence prisma:addresses.updated_at Carries the persisted updated_at value.
+   * @evidenceReview prisma:addresses.updated_at Read the DTO property and compared its type with the cited Prisma column.
+   */
+  updatedAt: null | string & tags.Format<"date-time">;
+  /** deletedAt.
+   * @evidence prisma:addresses.deleted_at Carries the persisted deleted_at value.
+   * @evidenceReview prisma:addresses.deleted_at Read the DTO property and compared its type with the cited Prisma column.
+   */
+  deletedAt: null | string & tags.Format<"date-time">;
+  /** attributes.
+   * @evidence prisma:addresses.attributes Carries aggregate-specific persisted fields.
+   * @evidenceReview prisma:addresses.attributes Read the DTO property and compared its type with the cited Prisma column.
+   */
+  attributes: null | Record<string, unknown>;
 }

@@ -1,0 +1,3631 @@
+/// Addresses domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-address-addresses Persists the explicit addresses concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-address-addresses Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model addresses {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Contacts domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-contact-contacts Persists the explicit contacts concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-contact-contacts Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model contacts {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Attachments domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-attachment-attachments Persists the explicit attachments concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-attachment-attachments Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model attachments {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Comments domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-comment-comments Persists the explicit comments concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-comment-comments Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model comments {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Tags domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-tag-tags Persists the explicit tags concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-tag-tags Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model tags {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Custom Fields domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-customfield-custom-fields Persists the explicit custom fields concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-customfield-custom-fields Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model custom_fields {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Custom Field Values domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-customfield-custom-fields Persists the explicit custom field values concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-customfield-custom-fields Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model custom_field_values {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Currencies domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-currency-currencies Persists the explicit currencies concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-currency-currencies Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model currencies {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Exchange Rates domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-exchange-rate-exchange-rates Persists the explicit exchange rates concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-exchange-rate-exchange-rates Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model exchange_rates {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Payment Terms domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-payment-term-payment-terms Persists the explicit payment terms concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-payment-term-payment-terms Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model payment_terms {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Tax Jurisdictions domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-tax-jurisdiction-tax-jurisdictions Persists the explicit tax jurisdictions concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-tax-jurisdiction-tax-jurisdictions Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model tax_jurisdictions {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Tax Codes domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-tax-code-tax-codes-and-rates Persists the explicit tax codes concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-tax-code-tax-codes-and-rates Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model tax_codes {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Tax Rates domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-tax-code-tax-codes-and-rates Persists the explicit tax rates concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-tax-code-tax-codes-and-rates Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model tax_rates {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Units Of Measure domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-uom-units-of-measure Persists the explicit units of measure concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-uom-units-of-measure Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model units_of_measure {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Document Number Sequences domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-doc-number-document-number-sequences Persists the explicit document number sequences concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-doc-number-document-number-sequences Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model document_number_sequences {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Fiscal Calendars domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-fiscal-calendar-fiscal-calendars Persists the explicit fiscal calendars concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-fiscal-calendar-fiscal-calendars Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model fiscal_calendars {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Notification Preferences domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-notification-preference-notification-preferences Persists the explicit notification preferences concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-notification-preference-notification-preferences Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model notification_preferences {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Ledger Accounts domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-account-ledger-account-lifecycle Persists the explicit ledger accounts concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-account-ledger-account-lifecycle Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model ledger_accounts {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Journal Entries domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-journal-journal-entry-lifecycle Persists the explicit journal entries concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-journal-journal-entry-lifecycle Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model journal_entries {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Journal Lines domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-journal-journal-entry-lifecycle Persists the explicit journal lines concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-journal-journal-entry-lifecycle Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model journal_lines {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Fiscal Periods domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-fiscal-period-fiscal-period-lifecycle Persists the explicit fiscal periods concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-fiscal-period-fiscal-period-lifecycle Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model fiscal_periods {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Closing Snapshots domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-close-snapshot-closing-snapshots Persists the explicit closing snapshots concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-close-snapshot-closing-snapshots Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model closing_snapshots {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Bank Accounts domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-bank-account-bank-accounts Persists the explicit bank accounts concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-bank-account-bank-accounts Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model bank_accounts {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Bank Transactions domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-bank-transaction-bank-transaction-lifecycle Persists the explicit bank transactions concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-bank-transaction-bank-transaction-lifecycle Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model bank_transactions {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Bank Reconciliations domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-reconciliation-bank-reconciliation-lifecycle Persists the explicit bank reconciliations concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-reconciliation-bank-reconciliation-lifecycle Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model bank_reconciliations {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Tax Returns domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-tax-return-tax-return-lifecycle Persists the explicit tax returns concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-tax-return-tax-return-lifecycle Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model tax_returns {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Vendors domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-vendor-vendor-lifecycle Persists the explicit vendors concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-vendor-vendor-lifecycle Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model vendors {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Purchase Requests domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-purchase-request-purchase-request-lifecycle Persists the explicit purchase requests concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-purchase-request-purchase-request-lifecycle Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model purchase_requests {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Purchase Request Lines domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-purchase-request-purchase-request-lifecycle Persists the explicit purchase request lines concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-purchase-request-purchase-request-lifecycle Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model purchase_request_lines {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Purchase Orders domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-purchase-order-purchase-order-lifecycle Persists the explicit purchase orders concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-purchase-order-purchase-order-lifecycle Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model purchase_orders {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Purchase Order Lines domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-purchase-order-purchase-order-lifecycle Persists the explicit purchase order lines concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-purchase-order-purchase-order-lifecycle Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model purchase_order_lines {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Purchase Receipts domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-purchase-receipt-purchase-receipt-lifecycle Persists the explicit purchase receipts concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-purchase-receipt-purchase-receipt-lifecycle Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model purchase_receipts {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Purchase Receipt Lines domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-purchase-receipt-purchase-receipt-lifecycle Persists the explicit purchase receipt lines concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-purchase-receipt-purchase-receipt-lifecycle Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model purchase_receipt_lines {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Purchase Returns domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-purchase-return-purchase-returns Persists the explicit purchase returns concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-purchase-return-purchase-returns Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model purchase_returns {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Purchase Return Lines domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-purchase-return-purchase-returns Persists the explicit purchase return lines concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-purchase-return-purchase-returns Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model purchase_return_lines {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Vendor Bills domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-vendor-bill-vendor-bill-lifecycle Persists the explicit vendor bills concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-vendor-bill-vendor-bill-lifecycle Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model vendor_bills {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Vendor Bill Lines domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-vendor-bill-vendor-bill-lifecycle Persists the explicit vendor bill lines concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-vendor-bill-vendor-bill-lifecycle Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model vendor_bill_lines {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Vendor Payments domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-vendor-payment-vendor-payments Persists the explicit vendor payments concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-vendor-payment-vendor-payments Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model vendor_payments {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Vendor Payment Allocations domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-vendor-payment-vendor-payments Persists the explicit vendor payment allocations concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-vendor-payment-vendor-payments Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model vendor_payment_allocations {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Vendor Credits domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-vendor-credit-vendor-credits Persists the explicit vendor credits concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-vendor-credit-vendor-credits Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model vendor_credits {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Items domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-item-item-lifecycle Persists the explicit items concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-item-item-lifecycle Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model items {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Warehouses domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-warehouse-warehouses Persists the explicit warehouses concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-warehouse-warehouses Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model warehouses {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Storage Locations domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-location-storage-locations Persists the explicit storage locations concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-location-storage-locations Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model storage_locations {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Stock Movements domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-stock-movement-stock-movements Persists the explicit stock movements concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-stock-movement-stock-movements Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model stock_movements {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Inventory Lots domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-lot-inventory-lots Persists the explicit inventory lots concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-lot-inventory-lots Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model inventory_lots {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Item Serials domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-serial-item-serials Persists the explicit item serials concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-serial-item-serials Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model item_serials {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Warehouse Transfers domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-transfer-warehouse-transfer-lifecycle Persists the explicit warehouse transfers concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-transfer-warehouse-transfer-lifecycle Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model warehouse_transfers {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Cycle Counts domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-cycle-count-cycle-count-lifecycle Persists the explicit cycle counts concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-cycle-count-cycle-count-lifecycle Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model cycle_counts {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Inventory Adjustments domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-inventory-adjustment-inventory-adjustments Persists the explicit inventory adjustments concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-inventory-adjustment-inventory-adjustments Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model inventory_adjustments {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Customers domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-customer-customer-lifecycle Persists the explicit customers concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-customer-customer-lifecycle Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model customers {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Sales Prices domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-sales-price-sales-prices Persists the explicit sales prices concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-sales-price-sales-prices Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model sales_prices {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Sales Quotes domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-sales-quote-sales-quote-lifecycle Persists the explicit sales quotes concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-sales-quote-sales-quote-lifecycle Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model sales_quotes {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Sales Quote Lines domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-sales-quote-sales-quote-lifecycle Persists the explicit sales quote lines concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-sales-quote-sales-quote-lifecycle Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model sales_quote_lines {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Sales Orders domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-sales-order-sales-order-lifecycle Persists the explicit sales orders concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-sales-order-sales-order-lifecycle Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model sales_orders {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Sales Order Lines domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-sales-order-sales-order-lifecycle Persists the explicit sales order lines concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-sales-order-sales-order-lifecycle Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model sales_order_lines {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Stock Allocations domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-allocation-stock-allocation-lifecycle Persists the explicit stock allocations concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-allocation-stock-allocation-lifecycle Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model stock_allocations {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Shipments domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-shipment-shipment-lifecycle Persists the explicit shipments concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-shipment-shipment-lifecycle Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model shipments {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Shipment Lines domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-shipment-shipment-lifecycle Persists the explicit shipment lines concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-shipment-shipment-lifecycle Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model shipment_lines {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Sales Invoices domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-sales-invoice-sales-invoice-lifecycle Persists the explicit sales invoices concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-sales-invoice-sales-invoice-lifecycle Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model sales_invoices {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Sales Invoice Lines domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-sales-invoice-sales-invoice-lifecycle Persists the explicit sales invoice lines concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-sales-invoice-sales-invoice-lifecycle Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model sales_invoice_lines {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Customer Payments domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-customer-payment-customer-payments Persists the explicit customer payments concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-customer-payment-customer-payments Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model customer_payments {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Sales Returns domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-sales-return-sales-return-lifecycle Persists the explicit sales returns concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-sales-return-sales-return-lifecycle Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model sales_returns {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Sales Return Lines domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-sales-return-sales-return-lifecycle Persists the explicit sales return lines concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-sales-return-sales-return-lifecycle Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model sales_return_lines {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Credit Memos domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-credit-memo-credit-memos Persists the explicit credit memos concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-credit-memo-credit-memos Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model credit_memos {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Employees domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-employee-employee-lifecycle Persists the explicit employees concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-employee-employee-lifecycle Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model employees {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Departments domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-department-departments Persists the explicit departments concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-department-departments Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model departments {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Employment Contracts domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-contract-employment-contract-lifecycle Persists the explicit employment contracts concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-contract-employment-contract-lifecycle Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model employment_contracts {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Projects domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-project-project-lifecycle Persists the explicit projects concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-project-project-lifecycle Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model projects {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Project Members domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-project-member-project-membership Persists the explicit project members concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-project-member-project-membership Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model project_members {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Tasks domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-task-task-lifecycle Persists the explicit tasks concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-task-task-lifecycle Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model tasks {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Timelogs domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-timelog-timelogs Persists the explicit timelogs concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-timelog-timelogs Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model timelogs {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Timesheets domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-timesheet-timesheet-lifecycle Persists the explicit timesheets concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-timesheet-timesheet-lifecycle Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model timesheets {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Payroll Configurations domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-payroll-config-payroll-configuration Persists the explicit payroll configurations concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-payroll-config-payroll-configuration Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model payroll_configurations {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Pay Schedules domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-pay-schedule-pay-schedules Persists the explicit pay schedules concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-pay-schedule-pay-schedules Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model pay_schedules {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Payroll Runs domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-payroll-run-payroll-run-lifecycle Persists the explicit payroll runs concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-payroll-run-payroll-run-lifecycle Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model payroll_runs {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Payslips domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-payslip-payslips Persists the explicit payslips concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-payslip-payslips Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model payslips {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Budgets domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-budget-budget-lifecycle Persists the explicit budgets concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-budget-budget-lifecycle Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model budgets {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Cost Centers domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-cost-center-cost-centers Persists the explicit cost centers concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-cost-center-cost-centers Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model cost_centers {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Profit Centers domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-profit-center-profit-centers Persists the explicit profit centers concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-profit-center-profit-centers Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model profit_centers {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Allocation Rules domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-allocation-rule-allocation-rules Persists the explicit allocation rules concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-allocation-rule-allocation-rules Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model allocation_rules {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Asset Categories domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-asset-category-asset-categories Persists the explicit asset categories concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-asset-category-asset-categories Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model asset_categories {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Fixed Assets domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-fixed-asset-fixed-asset-lifecycle Persists the explicit fixed assets concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-fixed-asset-fixed-asset-lifecycle Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model fixed_assets {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Depreciation Schedules domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-depreciation-schedule-depreciation-schedules Persists the explicit depreciation schedules concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-depreciation-schedule-depreciation-schedules Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model depreciation_schedules {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Depreciation Runs domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-depreciation-run-depreciation-runs Persists the explicit depreciation runs concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-depreciation-run-depreciation-runs Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model depreciation_runs {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Asset Transfers domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-asset-transfer-asset-transfers Persists the explicit asset transfers concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-asset-transfer-asset-transfers Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model asset_transfers {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Asset Impairments domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-asset-impairment-asset-impairments Persists the explicit asset impairments concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-asset-impairment-asset-impairments Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model asset_impairments {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Asset Disposals domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-asset-disposal-asset-disposals Persists the explicit asset disposals concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-asset-disposal-asset-disposals Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model asset_disposals {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Bill Of Materials domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-bom-bill-of-materials-lifecycle Persists the explicit bill of materials concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-bom-bill-of-materials-lifecycle Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model bill_of_materials {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Bom Versions domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-bom-bill-of-materials-lifecycle Persists the explicit bom versions concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-bom-bill-of-materials-lifecycle Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model bom_versions {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Routing Versions domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-routing-routing-lifecycle Persists the explicit routing versions concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-routing-routing-lifecycle Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model routing_versions {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Routing Operations domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-routing-routing-lifecycle Persists the explicit routing operations concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-routing-routing-lifecycle Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model routing_operations {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Work Centers domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-work-center-work-centers Persists the explicit work centers concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-work-center-work-centers Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model work_centers {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Machines domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-machine-machines Persists the explicit machines concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-machine-machines Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model machines {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Mrp Runs domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-mrp-run-mrp-runs Persists the explicit mrp runs concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-mrp-run-mrp-runs Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model mrp_runs {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Mrp Recommendations domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-mrp-recommendation-mrp-recommendations Persists the explicit mrp recommendations concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-mrp-recommendation-mrp-recommendations Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model mrp_recommendations {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Production Orders domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-production-order-production-order-lifecycle Persists the explicit production orders concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-production-order-production-order-lifecycle Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model production_orders {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Production Order Operations domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-production-order-production-order-lifecycle Persists the explicit production order operations concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-production-order-production-order-lifecycle Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model production_order_operations {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Inspection Plans domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-inspection-plan-inspection-plans Persists the explicit inspection plans concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-inspection-plan-inspection-plans Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model inspection_plans {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Inspection Orders domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-inspection-order-inspection-order-lifecycle Persists the explicit inspection orders concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-inspection-order-inspection-order-lifecycle Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model inspection_orders {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Stock Quarantines domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-quarantine-stock-quarantine-lifecycle Persists the explicit stock quarantines concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-quarantine-stock-quarantine-lifecycle Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model stock_quarantines {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Quality Dispositions domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-disposition-quality-disposition-lifecycle Persists the explicit quality dispositions concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-disposition-quality-disposition-lifecycle Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model quality_dispositions {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Equipment domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-equipment-equipment-lifecycle Persists the explicit equipment concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-equipment-equipment-lifecycle Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model equipment {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Maintenance Plans domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-maintenance-plan-maintenance-plans Persists the explicit maintenance plans concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-maintenance-plan-maintenance-plans Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model maintenance_plans {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Maintenance Orders domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-maintenance-order-maintenance-work-order-lifecycle Persists the explicit maintenance orders concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-maintenance-order-maintenance-work-order-lifecycle Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model maintenance_orders {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Service Cases domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-service-case-service-case-lifecycle Persists the explicit service cases concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-service-case-service-case-lifecycle Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model service_cases {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Service Orders domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-service-order-service-order-lifecycle Persists the explicit service orders concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-service-order-service-order-lifecycle Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model service_orders {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Approval Workflows domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-approval-workflow-approval-workflow-lifecycle Persists the explicit approval workflows concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-approval-workflow-approval-workflow-lifecycle Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model approval_workflows {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Approval Requests domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-approval-request-approval-request-lifecycle Persists the explicit approval requests concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-approval-request-approval-request-lifecycle Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model approval_requests {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Audit Events domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-audit-event-audit-events Persists the explicit audit events concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-audit-event-audit-events Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model audit_events {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+/// Notifications domain record with organization scope and lifecycle identity.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-notification-notification-lifecycle Persists the explicit notifications concept and its durable lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-notification-notification-lifecycle Read the Prisma model declaration and compared its organization, lifecycle, and retained attributes with the cited domain target.
+model notifications {
+  /// Application UUID.
+  id String @id
+  /// Owning organization UUID.
+  organization_id String
+  /// Human-readable identity when the concept has one.
+  name String?
+  /// Requirement-defined lifecycle status.
+  status String?
+  /// Requirement-defined description or memo.
+  description String?
+  /// Source or related record identity when applicable.
+  reference_id String?
+  /// Requirement-defined quantity when applicable.
+  quantity Decimal?
+  /// Requirement-defined monetary amount when applicable.
+  amount Decimal?
+  /// Creation instant.
+  created_at DateTime
+  /// Last mutable update, when the lifecycle permits changes.
+  updated_at DateTime?
+  /// Retention marker for deactivated records.
+  deleted_at DateTime?
+  /// Aggregate-specific fields supplied by the operation and retained as JSON.
+  attributes String?
+
+  @@index([organization_id])
+  @@index([organization_id, status])
+}
+
+

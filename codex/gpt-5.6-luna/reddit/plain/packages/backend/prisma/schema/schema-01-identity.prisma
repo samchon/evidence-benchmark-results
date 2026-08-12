@@ -1,0 +1,134 @@
+/// A platform account and its private credentials.
+model users {
+  /// Primary identifier.
+  id String @id
+  /// Case-normalized sign-in address, retained after deletion.
+  email_normalized String @unique
+  /// Public username in its selected casing.
+  username String
+  /// Case-normalized public identifier.
+  username_normalized String @unique
+  /// Password hash; never exposed by the API.
+  password_hash String
+  /// Permanent deletion instant, or null while active.
+  deleted_at DateTime?
+  /// Account creation instant.
+  created_at DateTime
+  /// Last account mutation instant.
+  updated_at DateTime
+  /// Public profile.
+  profile profiles?
+  /// Authenticated sessions.
+  sessions sessions[]
+  /// One-time recovery proofs.
+  recovery_proofs recovery_proofs[]
+  /// Communities owned by this account.
+  owned_communities communities[] @relation("community_owner")
+  /// Active and ended subscriptions.
+  subscriptions subscriptions[]
+  /// Scoped moderator assignments.
+  moderator_assignments moderators[]
+  /// Scoped bans received.
+  bans bans[] @relation("banned_user")
+  /// Scoped bans issued.
+  issued_bans bans[] @relation("ban_actor")
+  /// Authored posts.
+  posts posts[]
+  /// Authored comments.
+  comments comments[]
+  /// Votes cast by this account.
+  votes votes[] @relation("vote_user")
+  /// Reports submitted by this account.
+  reports reports[] @relation("reporter")
+  /// Moderation decisions made by this account.
+  decisions moderation_histories[] @relation("decision_actor")
+  decided_reports reports[] @relation("report_decision_actor")
+  /// Profile records that de-identify this account after deletion.
+  deidentified_histories moderation_histories[] @relation("deidentified_subject")
+}
+
+/// Public attributes belonging one-to-one to an account.
+model profiles {
+  /// Primary identifier, equal to the user identifier.
+  id String @id
+  /// Owning account.
+  user_id String @unique
+  /// Public display name.
+  display_name String
+  /// Public biography, possibly empty.
+  bio String
+  /// Optional avatar media identifier.
+  avatar_media_id String? @unique
+  /// Profile creation instant.
+  created_at DateTime
+  /// Last public edit instant.
+  updated_at DateTime
+  /// Owning account.
+  user users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  /// Optional avatar.
+  avatar media? @relation(fields: [avatar_media_id], references: [id], onDelete: SetNull)
+}
+
+/// One independently revocable authenticated connection.
+model sessions {
+  /// Primary identifier.
+  id String @id
+  /// Owning account identifier.
+  user_id String
+  /// Session creation instant.
+  created_at DateTime
+  /// Last continuation instant.
+  last_used_at DateTime
+  /// Revocation instant, or null while active.
+  revoked_at DateTime?
+  /// Owning account.
+  user users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  @@index([user_id, revoked_at])
+}
+
+/// A one-time password-recovery proof delivery record.
+model recovery_proofs {
+  /// Primary identifier.
+  id String @id
+  /// Account receiving the proof.
+  user_id String
+  /// Hash of the secret delivered out of band.
+  proof_hash String
+  /// Secret payload carried by the recorded delivery boundary.
+  proof_payload String
+  /// Creation instant.
+  created_at DateTime
+  /// Expiration instant.
+  expires_at DateTime
+  /// Consumption instant, or null while unused.
+  used_at DateTime?
+  /// Registered recipient address.
+  recipient_email String
+  /// Owning account.
+  user users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  @@index([user_id, created_at])
+}
+
+/// An uploaded public image and its presentation metadata.
+model media {
+  /// Primary identifier.
+  id String @id
+  /// Accepted MIME type.
+  mime_type String
+  /// Original encoded image bytes represented as base64.
+  data String
+  /// Bounded thumbnail bytes for image posts, or null for other media.
+  thumbnail_data String?
+  /// Original pixel width.
+  width Int
+  /// Original pixel height.
+  height Int
+  /// Creation instant.
+  created_at DateTime
+  /// Profile using this media as avatar.
+  avatar_profile profiles?
+  /// Community using this media as icon.
+  icon_community communities?
+  /// Post using this media as payload.
+  image_post posts?
+}

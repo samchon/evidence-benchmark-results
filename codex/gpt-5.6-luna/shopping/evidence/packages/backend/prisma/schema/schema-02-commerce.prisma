@@ -1,0 +1,536 @@
+/// Shared administrator-curated category.
+///
+/// @evidence docs/analysis/02-domain-model.md#req-category-domain-category-model Represents
+/// the two-level category hierarchy and live curation state.
+/// @evidence docs/analysis/03-functional-requirements.md#req-category-functions-category-operations Stores category operation state.
+/// @evidence docs/analysis/04-business-rules.md#req-category-policies-category-hierarchy-and-curation-policies Stores category policy state.
+/// @evidence docs/analysis/02-domain-model.md#req-category-domain-1-define-category-information Stores the persisted state required by this unit.
+/// @evidence docs/analysis/02-domain-model.md#req-category-domain-2-limit-the-category-hierarchy Stores the persisted state required by this unit.
+/// @evidence docs/analysis/02-domain-model.md#req-category-domain-3-classify-a-product Stores the persisted state required by this unit.
+/// @evidence docs/analysis/02-domain-model.md#req-category-domain-4-uncategorize-products-after-category-deletion Stores the persisted state required by this unit.
+/// @evidence docs/analysis/03-functional-requirements.md#req-category-functions-1-create-a-category Stores the persisted state required by this unit.
+/// @evidence docs/analysis/03-functional-requirements.md#req-category-functions-2-edit-a-category Stores the persisted state required by this unit.
+/// @evidence docs/analysis/03-functional-requirements.md#req-category-functions-3-delete-a-category Stores the persisted state required by this unit.
+/// @evidence docs/analysis/03-functional-requirements.md#req-category-functions-4-browse-categories Stores the persisted state required by this unit.
+/// @evidence docs/analysis/03-functional-requirements.md#req-category-functions-5-view-products-in-a-category Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-category-policies-1-reserve-category-curation-for-administrators Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-category-policies-2-limit-category-depth-to-two-levels Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-category-policies-3-assign-products-only-to-live-categories Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-category-policies-4-uncategorize-products-when-taxonomy-is-retired Stores the persisted state required by this unit.
+model shopping_categories {
+  /// Application UUID.
+  id String @id
+  /// Category name.
+  name String
+  /// Category explanation.
+  description String
+  /// Optional top-level parent identifier.
+  parent_id String?
+  /// Creation instant.
+  created_at DateTime
+  /// Last edit instant.
+  updated_at DateTime
+  /// Retirement instant; null means live.
+  deleted_at DateTime?
+  @@unique([parent_id, name])
+  @@index([parent_id, deleted_at, name])
+}
+
+/// Live seller-owned merchandise aggregate.
+///
+/// @evidence docs/analysis/02-domain-model.md#req-product-domain-product-model Represents
+/// catalog identity, seller ownership, category, price, and retirement.
+/// @evidence docs/analysis/04-business-rules.md#req-product-policies-product-validation-and-retirement-policies Owns the
+/// product validation and deletion boundary.
+/// @evidence docs/analysis/03-functional-requirements.md#req-product-functions-product-operations Stores product operations.
+/// @evidence docs/analysis/03-functional-requirements.md#req-product-discovery-product-discovery-journey Stores discovery facts.
+/// @evidence docs/analysis/04-business-rules.md#req-search-policies-product-search-and-listing-policies Stores searchable catalog facts.
+/// @evidence docs/analysis/02-domain-model.md#req-product-domain-1-define-product-catalog-information Stores the persisted state required by this unit.
+/// @evidence docs/analysis/02-domain-model.md#req-product-domain-2-relate-a-product-to-its-seller Stores the persisted state required by this unit.
+/// @evidence docs/analysis/02-domain-model.md#req-product-domain-4-relate-variants-to-a-product Stores the persisted state required by this unit.
+/// @evidence docs/analysis/02-domain-model.md#req-product-domain-5-relate-products-to-discovery-and-history Stores the persisted state required by this unit.
+/// @evidence docs/analysis/02-domain-model.md#req-product-lifecycle-1-show-a-newly-created-product Stores the persisted state required by this unit.
+/// @evidence docs/analysis/02-domain-model.md#req-product-lifecycle-2-mark-a-product-unavailable-without-variants Stores the persisted state required by this unit.
+/// @evidence docs/analysis/02-domain-model.md#req-product-lifecycle-3-hide-products-during-seller-suspension Stores the persisted state required by this unit.
+/// @evidence docs/analysis/02-domain-model.md#req-product-lifecycle-4-remove-live-product-relationships Stores the persisted state required by this unit.
+/// @evidence docs/analysis/02-domain-model.md#req-product-lifecycle-5-retain-history-after-product-deletion Stores the persisted state required by this unit.
+/// @evidence docs/analysis/02-domain-model.md#req-product-variant-domain-1-define-variant-information Stores the persisted state required by this unit.
+/// @evidence docs/analysis/02-domain-model.md#req-product-variant-domain-2-relate-a-variant-to-its-product Stores the persisted state required by this unit.
+/// @evidence docs/analysis/02-domain-model.md#req-product-variant-domain-3-resolve-the-effective-variant-price Stores the persisted state required by this unit.
+/// @evidence docs/analysis/02-domain-model.md#req-product-variant-domain-4-calculate-variant-stock Stores the persisted state required by this unit.
+/// @evidence docs/analysis/02-domain-model.md#req-product-variant-domain-5-use-variants-as-commerce-units Stores the persisted state required by this unit.
+/// @evidence docs/analysis/02-domain-model.md#req-snapshot-domain-1-define-change-snapshots Stores the persisted state required by this unit.
+/// @evidence docs/analysis/02-domain-model.md#req-snapshot-domain-2-keep-snapshots-immutable Stores the persisted state required by this unit.
+/// @evidence docs/analysis/02-domain-model.md#req-snapshot-domain-3-capture-complete-product-state Stores the persisted state required by this unit.
+/// @evidence docs/analysis/02-domain-model.md#req-snapshot-domain-4-capture-other-mutable-evidence Stores the persisted state required by this unit.
+/// @evidence docs/analysis/02-domain-model.md#req-snapshot-domain-5-capture-purchase-time-item-state Stores the persisted state required by this unit.
+/// @evidence docs/analysis/02-domain-model.md#req-snapshot-domain-6-retain-evidence-after-live-deletion Stores the persisted state required by this unit.
+/// @evidence docs/analysis/02-domain-model.md#req-snapshot-domain-7-limit-snapshot-visibility Stores the persisted state required by this unit.
+/// @evidence docs/analysis/02-domain-model.md#req-wishlist-domain-1-relate-a-wishlist-to-its-customer-and-products Stores the persisted state required by this unit.
+/// @evidence docs/analysis/02-domain-model.md#req-wishlist-domain-2-keep-one-entry-per-product Stores the persisted state required by this unit.
+/// @evidence docs/analysis/02-domain-model.md#req-wishlist-domain-3-remove-deleted-products-from-wishlists Stores the persisted state required by this unit.
+/// @evidence docs/analysis/03-functional-requirements.md#req-product-functions-1-create-a-product Stores the persisted state required by this unit.
+/// @evidence docs/analysis/03-functional-requirements.md#req-product-functions-2-edit-a-product Stores the persisted state required by this unit.
+/// @evidence docs/analysis/03-functional-requirements.md#req-product-functions-3-delete-an-owned-product Stores the persisted state required by this unit.
+/// @evidence docs/analysis/03-functional-requirements.md#req-product-functions-4-view-own-product-snapshots Stores the persisted state required by this unit.
+/// @evidence docs/analysis/03-functional-requirements.md#req-product-functions-5-list-and-view-all-products Stores the persisted state required by this unit.
+/// @evidence docs/analysis/03-functional-requirements.md#req-product-functions-6-view-any-product-snapshots Stores the persisted state required by this unit.
+/// @evidence docs/analysis/03-functional-requirements.md#req-product-functions-7-delete-a-policy-violating-product Stores the persisted state required by this unit.
+/// @evidence docs/analysis/03-functional-requirements.md#req-variant-functions-1-add-a-product-variant Stores the persisted state required by this unit.
+/// @evidence docs/analysis/03-functional-requirements.md#req-variant-functions-2-edit-a-product-variant Stores the persisted state required by this unit.
+/// @evidence docs/analysis/03-functional-requirements.md#req-variant-functions-3-delete-a-product-variant Stores the persisted state required by this unit.
+/// @evidence docs/analysis/03-functional-requirements.md#req-product-discovery-1-search-the-product-catalog Stores the persisted state required by this unit.
+/// @evidence docs/analysis/03-functional-requirements.md#req-product-discovery-2-compare-product-cards Stores the persisted state required by this unit.
+/// @evidence docs/analysis/03-functional-requirements.md#req-product-discovery-3-view-product-details Stores the persisted state required by this unit.
+/// @evidence docs/analysis/03-functional-requirements.md#req-wishlist-functions-1-add-a-product-to-the-wishlist Stores the persisted state required by this unit.
+/// @evidence docs/analysis/03-functional-requirements.md#req-wishlist-functions-3-remove-a-wishlist-product Stores the persisted state required by this unit.
+/// @evidence docs/analysis/03-functional-requirements.md#req-review-functions-1-publish-a-product-review Stores the persisted state required by this unit.
+/// @evidence docs/analysis/03-functional-requirements.md#req-user-oversight-2-ban-a-customer Stores the persisted state required by this unit.
+/// @evidence docs/analysis/03-functional-requirements.md#req-user-oversight-3-unban-a-customer Stores the persisted state required by this unit.
+/// @evidence docs/analysis/03-functional-requirements.md#req-user-oversight-5-ban-a-seller Stores the persisted state required by this unit.
+/// @evidence docs/analysis/03-functional-requirements.md#req-user-oversight-6-unban-a-seller Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-address-policies-2-enforce-address-ownership Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-address-policies-3-keep-at-most-one-default-address Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-address-policies-4-clear-a-removed-default-without-automatic-replacement Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-product-policies-1-require-valid-product-catalog-data Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-product-policies-2-enforce-product-ownership Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-product-policies-3-snapshot-the-complete-aggregate-on-catalog-edit Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-product-policies-4-block-seller-product-deletion-during-fulfillment Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-product-policies-5-block-seller-product-deletion-during-unresolved-requests Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-product-policies-6-retire-violating-merchandise-without-stranding-obligations Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-snapshot-policies-1-create-evidence-for-covered-commercial-changes Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-snapshot-policies-2-capture-the-complete-product-aggregate Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-snapshot-policies-4-keep-snapshots-immutable-and-undeletable Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-snapshot-policies-5-limit-snapshot-evidence-to-relevant-parties Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-search-policies-1-search-the-eligible-cross-seller-catalog Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-search-policies-2-combine-product-search-constraints Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-search-policies-3-order-and-page-search-results-deterministically Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-search-policies-4-render-the-standard-product-card Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-wishlist-policies-2-admit-one-live-product-entry-per-customer Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-wishlist-policies-3-keep-a-wishlist-entry-product-scoped-and-nonreserving Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-wishlist-policies-4-page-retained-wishlist-products-consistently Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-order-policies-1-calculate-the-fixed-purchase-total Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-order-policies-3-keep-fulfillment-and-resolution-item-scoped Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-order-policies-4-derive-the-complete-overall-order-status Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-order-policies-5-present-orders-from-purchase-time-evidence Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-review-policies-3-keep-one-review-identity-per-product-and-order Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-review-policies-6-calculate-the-live-product-rating Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-admin-oversight-policies-1-inspect-the-complete-platform-record Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-admin-oversight-policies-2-suspend-account-access-without-deleting-history Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-admin-oversight-policies-3-compose-seller-suspension-and-ban-independently Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-admin-oversight-policies-4-retire-a-policy-violating-product-without-rewriting-orders Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-admin-oversight-policies-7-apply-a-force-action-across-an-orders-eligible-items Stores the persisted state required by this unit.
+/// @evidence docs/analysis/05-non-functional.md#req-nfr-audit-integrity-3-preserve-a-complete-product-time-point Stores the persisted state required by this unit.
+model shopping_products {
+  /// Application UUID.
+  id String @id
+  /// Owning seller identifier.
+  seller_id String
+  /// Optional live category identifier.
+  category_id String?
+  /// Product name.
+  name String
+  /// Product description.
+  description String
+  /// Base price used when a variant has no override.
+  base_price Float
+  /// Creation instant.
+  created_at DateTime
+  /// Last edit instant.
+  updated_at DateTime
+  /// Terminal retirement instant; null means live.
+  deleted_at DateTime?
+  /// Seller owner.
+  seller shopping_sellers @relation(fields: [seller_id], references: [id], onDelete: Restrict)
+  /// Ordered product images.
+  images shopping_product_images[]
+  /// Selectable variants.
+  variants shopping_product_variants[]
+  /// Product snapshots.
+  snapshots shopping_product_snapshots[]
+  /// Wishlist entries.
+  wishlist_entries shopping_wishlist_entries[]
+  /// Reviews.
+  reviews shopping_reviews[]
+  @@index([seller_id, deleted_at])
+  @@index([category_id, deleted_at])
+  @@index([name, deleted_at])
+}
+
+/// One ordered product image.
+/// @evidence docs/analysis/02-domain-model.md#req-product-domain-3-order-product-images Stores the persisted state required by this unit.
+/// @evidence docs/analysis/03-functional-requirements.md#req-product-image-functions-1-upload-product-images Stores the persisted state required by this unit.
+/// @evidence docs/analysis/03-functional-requirements.md#req-product-image-functions-2-reorder-product-images Stores the persisted state required by this unit.
+/// @evidence docs/analysis/03-functional-requirements.md#req-product-image-functions-3-delete-a-product-image Stores the persisted state required by this unit.
+model shopping_product_images {
+  /// Application UUID.
+  id String @id
+  /// Owning product identifier.
+  product_id String
+  /// Image reference.
+  uri String
+  /// Zero-based display position.
+  sequence Int
+  /// Creation instant.
+  created_at DateTime
+  /// Owning product.
+  product shopping_products @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  @@unique([product_id, sequence])
+  @@index([product_id, sequence])
+}
+
+/// One concrete purchasable SKU beneath a product.
+/// @evidence docs/analysis/02-domain-model.md#req-variant-lifecycle-1-make-an-in-stock-variant-available Stores the persisted state required by this unit.
+/// @evidence docs/analysis/02-domain-model.md#req-variant-lifecycle-2-expose-the-out-of-stock-state Stores the persisted state required by this unit.
+/// @evidence docs/analysis/02-domain-model.md#req-variant-lifecycle-3-retire-a-deletable-variant Stores the persisted state required by this unit.
+/// @evidence docs/analysis/02-domain-model.md#req-variant-lifecycle-4-preserve-retired-variant-evidence Stores the persisted state required by this unit.
+/// @evidence docs/analysis/02-domain-model.md#req-inventory-domain-2-attach-movements-to-one-variant Stores the persisted state required by this unit.
+/// @evidence docs/analysis/02-domain-model.md#req-cart-domain-1-relate-a-cart-to-its-customer-and-variants Stores the persisted state required by this unit.
+/// @evidence docs/analysis/02-domain-model.md#req-cart-domain-2-keep-one-line-per-variant Stores the persisted state required by this unit.
+/// @evidence docs/analysis/02-domain-model.md#req-order-domain-3-combine-purchased-quantity-by-variant Stores the persisted state required by this unit.
+/// @evidence docs/analysis/03-functional-requirements.md#req-inventory-functions-1-restock-a-variant Stores the persisted state required by this unit.
+/// @evidence docs/analysis/03-functional-requirements.md#req-inventory-functions-3-view-variant-inventory-history Stores the persisted state required by this unit.
+/// @evidence docs/analysis/03-functional-requirements.md#req-cart-functions-1-add-a-variant-to-the-cart Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-variant-policies-1-require-a-unique-sku-and-concrete-option-combination Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-variant-policies-2-validate-the-optional-price-override Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-variant-policies-3-require-an-available-variant-for-purchase Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-variant-policies-4-block-variant-deletion-during-fulfillment Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-variant-policies-5-block-variant-deletion-during-unresolved-requests Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-cart-policies-2-merge-repeated-variant-additions Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-cart-policies-3-admit-only-a-purchasable-live-variant Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-order-policies-2-consolidate-purchased-units-by-variant Stores the persisted state required by this unit.
+model shopping_product_variants {
+  /// Application UUID.
+  id String @id
+  /// Owning product identifier.
+  product_id String
+  /// Globally unique seller SKU.
+  sku_code String @unique
+  /// Structured option values retained as the public option object.
+  option_values String
+  /// Optional override price.
+  price_override Float?
+  /// Retirement instant; null means live.
+  deleted_at DateTime?
+  /// Creation instant.
+  created_at DateTime
+  /// Last edit instant.
+  updated_at DateTime
+  /// Owning product.
+  product shopping_products @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  /// Inventory movement ledger.
+  inventory_movements shopping_inventory_movements[]
+  /// Cart lines selecting the SKU.
+  cart_lines shopping_cart_lines[]
+  @@unique([product_id, option_values])
+  @@index([product_id, deleted_at])
+}
+
+/// Signed append-only inventory movement for one variant.
+/// @evidence docs/analysis/02-domain-model.md#req-inventory-domain-1-define-an-inventory-movement Stores the persisted state required by this unit.
+/// @evidence docs/analysis/02-domain-model.md#req-inventory-domain-3-derive-current-stock-from-history Stores the persisted state required by this unit.
+/// @evidence docs/analysis/02-domain-model.md#req-inventory-domain-4-distinguish-automatic-commerce-movements Stores the persisted state required by this unit.
+/// @evidence docs/analysis/02-domain-model.md#req-inventory-domain-5-present-complete-inventory-history Stores the persisted state required by this unit.
+/// @evidence docs/analysis/03-functional-requirements.md#req-inventory-functions-2-subtract-inventory Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-inventory-policies-1-require-attributable-nonzero-inventory-movements Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-inventory-policies-2-apply-seller-movement-signs Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-inventory-policies-3-prevent-negative-or-reserved-stock-depletion Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-inventory-policies-4-deduct-purchased-quantity-at-order-creation Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-inventory-policies-5-restore-returned-item-quantity-exactly-once Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-snapshot-policies-3-use-inventory-history-for-stock-changes Stores the persisted state required by this unit.
+model shopping_inventory_movements {
+  /// Application UUID.
+  id String @id
+  /// Variant identifier.
+  variant_id String
+  /// Signed quantity change.
+  quantity_delta Int
+  /// Business reason for the movement.
+  reason String
+  /// Optional order item causing the movement.
+  order_item_id String?
+  /// Creation instant.
+  created_at DateTime
+  /// Variant ledger owner.
+  variant shopping_product_variants @relation(fields: [variant_id], references: [id], onDelete: Cascade)
+  @@index([variant_id, created_at, id])
+}
+
+/// Immutable complete merchandise time point.
+model shopping_product_snapshots {
+  /// Application UUID.
+  id String @id
+  /// Product identifier retained after retirement.
+  product_id String
+  /// Seller identifier at capture time.
+  seller_id String
+  /// Complete product name.
+  name String
+  /// Complete product description.
+  description String
+  /// Category identifier, when present.
+  category_id String?
+  /// Base price at capture.
+  base_price Float
+  /// Ordered image and variant aggregate.
+  aggregate String
+  /// Changed fields or child members.
+  changed_fields String
+  /// Capture instant.
+  created_at DateTime
+  /// Product source relation.
+  product shopping_products @relation(fields: [product_id], references: [id], onDelete: Restrict)
+  @@index([product_id, created_at])
+}
+
+/// One customer's product wishlist entry.
+/// @evidence docs/analysis/02-domain-model.md#req-wishlist-domain-4-order-wishlist-entries-for-paging Stores the persisted state required by this unit.
+/// @evidence docs/analysis/03-functional-requirements.md#req-wishlist-functions-2-view-the-wishlist Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-wishlist-policies-1-keep-wishlist-changes-within-the-owning-customer Stores the persisted state required by this unit.
+model shopping_wishlist_entries {
+  /// Application UUID.
+  id String @id
+  /// Owning customer identifier.
+  customer_id String
+  /// Saved product identifier.
+  product_id String
+  /// Save instant.
+  created_at DateTime
+  /// Customer owner.
+  customer shopping_customers @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  /// Saved product.
+  product shopping_products @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  @@unique([customer_id, product_id])
+  @@index([customer_id, created_at, id])
+}
+
+/// One private customer cart.
+/// @evidence docs/analysis/02-domain-model.md#req-cart-domain-3-present-cart-line-values Stores the persisted state required by this unit.
+/// @evidence docs/analysis/02-domain-model.md#req-cart-domain-4-calculate-the-cart-total Stores the persisted state required by this unit.
+/// @evidence docs/analysis/02-domain-model.md#req-cart-domain-5-expose-cart-availability-problems Stores the persisted state required by this unit.
+/// @evidence docs/analysis/03-functional-requirements.md#req-cart-functions-2-view-the-shopping-cart Stores the persisted state required by this unit.
+/// @evidence docs/analysis/03-functional-requirements.md#req-cart-functions-3-change-cart-quantity Stores the persisted state required by this unit.
+/// @evidence docs/analysis/03-functional-requirements.md#req-cart-functions-4-remove-a-cart-line Stores the persisted state required by this unit.
+/// @evidence docs/analysis/03-functional-requirements.md#req-checkout-journey-6-commit-stock-and-cart-effects Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-cart-policies-1-require-a-positive-whole-unit-cart-quantity Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-cart-policies-4-expose-current-cart-price-and-availability Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-cart-policies-5-exclude-ineligible-lines-from-checkout Stores the persisted state required by this unit.
+model shopping_carts {
+  /// Application UUID.
+  id String @id
+  /// Owning customer identifier.
+  customer_id String @unique
+  /// Creation instant.
+  created_at DateTime
+  /// Last cart mutation.
+  updated_at DateTime
+  /// Customer owner.
+  customer shopping_customers @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  /// Cart lines.
+  lines shopping_cart_lines[]
+}
+
+/// One requested quantity for one cart SKU.
+model shopping_cart_lines {
+  /// Application UUID.
+  id String @id
+  /// Owning cart identifier.
+  cart_id String
+  /// Selected variant identifier.
+  variant_id String
+  /// Requested positive quantity.
+  quantity Int
+  /// Creation instant.
+  created_at DateTime
+  /// Last quantity change.
+  updated_at DateTime
+  /// Owning cart.
+  cart shopping_carts @relation(fields: [cart_id], references: [id], onDelete: Cascade)
+  /// Selected variant.
+  variant shopping_product_variants @relation(fields: [variant_id], references: [id], onDelete: Restrict)
+  @@unique([cart_id, variant_id])
+  @@index([cart_id, created_at])
+}
+
+/// One successful purchase header and fixed total.
+///
+/// @evidence docs/analysis/02-domain-model.md#req-order-domain-order-model Represents the
+/// immutable order number, purchase total, destination, and item composition.
+/// @evidence docs/analysis/04-business-rules.md#req-order-policies-order-composition-pricing-and-status-policies Owns the
+/// order status derivation and purchase-time facts.
+/// @evidence docs/analysis/03-functional-requirements.md#req-checkout-journey-checkout-and-order-placement-journey Stores checkout outcomes.
+/// @evidence docs/analysis/03-functional-requirements.md#req-order-history-functions-customer-order-history Stores order history.
+/// @evidence docs/analysis/04-business-rules.md#req-checkout-policies-checkout-payment-and-order-creation-policies Stores purchase state.
+/// @evidence docs/analysis/02-domain-model.md#req-order-domain-1-define-order-information Stores the persisted state required by this unit.
+/// @evidence docs/analysis/02-domain-model.md#req-order-domain-2-relate-an-order-to-its-customer-and-items Stores the persisted state required by this unit.
+/// @evidence docs/analysis/02-domain-model.md#req-order-domain-4-allow-multi-seller-orders Stores the persisted state required by this unit.
+/// @evidence docs/analysis/02-domain-model.md#req-order-domain-5-relate-items-to-fulfillment-and-after-sales-records Stores the persisted state required by this unit.
+/// @evidence docs/analysis/02-domain-model.md#req-order-item-lifecycle-1-begin-items-in-paid-status Stores the persisted state required by this unit.
+/// @evidence docs/analysis/02-domain-model.md#req-order-item-lifecycle-2-transition-paid-items-to-shipped Stores the persisted state required by this unit.
+/// @evidence docs/analysis/02-domain-model.md#req-order-item-lifecycle-3-transition-shipped-items-to-delivered Stores the persisted state required by this unit.
+/// @evidence docs/analysis/02-domain-model.md#req-order-item-lifecycle-4-transition-an-item-to-cancelled Stores the persisted state required by this unit.
+/// @evidence docs/analysis/02-domain-model.md#req-order-item-lifecycle-5-transition-an-item-to-refunded Stores the persisted state required by this unit.
+/// @evidence docs/analysis/02-domain-model.md#req-order-item-lifecycle-6-preserve-item-facts-across-status-changes Stores the persisted state required by this unit.
+/// @evidence docs/analysis/02-domain-model.md#req-order-lifecycle-1-derive-paid-order-status Stores the persisted state required by this unit.
+/// @evidence docs/analysis/02-domain-model.md#req-order-lifecycle-2-derive-shipped-order-status Stores the persisted state required by this unit.
+/// @evidence docs/analysis/02-domain-model.md#req-order-lifecycle-3-derive-delivered-order-status Stores the persisted state required by this unit.
+/// @evidence docs/analysis/02-domain-model.md#req-order-lifecycle-4-derive-cancelled-order-status Stores the persisted state required by this unit.
+/// @evidence docs/analysis/02-domain-model.md#req-order-lifecycle-5-derive-refunded-order-status Stores the persisted state required by this unit.
+/// @evidence docs/analysis/02-domain-model.md#req-order-lifecycle-6-derive-partially-completed-status Stores the persisted state required by this unit.
+/// @evidence docs/analysis/03-functional-requirements.md#req-checkout-journey-1-start-checkout Stores the persisted state required by this unit.
+/// @evidence docs/analysis/03-functional-requirements.md#req-checkout-journey-2-review-the-order-summary Stores the persisted state required by this unit.
+/// @evidence docs/analysis/03-functional-requirements.md#req-checkout-journey-3-confirm-and-initiate-payment Stores the persisted state required by this unit.
+/// @evidence docs/analysis/03-functional-requirements.md#req-checkout-journey-4-recover-from-payment-failure Stores the persisted state required by this unit.
+/// @evidence docs/analysis/03-functional-requirements.md#req-checkout-journey-5-create-the-paid-order Stores the persisted state required by this unit.
+/// @evidence docs/analysis/03-functional-requirements.md#req-order-history-functions-1-list-customer-orders Stores the persisted state required by this unit.
+/// @evidence docs/analysis/03-functional-requirements.md#req-order-history-functions-2-view-order-details Stores the persisted state required by this unit.
+/// @evidence docs/analysis/03-functional-requirements.md#req-order-history-functions-3-view-order-shipments Stores the persisted state required by this unit.
+/// @evidence docs/analysis/03-functional-requirements.md#req-order-oversight-1-list-platform-orders Stores the persisted state required by this unit.
+/// @evidence docs/analysis/03-functional-requirements.md#req-order-oversight-2-view-a-platform-order Stores the persisted state required by this unit.
+/// @evidence docs/analysis/03-functional-requirements.md#req-order-oversight-3-force-cancel-one-order-item Stores the persisted state required by this unit.
+/// @evidence docs/analysis/03-functional-requirements.md#req-order-oversight-4-force-cancel-an-orders-eligible-items Stores the persisted state required by this unit.
+/// @evidence docs/analysis/03-functional-requirements.md#req-order-oversight-5-force-refund-one-order-item Stores the persisted state required by this unit.
+/// @evidence docs/analysis/03-functional-requirements.md#req-order-oversight-6-force-refund-an-orders-eligible-items Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-address-policies-5-use-only-a-current-owned-address-at-checkout Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-checkout-policies-1-require-purchasable-lines-and-an-owned-address Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-checkout-policies-2-refresh-material-purchase-facts-before-charge Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-checkout-policies-4-recover-cleanly-from-unsuccessful-payment Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-checkout-policies-5-make-gateway-success-idempotent Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-checkout-policies-6-commit-the-successful-purchase-atomically Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-admin-oversight-policies-5-force-cancel-an-eligible-order-item Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-admin-oversight-policies-6-force-refund-an-eligible-order-item Stores the persisted state required by this unit.
+model shopping_orders {
+  /// Application UUID.
+  id String @id
+  /// Globally unique immutable order number.
+  order_number String @unique
+  /// Purchasing customer identifier; retained for history.
+  customer_id String
+  /// Successful payment instant.
+  purchased_at DateTime
+  /// Fixed total price.
+  total_price Float
+  /// Immutable recipient name copy.
+  shipping_recipient_name String
+  /// Immutable recipient phone copy.
+  shipping_recipient_phone String
+  /// Immutable street copy.
+  shipping_street_address String
+  /// Immutable city copy.
+  shipping_city String
+  /// Immutable state or province copy.
+  shipping_state_or_province String
+  /// Immutable postal code copy.
+  shipping_postal_code String
+  /// Immutable country copy.
+  shipping_country String
+  /// Creation instant.
+  created_at DateTime
+  /// Customer owner.
+  customer shopping_customers @relation(fields: [customer_id], references: [id], onDelete: Restrict)
+  /// Independently progressing items.
+  items shopping_order_items[]
+  /// Shipments serving this order.
+  shipments shopping_shipments[]
+  @@index([customer_id, created_at])
+}
+
+/// One variant line in an order with immutable purchase-time evidence.
+/// @evidence docs/analysis/05-non-functional.md#req-nfr-audit-integrity-1-keep-commercial-change-evidence-immutable Stores the persisted state required by this unit.
+/// @evidence docs/analysis/05-non-functional.md#req-nfr-audit-integrity-2-reconstruct-each-recorded-modification Stores the persisted state required by this unit.
+/// @evidence docs/analysis/05-non-functional.md#req-nfr-audit-integrity-4-trace-stock-and-purchase-evidence-end-to-end Stores the persisted state required by this unit.
+/// @evidence docs/analysis/05-non-functional.md#req-nfr-purchase-consistency-1-expose-one-complete-successful-purchase-outcome Stores the persisted state required by this unit.
+/// @evidence docs/analysis/05-non-functional.md#req-nfr-purchase-consistency-2-preserve-a-clean-state-after-payment-failure Stores the persisted state required by this unit.
+/// @evidence docs/analysis/05-non-functional.md#req-nfr-purchase-consistency-3-keep-each-commercial-reversal-synchronized Stores the persisted state required by this unit.
+/// @evidence docs/analysis/05-non-functional.md#req-nfr-purchase-consistency-4-preserve-independent-item-progress Stores the persisted state required by this unit.
+/// @evidence docs/analysis/05-non-functional.md#req-nfr-history-continuity-1-keep-commercial-history-through-retirement Stores the persisted state required by this unit.
+/// @evidence docs/analysis/05-non-functional.md#req-nfr-history-continuity-2-keep-past-order-presentation-stable Stores the persisted state required by this unit.
+/// @evidence docs/analysis/05-non-functional.md#req-nfr-history-continuity-4-limit-retained-history-to-relevant-parties Stores the persisted state required by this unit.
+model shopping_order_items {
+  /// Application UUID.
+  id String @id
+  /// Parent order identifier.
+  order_id String
+  /// Seller identity at purchase time.
+  seller_id String
+  /// Live variant identifier when retained.
+  variant_id String?
+  /// Purchase-time product identifier.
+  product_id String
+  /// Purchase-time product name.
+  product_name String
+  /// Purchase-time product description.
+  product_description String
+  /// Purchase-time SKU.
+  sku_code String
+  /// Purchase-time option values.
+  option_values String
+  /// Purchase-time shop name.
+  seller_shop_name String
+  /// Purchase-time shop logo.
+  seller_logo_image String
+  /// Purchased quantity.
+  quantity Int
+  /// Fixed unit price.
+  unit_price Float
+  /// Paid, shipped, delivered, cancelled, or refunded.
+  status String
+  /// Purchase instant.
+  purchased_at DateTime
+  /// Parent order.
+  order shopping_orders @relation(fields: [order_id], references: [id], onDelete: Restrict)
+  /// Shipment relation.
+  shipment_items shopping_shipment_items[]
+  /// Cancellation requests.
+  cancellation_requests shopping_cancellation_requests[]
+  /// Refund requests.
+  refund_requests shopping_refund_requests[]
+  /// Immutable line snapshots.
+  snapshots shopping_order_item_snapshots[]
+  @@index([order_id, status])
+  @@index([seller_id, purchased_at, id])
+}
+
+/// Immutable purchase and resolution evidence for an order item.
+model shopping_order_item_snapshots {
+  /// Application UUID.
+  id String @id
+  /// Retained order item identifier.
+  order_item_id String
+  /// Snapshot kind.
+  kind String
+  /// Prior state representation.
+  before_state String
+  /// Resulting state representation.
+  after_state String
+  /// Complete relevant aggregate evidence.
+  payload String
+  /// Capture instant.
+  created_at DateTime
+  /// Order item whose state was captured.
+  order_item shopping_order_items @relation(fields: [order_item_id], references: [id], onDelete: Restrict)
+  @@index([order_item_id, created_at])
+}
+
+/// Payment attempt and its recorded gateway outcome.
+model shopping_payment_attempts {
+  /// Application UUID.
+  id String @id
+  /// Purchasing customer identifier.
+  customer_id String
+  /// Client or gateway idempotency key.
+  idempotency_key String @unique
+  /// Held, succeeded, failed, or unresolved.
+  status String
+  /// Attempted amount.
+  amount Float
+  /// Gateway reference when provided.
+  gateway_reference String?
+  /// Failure or reconciliation detail.
+  detail String?
+  /// Creation instant.
+  created_at DateTime
+  /// Completion instant.
+  completed_at DateTime?
+  @@index([customer_id, created_at])
+}

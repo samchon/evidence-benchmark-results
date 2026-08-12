@@ -21,7 +21,7 @@ Never edit generated paths. Change controllers or DTOs, then run backend `pnpm b
 `src/index.ts` is the only public entry. Export every authored DTO through `src/structures/index.ts` and then the package entry. Import from the package name:
 
 ```ts
-import * as api from "@benchmark/reddit2-api";
+import * as api from "@benchmark/reddit-api";
 
 const page: api.IPage<api.IShoppingSale.ISummary> =
   await api.functional.shopping.customer.sale.index(connection, {
@@ -31,7 +31,7 @@ const page: api.IPage<api.IShoppingSale.ISummary> =
 
 Import the package as a namespace, which exposes the accessors and the DTO types through one binding. A default import binds the whole surface under `default`, losing the `api.functional.…` address the accessors document themselves by.
 
-Do not publish or consume `@benchmark/reddit2-api/structures`. A second export surface creates a second contract path.
+Do not publish or consume `@benchmark/reddit-api/structures`. A second export surface creates a second contract path.
 
 ## Generated Accessors
 
@@ -78,4 +78,4 @@ Simulation validates the declared request boundary and returns type-correct gene
 const connection: api.IConnection = { host, simulate: true };
 ```
 
-It proves contract shape and client flow. It does not run providers, persist state, authorize ownership, refresh sessions, or produce deterministic cross-field data. Build frontend flows against simulation, use fixtures for named UI states, and close with the same browser journeys under `VITE_API_SIMULATE=false` against the live backend.
+It proves contract shape and client flow. It does not run providers, persist state, authorize ownership, refresh sessions, or produce deterministic cross-field data. Build frontend flows against simulation and use fixtures for named UI states, then close with the live journey suite under `VITE_API_SIMULATE=false` against the live backend. The two are separate suites, and `.agents/skills/frontend/verification.md` owns why.

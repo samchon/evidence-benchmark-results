@@ -1,6 +1,5 @@
-# Frontend omissions
+# Frontend Omissions
 
-No product-facing SDK operation is omitted. The health operation is
-infrastructure rather than a user capability; it is rendered as the workspace
-service-status indicator on `/app`, with its exact hook-to-screen ownership
-recorded in the screen plan.
+No requirement is omitted. Every requirement section is assigned to a product
+screen in `screen-plan.md`; infrastructure operations such as health are
+consumed by the application shell without requiring a separate page.

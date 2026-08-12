@@ -1,0 +1,9 @@
+import { useState } from "react";
+
+import { Button, Card, Field, PageState, PostCard } from "@/components/ui";
+
+/** Development-only fixture gallery for reviewing named screen states. */
+export function GalleryPage() {
+  const [saved, setSaved] = useState(false);
+  return <div className="page-grid"><section className="main-column"><h1>State gallery</h1><Card><h2>Loading</h2><PageState title="Loading feed" message="Finding public posts for this view." /></Card><Card><h2>Initial and filtered empty</h2><PageState title="Nothing here yet" message="No posts match this view." /></Card><Card><h2>Expected refusal</h2><PageState title="Sign in required" message="This private list belongs to the authenticated account." /></Card><Card><h2>Unexpected error and retry</h2><PageState title="Community unavailable" error={new Error("The fixture backend refused this request.")} onRetry={() => setSaved(true)} />{saved ? <p role="status">Retry requested.</p> : null}</Card><Card><h2>Boundary content and form</h2><Field label="Long text" value="A realistic long-content fixture keeps the visible label and the input boundary together." onChange={() => undefined} multiline /><p>{"A community description with enough text to inspect wrapping, readable line length, and mobile overflow behavior. ".repeat(4)}</p></Card><Card><h2>Successful post mutation</h2><PostCard post={{ id: "00000000-0000-4000-8000-000000000001", title: "A persisted fixture post", preview: "A visible post preview after a successful mutation.", author: "fixture-user", community: "fixture", score: 12, commentCount: 3, createdAt: new Date().toISOString() }} /><Button action={() => setSaved((current) => !current)}>{saved ? "Saved" : "Save fixture"}</Button></Card></section><aside className="side-column"><Card><h2>Review note</h2><p>This route is development-only and is not part of production navigation.</p></Card></aside></div>;
+}

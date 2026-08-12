@@ -1,2 +1,0 @@
-import * as core from "@nestia/core"; import { Controller } from "@nestjs/common"; import type { IAuth, IPage, ITaxReturn } from "@benchmark/erp-api"; import { TaxReturnProvider } from "../providers/TaxReturnProvider";
-/** Lists organization tax returns. */ @Controller("tax-return-search") export class TaxReturnIndexController { @core.TypedRoute.Patch() public async index(@core.TypedHeaders() headers: IAuth.IHeaders, @core.TypedBody() input: ITaxReturn.IRequest): Promise<IPage<ITaxReturn>> { return TaxReturnProvider.index(headers, input); } }

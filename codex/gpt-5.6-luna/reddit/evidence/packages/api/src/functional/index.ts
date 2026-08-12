@@ -5,14 +5,11 @@
  */
 //================================================================
 export * as auth from "./auth/index";
-export * as health from "./health/index";
-export * as profile from "./profile/index";
-export * as community from "./community/index";
-export * as subscription from "./subscription/index";
-export * as post from "./post/index";
-export * as feed from "./feed/index";
-export * as user from "./user/index";
 export * as comment from "./comment/index";
-export * as moderator from "./moderator/index";
-export * as ban from "./ban/index";
-export * as report from "./report/index";
+export * as community from "./community/index";
+export * as feed from "./feed/index";
+export * as health from "./health/index";
+export * as post from "./post/index";
+export * as subscription from "./subscription/index";
+export * as user from "./user/index";
+export * as vote from "./vote/index";

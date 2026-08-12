@@ -1,5 +1,6 @@
 import * as api from "@benchmark/reddit-api";
-import { TestValidator } from "@nestia/e2e";
+import typia from "typia";
+import { requireValue } from "../../../helpers/RequirementTest";
 
 /**
  * Validate that the generated health accessor reaches the running backend.
@@ -24,6 +25,7 @@ export async function test_api_health(
   // Step 2: Call the generated health accessor
   const value: string = await api.functional.health.get(healthConnection);
 
-  // Step 3: Validate the concrete health contract
-  TestValidator.equals("health marker", value, "OK");
+  // Step 3: Validate the response against its generated type
+  typia.assert(value);
+  requireValue(value === "OK", "Health accessor did not return the ready status.");
 }

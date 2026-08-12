@@ -26,6 +26,6 @@
     "rimraf": "catalog:utils",
     "ttsc": "catalog:typescript",
     "typescript": "catalog:typescript",
-    "@samchon/lint-plugin-evidence": "file:.benchmark-deps/evidence.tgz"
+    "@ttsc/evidence": "file:.benchmark-deps/evidence.tgz"
   }
 }

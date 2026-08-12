@@ -1,2 +1,0 @@
-import * as core from "@nestia/core"; import { Controller } from "@nestjs/common"; import type { IAuth, IPage, ITimesheet } from "@benchmark/erp-api"; import { ProjectWorkProvider } from "../providers/ProjectWorkProvider";
-/** Lists timesheets. */ @Controller("timesheet-search") export class TimesheetIndexController { @core.TypedRoute.Patch() public async index(@core.TypedHeaders() h: IAuth.IHeaders, @core.TypedBody() input: ITimesheet.IRequest): Promise<IPage<ITimesheet>> { return ProjectWorkProvider.timesheetIndex(h, input); } }

@@ -1,4 +1,4 @@
-import { evidence } from "@samchon/lint-plugin-evidence";
+import { evidence } from "@ttsc/evidence";
 import type { ITtscLintConfig } from "@ttsc/lint";
 
 /**
@@ -23,12 +23,11 @@ import type { ITtscLintConfig } from "@ttsc/lint";
  * against that same root, so the carrier is declared rather than conventional
  * and an `@evidenceExclude` written anywhere else is a compile error.
  *
- * The two file rules are declared here rather than on the package for the same
- * reason: this Program includes `../src` alongside the tests, so it already
- * covers every file they should reach. Declaring them on the package would put
- * them in the configuration `nestia all` resolves when it compiles
- * `nestia.config.ts` through a project of its own making, and that file is an
- * anonymous default export `evidence/singular` can never accept.
+ * The graph and todo rules are project-scoped here because this Program owns
+ * every backend claim. The file-scoped singular rule is inherited from
+ * `scope.lint.config.ts`: it selects only backend-owned source and test files,
+ * so the generated API package remains outside this backend file rule while
+ * the package configuration used by `nestia all` stays untouched.
  *
  * `include` selects this directory, so the Program holds this file too, and
  * `evidence/singular` would reach the anonymous default export below for the
@@ -36,13 +35,18 @@ import type { ITtscLintConfig } from "@ttsc/lint";
  * declares the rules is never the point, so it is ignored here.
  */
 export default {
-  extends: "../lint.config.ts",
+  extends: "./scope.lint.config.ts",
   ignores: ["lint.config.ts"],
   plugins: {
     evidence,
   },
   rules: {
-    "evidence/singular": "error",
+    // A review states what was checked, which the reason does not. It ships
+    // "off" because a review is a record of a check, and the checks happen in
+    // Backend Review, which owns the schema, operation, and test claims declared here. Set this to
+    // "error" there, and every acknowledgement reports itself as unreviewed
+    // until that Review reaches it.
+    "evidence/review": "error",
     "evidence/todo": "error",
     "evidence/graph": [
       "error",
@@ -112,13 +116,15 @@ export default {
               },
               {
                 type: "typescript",
-                package: "@benchmark/reddit2-api",
+                package: "@benchmark/reddit-api",
                 files: ["src/functional/**/*.ts"],
                 symbol: ["function"],
                 noEvidenceExclude: true,
                 singleEvidencePerSymbol: true,
               },
             ],
+            // Remove after every public-operation test and evidence mapping is
+            // complete.
           },
         ],
       },

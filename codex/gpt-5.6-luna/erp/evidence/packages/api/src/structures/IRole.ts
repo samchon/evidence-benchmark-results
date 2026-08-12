@@ -1,20 +1,47 @@
-import type { tags } from "typia";
+import { tags } from "typia";
 
-/** Organization-scoped built-in or custom role. */
 /**
- * @evidence prisma:roles Exposes the persisted roles record.
+ * Role public identity and lifecycle shape.
+ * @evidence docs/analysis/01-actors-and-auth.md#req-auth-role-organization-roles-and-permissions Exposes the caller-visible role contract.
+ * @evidenceReview docs/analysis/01-actors-and-auth.md#req-auth-role-organization-roles-and-permissions Read the DTO declaration and checked its public and inherited fields against the cited requirement.
+ * @evidence prisma:roles Represents the persisted roles model.
+ * @evidenceReview prisma:roles Read the DTO declaration and compared its concrete record shape with the cited Prisma model.
  */
 export interface IRole {
-  /** @evidence prisma:roles.id Carries the persisted id value. */ id: string & tags.Format<"uuid">;
-  /** @evidence prisma:roles.name Carries the persisted name value. */ name: string;
-  /** @evidence prisma:roles.built_in Carries the persisted built_in value. */ builtIn: boolean;
-  permissions: string[];
-  /** @evidence prisma:roles.created_at Carries the persisted created_at value. */ createdAt: string & tags.Format<"date-time">;
-  /** @evidence prisma:roles.updated_at Carries the persisted updated_at value. */ updatedAt: string & tags.Format<"date-time">;
+  /** id.
+   * @evidence prisma:roles.id Carries the persisted id value.
+   * @evidenceReview prisma:roles.id Read the DTO property and compared its type with the cited Prisma column.
+   */
+  id: string & tags.Format<"uuid">;
+  /** organizationId.
+   * @evidence prisma:roles.organization_id Carries the persisted organization_id value.
+   * @evidenceReview prisma:roles.organization_id Read the DTO property and compared its type with the cited Prisma column.
+   */
+  organizationId: null | (string & tags.Format<"uuid">);
+  /** name.
+   * @evidence prisma:roles.name Carries the persisted name value.
+   * @evidenceReview prisma:roles.name Read the DTO property and compared its type with the cited Prisma column.
+   */
+  name: string;
+  /** kind.
+   * @evidence prisma:roles.kind Carries the persisted kind value.
+   * @evidenceReview prisma:roles.kind Read the DTO property and compared its type with the cited Prisma column.
+   */
+  kind: string;
+  /** permissions.
+   * @evidence prisma:roles.permissions Carries the persisted permissions value.
+   * @evidenceReview prisma:roles.permissions Read the DTO property and compared its type with the cited Prisma column.
+   */
+  permissions: string;
+  /** createdAt.
+   * @evidence prisma:roles.created_at Carries the persisted created_at value.
+   * @evidenceReview prisma:roles.created_at Read the DTO property and compared its type with the cited Prisma column.
+   */
+  createdAt: string & tags.Format<"date-time">;
+  /** updatedAt.
+   * @evidence prisma:roles.updated_at Carries the persisted updated_at value.
+   * @evidenceReview prisma:roles.updated_at Read the DTO property and compared its type with the cited Prisma column.
+   */
+  updatedAt: string & tags.Format<"date-time">;
 }
-export namespace IRole {
-  export interface ICreate { name: string & tags.MinLength<1>; permissions?: string[]; }
-  export interface IUpdate { name?: string & tags.MinLength<1>; permissions?: string[]; }
-  export interface IAssign { membershipId: string & tags.Format<"uuid">; roleId: string & tags.Format<"uuid">; }
-  export interface IRevoke { membershipId: string & tags.Format<"uuid">; roleId: string & tags.Format<"uuid">; }
-}
+

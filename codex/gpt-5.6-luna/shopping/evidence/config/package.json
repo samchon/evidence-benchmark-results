@@ -1,8 +1,8 @@
 {
   "private": true,
-  "name": "benchmark-shopping2-config",
+  "name": "benchmark-shopping-config",
   "version": "0.1.0",
-  "description": "Shared TypeScript and @ttsc/lint configuration for benchmark-shopping2",
+  "description": "Shared TypeScript and @ttsc/lint configuration for benchmark-shopping",
   "files": [
     "lint.config.ts",
     "lint.config.frontend.ts",

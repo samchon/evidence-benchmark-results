@@ -1,2 +1,0 @@
-import * as core from "@nestia/core"; import { Controller } from "@nestjs/common"; import type { IAuth, IJournal } from "@benchmark/erp-api"; import { JournalProvider } from "../providers/JournalProvider";
-/** Edits a draft journal and its lines. */ @Controller("journal-update") export class JournalUpdateController { @core.TypedRoute.Put(":id") public async update(@core.TypedHeaders() headers: IAuth.IHeaders, @core.TypedParam("id") id: string, @core.TypedBody() input: IJournal.IUpdate): Promise<IJournal> { return JournalProvider.update(headers, id, input); } }

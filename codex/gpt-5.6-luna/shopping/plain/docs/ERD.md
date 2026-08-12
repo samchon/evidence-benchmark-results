@@ -8,745 +8,727 @@
 
 ```mermaid
 erDiagram
-"shopping_users" {
+"shopping_customers" {
   String id PK
-  String kind
   String email
+  String email_normalized UK
   String password_hash
-  String display_name "nullable"
-  String phone "nullable"
-  String shop_name "nullable"
-  String shop_description "nullable"
-  String shop_logo "nullable"
-  String approval_status "nullable"
-  String rejection_reason "nullable"
-  Boolean suspended
-  Boolean banned
-  DateTime deleted_at "nullable"
-  String grades
+  String login_state
   DateTime created_at
+  DateTime deleted_at "nullable"
+}
+"shopping_customer_profiles" {
+  String id PK
+  String customer_id UK
+  String display_name
+  String phone_number
   DateTime updated_at
 }
-"shopping_sessions" {
+"shopping_customer_sessions" {
   String id PK
-  String shopping_user_id FK
-  String token UK
-  String refresh_token UK
+  String customer_id
+  String access_hash UK
+  String refresh_hash UK
+  DateTime expired_at
+  DateTime revoked_at "nullable"
+  DateTime created_at
+}
+"shopping_sellers" {
+  String id PK
+  String email
+  String email_normalized UK
+  String password_hash
+  String approval_state
+  String rejection_reason "nullable"
+  Boolean suspended
+  String login_state
+  DateTime created_at
+  DateTime deleted_at "nullable"
+}
+"shopping_recovery_deliveries" {
+  String id PK
+  String actor_type
+  String actor_id
+  String recipient
+  String kind
+  String payload
+  String secret_hash UK
   DateTime created_at
   DateTime expires_at
-  Boolean revoked
+  DateTime consumed_at "nullable"
 }
-"shopping_addresses" {
+"shopping_seller_profiles" {
   String id PK
-  String shopping_user_id FK
+  String seller_id UK
+  String shop_name
+  String shop_description
+  String logo "nullable"
+  DateTime updated_at
+}
+"shopping_seller_sessions" {
+  String id PK
+  String seller_id
+  String access_hash UK
+  String refresh_hash UK
+  DateTime expired_at
+  DateTime revoked_at "nullable"
+  DateTime created_at
+}
+"shopping_administrator_grades" {
+  String id PK
+  String actor_type
+  String actor_id
+  String grade
+  DateTime created_at
+}
+"shopping_administrator_applications" {
+  String id PK
+  String actor_type
+  String actor_id
+  String reason
+  String status
+  String pending_key UK "nullable"
+  String decided_by "nullable"
+  DateTime decided_at "nullable"
+  DateTime created_at
+}
+"shopping_seller_approval_requests" {
+  String id PK
+  String seller_id
+  String status
+  String pending_key UK "nullable"
+  String reason "nullable"
+  String decided_by "nullable"
+  DateTime decided_at "nullable"
+  DateTime created_at
+}
+"shopping_shipping_addresses" {
+  String id PK
+  String customer_id
   String recipient_name
-  String phone
+  String recipient_phone
   String street_address
   String city
-  String state
+  String state_or_province
   String postal_code
   String country
   Boolean is_default
   DateTime created_at
-  DateTime updated_at
 }
 "shopping_categories" {
   String id PK
-  String parent_id FK "nullable"
   String name
   String description
+  String parent_id "nullable"
   DateTime created_at
-  DateTime updated_at
+  DateTime deleted_at "nullable"
 }
 "shopping_products" {
   String id PK
-  String shopping_seller_id FK
-  String shopping_category_id FK "nullable"
+  String seller_id
+  String category_id "nullable"
   String name
   String description
   Float base_price
   DateTime created_at
-  DateTime updated_at
   DateTime deleted_at "nullable"
 }
 "shopping_product_images" {
   String id PK
-  String shopping_product_id FK
-  String uri
-  Int sequence
+  String product_id
+  String url
+  Int display_order
   DateTime created_at
 }
 "shopping_variants" {
   String id PK
-  String shopping_product_id FK
-  String sku UK
-  String options_json
+  String product_id
+  String seller_id
+  String sku
+  String sku_normalized UK
+  String options
   Float price_override "nullable"
-  DateTime created_at
-  DateTime updated_at
   DateTime deleted_at "nullable"
+  DateTime created_at
 }
 "shopping_inventory_movements" {
   String id PK
-  String shopping_variant_id FK
-  Int quantity
+  String variant_id
+  Int quantity_change
   String reason
+  String order_item_id "nullable"
   DateTime created_at
 }
-"shopping_checkout_sessions" {
+"shopping_wishlist_entries" {
   String id PK
-  String shopping_user_id FK
-  String shopping_address_id "nullable"
-  String recipient_name
-  String phone
-  String street_address
-  String city
-  String state
-  String postal_code
-  String country
-  Float total
-  String status
-  DateTime created_at
-  DateTime updated_at
-}
-"shopping_checkout_lines" {
-  String id PK
-  String shopping_checkout_id FK
-  String shopping_variant_id FK "nullable"
+  String customer_id
   String product_id
-  String product_name
-  String variant_sku
-  Float unit_price
-  Int quantity
-}
-"shopping_payment_attempts" {
-  String id PK
-  String shopping_checkout_id FK
-  String attempt_key UK
-  String status
-  Float amount "nullable"
-  String order_id "nullable"
-  DateTime created_at
-  DateTime finalized_at "nullable"
-}
-"shopping_inventory_holds" {
-  String id PK
-  String shopping_payment_id FK
-  String shopping_variant_id FK
-  Int quantity
-  String status
-  DateTime created_at
-}
-"shopping_recovery_tokens" {
-  String id PK
-  String shopping_user_id FK
-  String token UK
-  DateTime expires_at
-  Boolean used
-  DateTime created_at
-}
-"shopping_wishlists" {
-  String id PK
-  String shopping_user_id FK
-  String shopping_product_id FK
   DateTime created_at
 }
 "shopping_cart_lines" {
   String id PK
-  String shopping_user_id FK
-  String shopping_variant_id FK
+  String customer_id
+  String variant_id
   Int quantity
   DateTime created_at
-  DateTime updated_at
+}
+"shopping_checkout_attempts" {
+  String id PK
+  String attempt_id UK
+  String customer_id
+  String lines
+  String address
+  Float amount
+  String status
+  String order_id "nullable"
+  DateTime created_at
+}
+"shopping_checkout_holds" {
+  String id PK
+  String attempt_id
+  String variant_id
+  Int quantity
+  DateTime created_at
+}
+"shopping_payment_transactions" {
+  String id PK
+  String reference_id UK
+  String kind
+  String order_id
+  String order_item_id "nullable"
+  Float amount
+  DateTime created_at
 }
 "shopping_orders" {
   String id PK
   String order_number UK
-  String shopping_customer_id FK
-  Float total
-  String status
+  String customer_id
+  DateTime purchased_at
+  Float total_price
   String recipient_name
-  String phone
+  String recipient_phone
   String street_address
   String city
-  String state
+  String state_or_province
   String postal_code
   String country
+  String status
   DateTime created_at
 }
 "shopping_order_items" {
   String id PK
-  String shopping_order_id FK
-  String shopping_variant_id FK "nullable"
-  String shopping_seller_id
-  String product_id
+  String order_id
+  String variant_id
+  String seller_id
   String product_name
   String product_description
   String variant_sku
-  String variant_options_json
+  String variant_options
   String seller_shop_name
-  String seller_shop_logo "nullable"
+  String seller_logo "nullable"
   Float unit_price
   Int quantity
   String status
-  Float refunded_amount "nullable"
-  DateTime purchased_at
   DateTime delivered_at "nullable"
+  String shipment_id "nullable"
+  DateTime purchased_at
 }
 "shopping_shipments" {
   String id PK
-  String shopping_order_id FK
-  String shopping_seller_id
+  String order_id
+  String seller_id
   String carrier
   String tracking_number
   DateTime shipped_at
   DateTime delivered_at "nullable"
+  DateTime created_at
 }
-"shopping_shipment_items" {
+"shopping_cancellation_requests" {
   String id PK
-  String shopping_shipment_id FK
-  String shopping_order_item_id FK,UK
-}
-"shopping_requests" {
-  String id PK
-  String shopping_order_item_id FK
-  String kind
+  String order_item_id
+  String customer_id
+  String seller_id
   String reason
   String status
-  DateTime created_at
+  String pending_key UK "nullable"
+  String decided_by "nullable"
   DateTime decided_at "nullable"
+  DateTime created_at
+}
+"shopping_refund_requests" {
+  String id PK
+  String order_item_id
+  String customer_id
+  String seller_id
+  String reason
+  String status
+  String pending_key UK "nullable"
+  String decided_by "nullable"
+  DateTime decided_at "nullable"
+  DateTime created_at
+}
+"shopping_snapshots" {
+  String id PK
+  String kind
+  String subject_type
+  String subject_id
+  String changed
+  String before_data
+  String after_data
+  DateTime created_at
 }
 "shopping_reviews" {
   String id PK
-  String shopping_user_id FK
-  String shopping_product_id FK
-  String shopping_order_id
+  String customer_id "nullable"
+  String product_id
+  String order_id
   Int rating
   String text "nullable"
-  DateTime created_at
-  DateTime updated_at
+  DateTime published_at
   DateTime deleted_at "nullable"
-}
-"shopping_review_snapshots" {
-  String id PK
-  String shopping_review_id FK
-  Int before_rating
-  Int after_rating
-  String before_text "nullable"
-  String after_text "nullable"
-  DateTime created_at
-}
-"shopping_seller_approvals" {
-  String id PK
-  String shopping_seller_id FK
-  String status
-  String reason "nullable"
-  DateTime created_at
-  DateTime decided_at "nullable"
-  String decided_by_id "nullable"
-}
-"shopping_admin_applications" {
-  String id PK
-  String shopping_user_id FK
-  String reason
-  String status
-  DateTime created_at
-  DateTime decided_at "nullable"
-  String decided_by_id "nullable"
-}
-"shopping_product_snapshots" {
-  String id PK
-  String shopping_product_id FK
-  String before_json
-  String after_json
-  String changed_fields
-  DateTime created_at
-}
-"shopping_seller_profile_snapshots" {
-  String id PK
-  String shopping_seller_id FK
-  String before_json
-  String after_json
-  String changed_fields
-  DateTime created_at
-}
-"shopping_request_snapshots" {
-  String id PK
-  String shopping_request_id FK
-  String actor_id
-  String actor_kind
-  String before_status
-  String after_status
-  String before_reason
-  String after_reason
-  DateTime created_at
 }
 "shopping_admin_actions" {
   String id PK
-  String actor_id FK
-  String target_kind
+  String kind
+  String actor_id
   String target_id
-  String action
   String reason
-  String outcome_json
+  String before_state "nullable"
+  String after_state "nullable"
   DateTime created_at
 }
-"shopping_sessions" }o--|| "shopping_users" : user
-"shopping_addresses" }o--|| "shopping_users" : user
-"shopping_categories" }o--o| "shopping_categories" : parent
-"shopping_products" }o--|| "shopping_users" : seller
-"shopping_products" }o--o| "shopping_categories" : category
-"shopping_product_images" }o--|| "shopping_products" : product
-"shopping_variants" }o--|| "shopping_products" : product
-"shopping_inventory_movements" }o--|| "shopping_variants" : variant
-"shopping_checkout_sessions" }o--|| "shopping_users" : user
-"shopping_checkout_lines" }o--|| "shopping_checkout_sessions" : checkout
-"shopping_checkout_lines" }o--o| "shopping_variants" : variant
-"shopping_payment_attempts" }o--|| "shopping_checkout_sessions" : checkout
-"shopping_inventory_holds" }o--|| "shopping_payment_attempts" : payment
-"shopping_inventory_holds" }o--|| "shopping_variants" : variant
-"shopping_recovery_tokens" }o--|| "shopping_users" : user
-"shopping_wishlists" }o--|| "shopping_users" : user
-"shopping_wishlists" }o--|| "shopping_products" : product
-"shopping_cart_lines" }o--|| "shopping_users" : user
-"shopping_cart_lines" }o--|| "shopping_variants" : variant
-"shopping_orders" }o--|| "shopping_users" : customer
-"shopping_order_items" }o--|| "shopping_orders" : order
-"shopping_order_items" }o--o| "shopping_variants" : variant
-"shopping_shipments" }o--|| "shopping_orders" : order
-"shopping_shipment_items" }o--|| "shopping_shipments" : shipment
-"shopping_shipment_items" |o--|| "shopping_order_items" : item
-"shopping_requests" }o--|| "shopping_order_items" : item
-"shopping_reviews" }o--|| "shopping_users" : user
-"shopping_reviews" }o--|| "shopping_products" : product
-"shopping_review_snapshots" }o--|| "shopping_reviews" : review
-"shopping_seller_approvals" }o--|| "shopping_users" : seller
-"shopping_admin_applications" }o--|| "shopping_users" : user
-"shopping_product_snapshots" }o--|| "shopping_products" : product
-"shopping_seller_profile_snapshots" }o--|| "shopping_users" : seller
-"shopping_request_snapshots" }o--|| "shopping_requests" : request
-"shopping_admin_actions" }o--|| "shopping_users" : actor
 ```
 
-### `shopping_users`
+### `shopping_customers`
 
-A customer or seller identity.
-
-Properties as follows:
-
-- `id`:
-- `kind`:
-- `email`:
-- `password_hash`:
-- `display_name`:
-- `phone`:
-- `shop_name`:
-- `shop_description`:
-- `shop_logo`:
-- `approval_status`:
-- `rejection_reason`:
-- `suspended`:
-- `banned`:
-- `deleted_at`:
-- `grades`:
-- `created_at`:
-- `updated_at`:
-
-### `shopping_sessions`
-
-An authenticated session.
+A registered customer identity.
 
 Properties as follows:
 
-- `id`:
-- `shopping_user_id`:
-- `token`:
-- `refresh_token`:
-- `created_at`:
-- `expires_at`:
-- `revoked`:
+- `id`: Primary identifier.
+- `email`: Canonical login email.
+- `email_normalized`: Case-insensitive trimmed email used for uniqueness.
+- `password_hash`: Password hash owned by the identity.
+- `login_state`: Current login state: active, banned, or deleted.
+- `created_at`: Registration instant.
+- `deleted_at`: Deletion instant, when closed.
 
-### `shopping_addresses`
+### `shopping_customer_profiles`
 
-A saved customer shipping address.
+The one live profile belonging to a customer.
 
 Properties as follows:
 
-- `id`:
-- `shopping_user_id`:
-- `recipient_name`:
-- `phone`:
-- `street_address`:
-- `city`:
-- `state`:
-- `postal_code`:
-- `country`:
-- `is_default`:
-- `created_at`:
-- `updated_at`:
+- `id`: Primary identifier.
+- `customer_id`: Owning customer identifier.
+- `display_name`: Customer-facing display name.
+- `phone_number`: Customer contact phone number.
+- `updated_at`: Last modification instant.
+
+### `shopping_customer_sessions`
+
+An authenticated customer session.
+
+Properties as follows:
+
+- `id`: Primary identifier.
+- `customer_id`: Owning customer identifier.
+- `access_hash`: Hash of the access token.
+- `refresh_hash`: Hash of the refresh token.
+- `expired_at`: Session expiry instant.
+- `revoked_at`: Revocation instant.
+- `created_at`: Creation instant.
+
+### `shopping_sellers`
+
+A registered seller identity.
+
+Properties as follows:
+
+- `id`: Primary identifier.
+- `email`: Login email.
+- `email_normalized`: Canonical login email used for uniqueness.
+- `password_hash`: Password hash owned by the identity.
+- `approval_state`: Approval lifecycle state.
+- `rejection_reason`: Rejection explanation from the latest decision.
+- `suspended`: Whether catalog activity is suspended.
+- `login_state`: Current login state: active, banned, or deleted.
+- `created_at`: Registration instant.
+- `deleted_at`: Deletion instant, when closed.
+
+### `shopping_recovery_deliveries`
+
+One recorded out-of-band password recovery delivery.
+
+Properties as follows:
+
+- `id`: Primary identifier.
+- `actor_type`: Identity kind receiving the delivery.
+- `actor_id`: Identity receiving the delivery.
+- `recipient`: Registered email recipient.
+- `kind`: Delivery effect kind.
+- `payload`: Serialized delivery payload retained for the configured delivery sink.
+- `secret_hash`: Hash used to consume the one-time secret without searching plaintext.
+- `created_at`: Delivery creation instant.
+- `expires_at`: Expiry instant.
+- `consumed_at`: Consumption instant, when recovery succeeds.
+
+### `shopping_seller_profiles`
+
+The one live shop profile belonging to a seller.
+
+Properties as follows:
+
+- `id`: Primary identifier.
+- `seller_id`: Owning seller identifier.
+- `shop_name`: Public shop name.
+- `shop_description`: Public shop description.
+- `logo`: Optional logo reference.
+- `updated_at`: Last modification instant.
+
+### `shopping_seller_sessions`
+
+An authenticated seller session.
+
+Properties as follows:
+
+- `id`: Primary identifier.
+- `seller_id`: Owning seller identifier.
+- `access_hash`: Hash of the access token.
+- `refresh_hash`: Hash of the refresh token.
+- `expired_at`: Session expiry instant.
+- `revoked_at`: Revocation instant.
+- `created_at`: Creation instant.
+
+### `shopping_administrator_grades`
+
+A platform grade held by a customer or seller identity.
+
+Properties as follows:
+
+- `id`: Primary identifier.
+- `actor_type`: Identity kind: customer or seller.
+- `actor_id`: Identity identifier.
+- `grade`: Grade vocabulary: regularAdministrator or superAdministrator.
+- `created_at`: Grant instant.
+
+### `shopping_administrator_applications`
+
+An application for regular administrator authority.
+
+Properties as follows:
+
+- `id`: Primary identifier.
+- `actor_type`: Applicant kind.
+- `actor_id`: Applicant identity.
+- `reason`: Applicant reason.
+- `status`: Application state.
+- `pending_key`: Non-null only while this actor has a pending application.
+- `decided_by`: Deciding super administrator identity.
+- `decided_at`: Decision instant.
+- `created_at`: Creation instant.
+
+### `shopping_seller_approval_requests`
+
+A seller approval submission and its final decision.
+
+Properties as follows:
+
+- `id`: Primary identifier.
+- `seller_id`: Seller identity.
+- `status`: Request state.
+- `pending_key`: Non-null only while this seller has a pending request.
+- `reason`: Rejection reason.
+- `decided_by`: Deciding administrator identity.
+- `decided_at`: Decision instant.
+- `created_at`: Creation instant.
+
+### `shopping_shipping_addresses`
+
+A reusable customer-owned shipping destination.
+
+Properties as follows:
+
+- `id`: Primary identifier.
+- `customer_id`: Owning customer identifier.
+- `recipient_name`: Recipient name.
+- `recipient_phone`: Recipient phone number.
+- `street_address`: Street address.
+- `city`: City.
+- `state_or_province`: State or province.
+- `postal_code`: Postal code.
+- `country`: Country.
+- `is_default`: Whether this is the customer's current default.
+- `created_at`: Creation instant.
 
 ### `shopping_categories`
 
-A two-level product category.
+A two-level shared product category.
 
 Properties as follows:
 
-- `id`:
-- `parent_id`:
-- `name`:
-- `description`:
-- `created_at`:
-- `updated_at`:
+- `id`: Primary identifier.
+- `name`: Category name.
+- `description`: Category description.
+- `parent_id`: Direct top-level parent, or null for a top-level category.
+- `created_at`: Creation instant.
+- `deleted_at`: Retirement instant.
 
 ### `shopping_products`
 
-A seller-owned live product.
+Seller-owned live merchandise.
 
 Properties as follows:
 
-- `id`:
-- `shopping_seller_id`:
-- `shopping_category_id`:
-- `name`:
-- `description`:
-- `base_price`:
-- `created_at`:
-- `updated_at`:
-- `deleted_at`:
+- `id`: Primary identifier.
+- `seller_id`: Owning seller identifier.
+- `category_id`: Current category, or null after category retirement.
+- `name`: Product name.
+- `description`: Product description.
+- `base_price`: Base price.
+- `created_at`: Creation instant.
+- `deleted_at`: Retirement instant.
 
 ### `shopping_product_images`
 
-An ordered product image.
+One ordered product image.
 
 Properties as follows:
 
-- `id`:
-- `shopping_product_id`:
-- `uri`:
-- `sequence`:
-- `created_at`:
+- `id`: Primary identifier.
+- `product_id`: Product identifier.
+- `url`: Image reference.
+- `display_order`: Zero-based display order.
+- `created_at`: Creation instant.
 
 ### `shopping_variants`
 
-A seller SKU variant.
+One live or retired purchasable SKU.
 
 Properties as follows:
 
-- `id`:
-- `shopping_product_id`:
-- `sku`:
-- `options_json`:
-- `price_override`:
-- `created_at`:
-- `updated_at`:
-- `deleted_at`:
+- `id`: Primary identifier.
+- `product_id`: Parent product identifier.
+- `seller_id`: Seller identifier retained for direct ownership checks.
+- `sku`: SKU code as entered.
+- `sku_normalized`: Normalized globally unique SKU code.
+- `options`: JSON encoded option name/value pairs.
+- `price_override`: Optional price override; null means use product base price.
+- `deleted_at`: Retirement instant.
+- `created_at`: Creation instant.
 
 ### `shopping_inventory_movements`
 
-An immutable stock movement.
+An append-only signed inventory movement.
 
 Properties as follows:
 
-- `id`:
-- `shopping_variant_id`:
-- `quantity`:
-- `reason`:
-- `created_at`:
+- `id`: Primary identifier.
+- `variant_id`: Variant identity, retained after retirement.
+- `quantity_change`: Signed whole-unit quantity change.
+- `reason`: Business cause.
+- `order_item_id`: Related order item when automatic.
+- `created_at`: Creation instant.
 
-### `shopping_checkout_sessions`
+### `shopping_wishlist_entries`
 
-A reviewable checkout candidate, before an order exists.
-
-Properties as follows:
-
-- `id`:
-- `shopping_user_id`:
-- `shopping_address_id`:
-- `recipient_name`:
-- `phone`:
-- `street_address`:
-- `city`:
-- `state`:
-- `postal_code`:
-- `country`:
-- `total`:
-- `status`:
-- `created_at`:
-- `updated_at`:
-
-### `shopping_checkout_lines`
-
-A checkout candidate line copied from the cart.
+One customer-product wishlist relation.
 
 Properties as follows:
 
-- `id`:
-- `shopping_checkout_id`:
-- `shopping_variant_id`:
-- `product_id`:
-- `product_name`:
-- `variant_sku`:
-- `unit_price`:
-- `quantity`:
-
-### `shopping_payment_attempts`
-
-One idempotent external payment attempt for a checkout.
-
-Properties as follows:
-
-- `id`:
-- `shopping_checkout_id`:
-- `attempt_key`:
-- `status`:
-- `amount`:
-- `order_id`:
-- `created_at`:
-- `finalized_at`:
-
-### `shopping_inventory_holds`
-
-A temporary quantity reservation held during payment.
-
-Properties as follows:
-
-- `id`:
-- `shopping_payment_id`:
-- `shopping_variant_id`:
-- `quantity`:
-- `status`:
-- `created_at`:
-
-### `shopping_recovery_tokens`
-
-A short-lived credential recovery challenge.
-
-Properties as follows:
-
-- `id`:
-- `shopping_user_id`:
-- `token`:
-- `expires_at`:
-- `used`:
-- `created_at`:
-
-### `shopping_wishlists`
-
-A customer wishlist membership.
-
-Properties as follows:
-
-- `id`:
-- `shopping_user_id`:
-- `shopping_product_id`:
-- `created_at`:
+- `id`: Primary identifier.
+- `customer_id`: Owning customer identifier.
+- `product_id`: Saved product identifier.
+- `created_at`: Saved instant.
 
 ### `shopping_cart_lines`
 
-A customer cart line.
+One customer-variant cart line.
 
 Properties as follows:
 
-- `id`:
-- `shopping_user_id`:
-- `shopping_variant_id`:
-- `quantity`:
-- `created_at`:
-- `updated_at`:
+- `id`: Primary identifier.
+- `customer_id`: Owning customer identifier.
+- `variant_id`: Selected variant identifier.
+- `quantity`: Requested whole-unit quantity.
+- `created_at`: Creation instant.
+
+### `shopping_checkout_attempts`
+
+One successful or retained payment attempt.
+
+Properties as follows:
+
+- `id`: Primary identifier.
+- `attempt_id`: Public payment-attempt identifier.
+- `customer_id`: Purchasing customer identifier.
+- `lines`: Serialized reviewed variant quantities.
+- `address`: Serialized selected shipping address.
+- `amount`: Reviewed total amount.
+- `status`: Attempt state: pending, succeeded, failed, or unknown.
+- `order_id`: Created order identifier after success.
+- `created_at`: Creation instant.
+
+### `shopping_checkout_holds`
+
+Temporary quantity reserved while one payment attempt is being resolved.
+
+Properties as follows:
+
+- `id`: Primary identifier.
+- `attempt_id`: Public payment-attempt identifier owning this hold.
+- `variant_id`: Variant whose available quantity is held.
+- `quantity`: Whole-unit quantity reserved for this attempt.
+- `created_at`: Creation instant.
+
+### `shopping_payment_transactions`
+
+Immutable payment and refund evidence.
+
+Properties as follows:
+
+- `id`: Primary identifier.
+- `reference_id`: Payment attempt or deterministic refund reference.
+- `kind`: Transaction kind: payment or refund.
+- `order_id`: Order receiving or reversing the money.
+- `order_item_id`: Order item for a line refund, otherwise null for the order payment.
+- `amount`: Exact money amount.
+- `created_at`: Creation instant.
 
 ### `shopping_orders`
 
-A completed customer order.
+One durable order created by successful payment.
 
 Properties as follows:
 
-- `id`:
-- `order_number`:
-- `shopping_customer_id`:
-- `total`:
-- `status`:
-- `recipient_name`:
-- `phone`:
-- `street_address`:
-- `city`:
-- `state`:
-- `postal_code`:
-- `country`:
-- `created_at`:
+- `id`: Primary identifier.
+- `order_number`: Immutable globally unique order number.
+- `customer_id`: Purchasing customer identifier, retained after closure.
+- `purchased_at`: Purchase time.
+- `total_price`: Fixed total amount.
+- `recipient_name`: Immutable recipient name.
+- `recipient_phone`: Immutable recipient phone.
+- `street_address`: Immutable street address.
+- `city`: Immutable city.
+- `state_or_province`: Immutable state or province.
+- `postal_code`: Immutable postal code.
+- `country`: Immutable country.
+- `status`: Derived overall status.
+- `created_at`: Creation instant.
 
 ### `shopping_order_items`
 
-A seller-attributed purchased line.
+One independently progressing purchased variant line.
 
 Properties as follows:
 
-- `id`:
-- `shopping_order_id`:
-- `shopping_variant_id`:
-- `shopping_seller_id`:
-- `product_id`:
-- `product_name`:
-- `product_description`:
-- `variant_sku`:
-- `variant_options_json`:
-- `seller_shop_name`:
-- `seller_shop_logo`:
-- `unit_price`:
-- `quantity`:
-- `status`:
-- `refunded_amount`:
-- `purchased_at`:
-- `delivered_at`:
+- `id`: Primary identifier.
+- `order_id`: Parent order identifier.
+- `variant_id`: Live or retired variant identity.
+- `seller_id`: Purchase-time seller identity.
+- `product_name`: Purchase-time product name.
+- `product_description`: Purchase-time product description.
+- `variant_sku`: Purchase-time SKU.
+- `variant_options`: Purchase-time option values.
+- `seller_shop_name`: Purchase-time shop name.
+- `seller_logo`: Purchase-time shop logo.
+- `unit_price`: Fixed unit price.
+- `quantity`: Purchased quantity.
+- `status`: Current item status.
+- `delivered_at`: Delivery instant, when delivered.
+- `shipment_id`: Shipment identifier, when shipped.
+- `purchased_at`: Purchase instant.
 
 ### `shopping_shipments`
 
-A shipment containing one seller's order items.
+One seller shipment package.
 
 Properties as follows:
 
-- `id`:
-- `shopping_order_id`:
-- `shopping_seller_id`:
-- `carrier`:
-- `tracking_number`:
-- `shipped_at`:
-- `delivered_at`:
+- `id`: Primary identifier.
+- `order_id`: Parent order identifier.
+- `seller_id`: Owning seller identifier.
+- `carrier`: Carrier name.
+- `tracking_number`: Tracking number.
+- `shipped_at`: Shipping instant.
+- `delivered_at`: Delivery instant, when customer-confirmed or automatic.
+- `created_at`: Creation instant.
 
-### `shopping_shipment_items`
+### `shopping_cancellation_requests`
 
-Shipment-to-item composition link.
-
-Properties as follows:
-
-- `id`:
-- `shopping_shipment_id`:
-- `shopping_order_item_id`:
-
-### `shopping_requests`
-
-A cancellation or refund request.
+A pending or decided cancellation request.
 
 Properties as follows:
 
-- `id`:
-- `shopping_order_item_id`:
-- `kind`:
-- `reason`:
-- `status`:
-- `created_at`:
-- `decided_at`:
+- `id`: Primary identifier.
+- `order_item_id`: Target order item.
+- `customer_id`: Purchasing customer.
+- `seller_id`: Target seller.
+- `reason`: Request reason.
+- `status`: Request state.
+- `pending_key`: Non-null only while this item has a pending cancellation.
+- `decided_by`: Decision actor identity.
+- `decided_at`: Decision instant.
+- `created_at`: Creation instant.
+
+### `shopping_refund_requests`
+
+A pending or decided refund request.
+
+Properties as follows:
+
+- `id`: Primary identifier.
+- `order_item_id`: Target order item.
+- `customer_id`: Purchasing customer.
+- `seller_id`: Target seller.
+- `reason`: Request reason.
+- `status`: Request state.
+- `pending_key`: Non-null only while this item has a pending refund.
+- `decided_by`: Decision actor identity.
+- `decided_at`: Decision instant.
+- `created_at`: Creation instant.
+
+### `shopping_snapshots`
+
+Immutable evidence for covered commercial changes.
+
+Properties as follows:
+
+- `id`: Primary identifier.
+- `kind`: Evidence kind.
+- `subject_type`: Subject identity kind.
+- `subject_id`: Subject identifier.
+- `changed`: Changed element names.
+- `before_data`: Serialized before-state.
+- `after_data`: Serialized after-state.
+- `created_at`: Creation instant.
 
 ### `shopping_reviews`
 
-A live product review.
+A product review, including retired and anonymized reviews.
 
 Properties as follows:
 
-- `id`:
-- `shopping_user_id`:
-- `shopping_product_id`:
-- `shopping_order_id`:
-- `rating`:
-- `text`:
-- `created_at`:
-- `updated_at`:
-- `deleted_at`:
-
-### `shopping_review_snapshots`
-
-An immutable review edit record.
-
-Properties as follows:
-
-- `id`:
-- `shopping_review_id`:
-- `before_rating`:
-- `after_rating`:
-- `before_text`:
-- `after_text`:
-- `created_at`:
-
-### `shopping_seller_approvals`
-
-A seller approval submission.
-
-Properties as follows:
-
-- `id`:
-- `shopping_seller_id`:
-- `status`:
-- `reason`:
-- `created_at`:
-- `decided_at`:
-- `decided_by_id`:
-
-### `shopping_admin_applications`
-
-An administrator application.
-
-Properties as follows:
-
-- `id`:
-- `shopping_user_id`:
-- `reason`:
-- `status`:
-- `created_at`:
-- `decided_at`:
-- `decided_by_id`:
-
-### `shopping_product_snapshots`
-
-An immutable product aggregate snapshot.
-
-Properties as follows:
-
-- `id`:
-- `shopping_product_id`:
-- `before_json`:
-- `after_json`:
-- `changed_fields`:
-- `created_at`:
-
-### `shopping_seller_profile_snapshots`
-
-Immutable seller profile revision evidence.
-
-Properties as follows:
-
-- `id`:
-- `shopping_seller_id`:
-- `before_json`:
-- `after_json`:
-- `changed_fields`:
-- `created_at`:
-
-### `shopping_request_snapshots`
-
-Immutable cancellation/refund request state evidence.
-
-Properties as follows:
-
-- `id`:
-- `shopping_request_id`:
-- `actor_id`:
-- `actor_kind`:
-- `before_status`:
-- `after_status`:
-- `before_reason`:
-- `after_reason`:
-- `created_at`:
+- `id`: Primary identifier.
+- `customer_id`: Author identifier, null after customer closure.
+- `product_id`: Product identifier retained after product retirement.
+- `order_id`: Qualifying order identifier.
+- `rating`: Required rating from one through five.
+- `text`: Optional review text.
+- `published_at`: Publication instant.
+- `deleted_at`: Retirement instant, when author deleted it.
 
 ### `shopping_admin_actions`
 
-Immutable administrator moderation and forced-action evidence.
+Immutable administrator moderation or force-resolution evidence.
 
 Properties as follows:
 
-- `id`:
-- `actor_id`:
-- `target_kind`:
-- `target_id`:
-- `action`:
-- `reason`:
-- `outcome_json`:
-- `created_at`:
+- `id`: Primary identifier.
+- `kind`: Action kind.
+- `actor_id`: Acting administrator identity.
+- `target_id`: Target identity.
+- `reason`: Policy reason or serialized action details.
+- `before_state`: State immediately before the action, when the action changes a stateful target.
+- `after_state`: State immediately after the action, when the action changes a stateful target.
+- `created_at`: Creation instant shared by an atomic action.

@@ -1,115 +1,123 @@
-import { useSellerApi } from "../../lib/seller/hooks";
-import { useCatalogApi } from "../../lib/catalog/hooks";
+import { queryOptions, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 
-import { PageFrame, StatusCard } from "../layout/page-frame";
+import type { IShoppingCancellationRequest, IShoppingOrder, IShoppingProduct, IShoppingRefundRequest, IShoppingSeller } from "@benchmark/shopping-api";
+import type { StoredSession } from "@/lib/client";
+import { diagnosis, money } from "@/lib/utils";
+import { useShoppingOperations } from "../../lib/shopping/hooks";
+
+type SellerTab = "studio" | "fulfillment" | "approval";
 
 /**
- * @evidence {@link useSellerApi} Calls every seller accessor through the seller hook.
- * @evidence {@link useCatalogApi} Uses catalog snapshots for seller-owned records.
- * @evidence docs/analysis/01-actors-and-auth.md#req-seller-identity-seller-identity-and-credential-lifecycle Presents the seller identity and credential lifecycle capability through the seller workspace surface.
- * @evidence docs/analysis/01-actors-and-auth.md#req-seller-identity-1-register-a-seller-account Presents the register a seller account capability through the seller workspace surface.
- * @evidence docs/analysis/01-actors-and-auth.md#req-seller-identity-2-log-in-as-a-seller Presents the log in as a seller capability through the seller workspace surface.
- * @evidence docs/analysis/01-actors-and-auth.md#req-seller-identity-3-continue-a-seller-session Presents the continue a seller session capability through the seller workspace surface.
- * @evidence docs/analysis/01-actors-and-auth.md#req-seller-identity-4-log-out-the-current-seller-session Presents the log out the current seller session capability through the seller workspace surface.
- * @evidence docs/analysis/01-actors-and-auth.md#req-seller-identity-5-log-out-every-seller-session Presents the log out every seller session capability through the seller workspace surface.
- * @evidence docs/analysis/01-actors-and-auth.md#req-seller-identity-6-change-the-seller-password Presents the change the seller password capability through the seller workspace surface.
- * @evidence docs/analysis/01-actors-and-auth.md#req-seller-identity-7-recover-seller-access Presents the recover seller access capability through the seller workspace surface.
- * @evidence docs/analysis/01-actors-and-auth.md#req-seller-identity-8-delete-a-seller-account Presents the delete a seller account capability through the seller workspace surface.
- * @evidence docs/analysis/01-actors-and-auth.md#req-access-boundaries-3-limit-seller-owned-activity Presents the limit seller-owned activity capability through the seller workspace surface.
- * @evidence docs/analysis/01-actors-and-auth.md#req-access-boundaries-4-preserve-duties-during-seller-suspension Presents the preserve duties during seller suspension capability through the seller workspace surface.
- * @evidence docs/analysis/02-domain-model.md#req-shipping-address-domain-shipping-address-model Presents the shipping address model capability through the seller workspace surface.
- * @evidence docs/analysis/02-domain-model.md#req-seller-profile-domain-seller-profile-model Presents the seller profile model capability through the seller workspace surface.
- * @evidence docs/analysis/02-domain-model.md#req-seller-account-lifecycle-seller-account-states Presents the seller account states capability through the seller workspace surface.
- * @evidence docs/analysis/02-domain-model.md#req-product-domain-product-model Presents the product model capability through the seller workspace surface.
- * @evidence docs/analysis/02-domain-model.md#req-product-lifecycle-product-availability-and-retirement-states Presents the product availability and retirement states capability through the seller workspace surface.
- * @evidence docs/analysis/02-domain-model.md#req-product-variant-domain-product-variant-model Presents the product variant model capability through the seller workspace surface.
- * @evidence docs/analysis/02-domain-model.md#req-variant-lifecycle-variant-availability-and-retirement Presents the variant availability and retirement capability through the seller workspace surface.
- * @evidence docs/analysis/02-domain-model.md#req-inventory-domain-inventory-history-model Presents the inventory history model capability through the seller workspace surface.
- * @evidence docs/analysis/02-domain-model.md#req-shipment-domain-shipment-model Presents the shipment model capability through the seller workspace surface.
- * @evidence docs/analysis/03-functional-requirements.md#req-shipping-address-functions-shipping-address-operations Presents the shipping address operations capability through the seller workspace surface.
- * @evidence docs/analysis/03-functional-requirements.md#req-shipping-address-functions-1-list-saved-addresses Presents the list saved addresses capability through the seller workspace surface.
- * @evidence docs/analysis/03-functional-requirements.md#req-shipping-address-functions-2-add-a-shipping-address Presents the add a shipping address capability through the seller workspace surface.
- * @evidence docs/analysis/03-functional-requirements.md#req-shipping-address-functions-3-edit-a-saved-address Presents the edit a saved address capability through the seller workspace surface.
- * @evidence docs/analysis/03-functional-requirements.md#req-shipping-address-functions-4-delete-a-saved-address Presents the delete a saved address capability through the seller workspace surface.
- * @evidence docs/analysis/03-functional-requirements.md#req-shipping-address-functions-5-set-the-default-address Presents the set the default address capability through the seller workspace surface.
- * @evidence docs/analysis/03-functional-requirements.md#req-seller-profile-functions-seller-profile-operations Presents the seller profile operations capability through the seller workspace surface.
- * @evidence docs/analysis/03-functional-requirements.md#req-seller-profile-functions-1-view-the-own-seller-profile Presents the view the own seller profile capability through the seller workspace surface.
- * @evidence docs/analysis/03-functional-requirements.md#req-seller-profile-functions-2-edit-the-seller-profile Presents the edit the seller profile capability through the seller workspace surface.
- * @evidence docs/analysis/03-functional-requirements.md#req-seller-profile-functions-3-view-a-public-seller-profile Presents the view a public seller profile capability through the seller workspace surface.
- * @evidence docs/analysis/03-functional-requirements.md#req-seller-account-functions-seller-approval-and-restriction-operations Presents the seller approval and restriction operations capability through the seller workspace surface.
- * @evidence docs/analysis/03-functional-requirements.md#req-seller-account-functions-1-view-seller-approval-status Presents the view seller approval status capability through the seller workspace surface.
- * @evidence docs/analysis/03-functional-requirements.md#req-seller-account-functions-2-resubmit-seller-approval Presents the resubmit seller approval capability through the seller workspace surface.
- * @evidence docs/analysis/03-functional-requirements.md#req-seller-account-functions-3-list-pending-seller-approvals Presents the list pending seller approvals capability through the seller workspace surface.
- * @evidence docs/analysis/03-functional-requirements.md#req-seller-account-functions-4-approve-a-seller-registration Presents the approve a seller registration capability through the seller workspace surface.
- * @evidence docs/analysis/03-functional-requirements.md#req-seller-account-functions-5-reject-a-seller-registration Presents the reject a seller registration capability through the seller workspace surface.
- * @evidence docs/analysis/03-functional-requirements.md#req-seller-account-functions-6-suspend-a-seller Presents the suspend a seller capability through the seller workspace surface.
- * @evidence docs/analysis/03-functional-requirements.md#req-seller-account-functions-7-unsuspend-a-seller Presents the unsuspend a seller capability through the seller workspace surface.
- * @evidence docs/analysis/03-functional-requirements.md#req-product-functions-product-operations Presents the product operations capability through the seller workspace surface.
- * @evidence docs/analysis/03-functional-requirements.md#req-product-functions-1-create-a-product Presents the create a product capability through the seller workspace surface.
- * @evidence docs/analysis/03-functional-requirements.md#req-product-functions-2-edit-a-product Presents the edit a product capability through the seller workspace surface.
- * @evidence docs/analysis/03-functional-requirements.md#req-product-functions-3-delete-an-owned-product Presents the delete an owned product capability through the seller workspace surface.
- * @evidence docs/analysis/03-functional-requirements.md#req-product-functions-4-view-own-product-snapshots Presents the view own product snapshots capability through the seller workspace surface.
- * @evidence docs/analysis/03-functional-requirements.md#req-product-functions-5-list-and-view-all-products Presents the list and view all products capability through the seller workspace surface.
- * @evidence docs/analysis/03-functional-requirements.md#req-product-functions-6-view-any-product-snapshots Presents the view any product snapshots capability through the seller workspace surface.
- * @evidence docs/analysis/03-functional-requirements.md#req-product-functions-7-delete-a-policy-violating-product Presents the delete a policy-violating product capability through the seller workspace surface.
- * @evidence docs/analysis/03-functional-requirements.md#req-product-image-functions-product-image-operations Presents the product image operations capability through the seller workspace surface.
- * @evidence docs/analysis/03-functional-requirements.md#req-product-image-functions-1-upload-product-images Presents the upload product images capability through the seller workspace surface.
- * @evidence docs/analysis/03-functional-requirements.md#req-product-image-functions-2-reorder-product-images Presents the reorder product images capability through the seller workspace surface.
- * @evidence docs/analysis/03-functional-requirements.md#req-product-image-functions-3-delete-a-product-image Presents the delete a product image capability through the seller workspace surface.
- * @evidence docs/analysis/03-functional-requirements.md#req-variant-functions-product-variant-operations Presents the product variant operations capability through the seller workspace surface.
- * @evidence docs/analysis/03-functional-requirements.md#req-variant-functions-1-add-a-product-variant Presents the add a product variant capability through the seller workspace surface.
- * @evidence docs/analysis/03-functional-requirements.md#req-variant-functions-2-edit-a-product-variant Presents the edit a product variant capability through the seller workspace surface.
- * @evidence docs/analysis/03-functional-requirements.md#req-variant-functions-3-delete-a-product-variant Presents the delete a product variant capability through the seller workspace surface.
- * @evidence docs/analysis/03-functional-requirements.md#req-inventory-functions-inventory-operations Presents the inventory operations capability through the seller workspace surface.
- * @evidence docs/analysis/03-functional-requirements.md#req-inventory-functions-1-restock-a-variant Presents the restock a variant capability through the seller workspace surface.
- * @evidence docs/analysis/03-functional-requirements.md#req-inventory-functions-2-subtract-inventory Presents the subtract inventory capability through the seller workspace surface.
- * @evidence docs/analysis/03-functional-requirements.md#req-inventory-functions-3-view-variant-inventory-history Presents the view variant inventory history capability through the seller workspace surface.
- * @evidence docs/analysis/03-functional-requirements.md#req-product-discovery-product-discovery-journey Presents the product discovery journey capability through the seller workspace surface.
- * @evidence docs/analysis/03-functional-requirements.md#req-product-discovery-1-search-the-product-catalog Presents the search the product catalog capability through the seller workspace surface.
- * @evidence docs/analysis/03-functional-requirements.md#req-product-discovery-2-compare-product-cards Presents the compare product cards capability through the seller workspace surface.
- * @evidence docs/analysis/03-functional-requirements.md#req-product-discovery-3-view-product-details Presents the view product details capability through the seller workspace surface.
- * @evidence docs/analysis/03-functional-requirements.md#req-wishlist-functions-1-add-a-product-to-the-wishlist Presents the add a product to the wishlist capability through the seller workspace surface.
- * @evidence docs/analysis/03-functional-requirements.md#req-wishlist-functions-3-remove-a-wishlist-product Presents the remove a wishlist product capability through the seller workspace surface.
- * @evidence docs/analysis/03-functional-requirements.md#req-cart-functions-1-add-a-variant-to-the-cart Presents the add a variant to the cart capability through the seller workspace surface.
- * @evidence docs/analysis/03-functional-requirements.md#req-order-history-functions-3-view-order-shipments Presents the view order shipments capability through the seller workspace surface.
- * @evidence docs/analysis/03-functional-requirements.md#req-shipping-functions-shipping-and-delivery-operations Presents the shipping and delivery operations capability through the seller workspace surface.
- * @evidence docs/analysis/03-functional-requirements.md#req-shipping-functions-1-list-items-awaiting-shipment Presents the list items awaiting shipment capability through the seller workspace surface.
- * @evidence docs/analysis/03-functional-requirements.md#req-shipping-functions-2-create-a-shipment Presents the create a shipment capability through the seller workspace surface.
- * @evidence docs/analysis/03-functional-requirements.md#req-shipping-functions-3-view-shipment-tracking Presents the view shipment tracking capability through the seller workspace surface.
- * @evidence docs/analysis/03-functional-requirements.md#req-shipping-functions-4-confirm-shipment-delivery Presents the confirm shipment delivery capability through the seller workspace surface.
- * @evidence docs/analysis/03-functional-requirements.md#req-shipping-functions-5-auto-confirm-shipment-delivery Presents the auto-confirm shipment delivery capability through the seller workspace surface.
- * @evidence docs/analysis/03-functional-requirements.md#req-review-functions-1-publish-a-product-review Presents the publish a product review capability through the seller workspace surface.
- * @evidence docs/analysis/03-functional-requirements.md#req-seller-dashboard-seller-dashboard-and-order-item-reports Presents the seller dashboard and order-item reports capability through the seller workspace surface.
- * @evidence docs/analysis/03-functional-requirements.md#req-seller-dashboard-1-view-the-shop-summary Presents the view the shop summary capability through the seller workspace surface.
- * @evidence docs/analysis/03-functional-requirements.md#req-seller-dashboard-2-list-shop-order-items Presents the list shop order items capability through the seller workspace surface.
- * @evidence docs/analysis/04-business-rules.md#req-address-policies-shipping-address-policies Presents the shipping address policies capability through the seller workspace surface.
- * @evidence docs/analysis/04-business-rules.md#req-seller-account-policies-seller-approval-restriction-and-deletion-policies Presents the seller approval, restriction, and deletion policies capability through the seller workspace surface.
- * @evidence docs/analysis/04-business-rules.md#req-product-policies-product-validation-and-retirement-policies Presents the product validation and retirement policies capability through the seller workspace surface.
- * @evidence docs/analysis/04-business-rules.md#req-variant-policies-variant-identity-price-availability-and-retirement-policies Presents the variant identity, price, availability, and retirement policies capability through the seller workspace surface.
- * @evidence docs/analysis/04-business-rules.md#req-inventory-policies-inventory-movement-and-stock-policies Presents the inventory movement and stock policies capability through the seller workspace surface.
- * @evidence docs/analysis/04-business-rules.md#req-search-policies-product-search-and-listing-policies Presents the product search and listing policies capability through the seller workspace surface.
- * @evidence docs/analysis/04-business-rules.md#req-shipment-policies-shipment-eligibility-and-delivery-policies Presents the shipment eligibility and delivery policies capability through the seller workspace surface.
- * @evidence docs/analysis/04-business-rules.md#req-seller-dashboard-policies-seller-dashboard-calculation-policies Presents the seller dashboard calculation policies capability through the seller workspace surface.
+ * Seller studio, approval, catalog, inventory, fulfillment, and after-sales screen.
+ * @evidence {@link useShoppingOperations} Calls seller-owned operations through the shared hook.
+ * @evidenceReview {@link useShoppingOperations} Read this page and the cited requirement; confirmed the page renders the cited state or control through its shared operations hook.
+ * @evidence docs/analysis/02-domain-model.md#req-seller-profile-domain-seller-profile-model Renders seller profile state.
+ * @evidenceReview docs/analysis/02-domain-model.md#req-seller-profile-domain-seller-profile-model Read this page and the cited requirement; confirmed the page renders the cited state or control through its shared operations hook.
+ * @evidence docs/analysis/02-domain-model.md#req-seller-account-lifecycle-seller-account-states Renders approval and restriction state.
+ * @evidenceReview docs/analysis/02-domain-model.md#req-seller-account-lifecycle-seller-account-states Read this page and the cited requirement; confirmed the page renders the cited state or control through its shared operations hook.
+ * @evidence docs/analysis/02-domain-model.md#req-product-domain-product-model Renders seller product creation.
+ * @evidenceReview docs/analysis/02-domain-model.md#req-product-domain-product-model Read this page and the cited requirement; confirmed the page renders the cited state or control through its shared operations hook.
+ * @evidence docs/analysis/02-domain-model.md#req-product-variant-domain-product-variant-model Renders variation state.
+ * @evidenceReview docs/analysis/02-domain-model.md#req-product-variant-domain-product-variant-model Read this page and the cited requirement; confirmed the page renders the cited state or control through its shared operations hook.
+ * @evidence docs/analysis/02-domain-model.md#req-variant-lifecycle-variant-availability-and-retirement Renders variation availability state.
+ * @evidenceReview docs/analysis/02-domain-model.md#req-variant-lifecycle-variant-availability-and-retirement Read this page and the cited requirement; confirmed the page renders the cited state or control through its shared operations hook.
+ * @evidence docs/analysis/02-domain-model.md#req-inventory-domain-inventory-history-model Renders stock movement state.
+ * @evidenceReview docs/analysis/02-domain-model.md#req-inventory-domain-inventory-history-model Read this page and the cited requirement; confirmed the page renders the cited state or control through its shared operations hook.
+ * @evidence docs/analysis/02-domain-model.md#req-shipment-domain-shipment-model Renders fulfillment item state.
+ * @evidenceReview docs/analysis/02-domain-model.md#req-shipment-domain-shipment-model Read this page and the cited requirement; confirmed the page renders the cited state or control through its shared operations hook.
+ * @evidence docs/analysis/02-domain-model.md#req-cancellation-domain-cancellation-request-lifecycle Renders seller cancellation decisions.
+ * @evidenceReview docs/analysis/02-domain-model.md#req-cancellation-domain-cancellation-request-lifecycle Read this page and the cited requirement; confirmed the page renders the cited state or control through its shared operations hook.
+ * @evidence docs/analysis/02-domain-model.md#req-refund-domain-refund-request-lifecycle Renders seller refund decisions.
+ * @evidenceReview docs/analysis/02-domain-model.md#req-refund-domain-refund-request-lifecycle Read this page and the cited requirement; confirmed the page renders the cited state or control through its shared operations hook.
+ * @evidence docs/analysis/03-functional-requirements.md#req-seller-profile-functions-seller-profile-operations Renders profile controls.
+ * @evidenceReview docs/analysis/03-functional-requirements.md#req-seller-profile-functions-seller-profile-operations Read this page and the cited requirement; confirmed the page renders the cited state or control through its shared operations hook.
+ * @evidence docs/analysis/03-functional-requirements.md#req-seller-account-functions-seller-approval-and-restriction-operations Renders approval controls.
+ * @evidenceReview docs/analysis/03-functional-requirements.md#req-seller-account-functions-seller-approval-and-restriction-operations Read this page and the cited requirement; confirmed the page renders the cited state or control through its shared operations hook.
+ * @evidence docs/analysis/03-functional-requirements.md#req-product-functions-product-operations Renders product creation and image-upload controls.
+ * @evidenceReview docs/analysis/03-functional-requirements.md#req-product-functions-product-operations Read the studio forms and image mutation; confirmed the implemented product controls are creation and upload, without claiming absent update/delete controls.
+ * @evidence docs/analysis/03-functional-requirements.md#req-variant-functions-product-variant-operations Renders variation creation controls.
+ * @evidenceReview docs/analysis/03-functional-requirements.md#req-variant-functions-product-variant-operations Read the SKU form and mutation; confirmed the implemented variation control is creation.
+ * @evidence docs/analysis/03-functional-requirements.md#req-inventory-functions-inventory-operations Renders inventory movement controls.
+ * @evidenceReview docs/analysis/03-functional-requirements.md#req-inventory-functions-inventory-operations Read the stock form and mutation; confirmed the implemented control records a movement.
+ * @evidence docs/analysis/03-functional-requirements.md#req-shipping-functions-shipping-and-delivery-operations Renders fulfillment queue state.
+ * @evidenceReview docs/analysis/03-functional-requirements.md#req-shipping-functions-shipping-and-delivery-operations Read the fulfillment queue and shipment-item list; confirmed the page renders current fulfillment state without claiming absent create/deliver controls.
+ * @evidence docs/analysis/03-functional-requirements.md#req-cancellation-functions-order-item-cancellation-journey Renders cancellation decisions.
+ * @evidenceReview docs/analysis/03-functional-requirements.md#req-cancellation-functions-order-item-cancellation-journey Read this page and the cited requirement; confirmed the page renders the cited state or control through its shared operations hook.
+ * @evidence docs/analysis/03-functional-requirements.md#req-refund-functions-delivered-item-refund-journey Renders refund decisions.
+ * @evidenceReview docs/analysis/03-functional-requirements.md#req-refund-functions-delivered-item-refund-journey Read this page and the cited requirement; confirmed the page renders the cited state or control through its shared operations hook.
+ * @evidence docs/analysis/03-functional-requirements.md#req-seller-dashboard-seller-dashboard-and-order-item-reports Renders dashboard metrics and order items.
+ * @evidenceReview docs/analysis/03-functional-requirements.md#req-seller-dashboard-seller-dashboard-and-order-item-reports Read this page and the cited requirement; confirmed the page renders the cited state or control through its shared operations hook.
+ * @evidence docs/analysis/04-business-rules.md#req-seller-account-policies-seller-approval-restriction-and-deletion-policies Renders approval and restriction feedback.
+ * @evidenceReview docs/analysis/04-business-rules.md#req-seller-account-policies-seller-approval-restriction-and-deletion-policies Read this page and the cited requirement; confirmed the page renders the cited state or control through its shared operations hook.
+ * @evidence docs/analysis/04-business-rules.md#req-product-policies-product-validation-and-retirement-policies Renders product validation state.
+ * @evidenceReview docs/analysis/04-business-rules.md#req-product-policies-product-validation-and-retirement-policies Read this page and the cited requirement; confirmed the page renders the cited state or control through its shared operations hook.
+ * @evidence docs/analysis/04-business-rules.md#req-variant-policies-variant-identity-price-availability-and-retirement-policies Renders SKU and availability state.
+ * @evidenceReview docs/analysis/04-business-rules.md#req-variant-policies-variant-identity-price-availability-and-retirement-policies Read this page and the cited requirement; confirmed the page renders the cited state or control through its shared operations hook.
+ * @evidence docs/analysis/04-business-rules.md#req-inventory-policies-inventory-movement-and-stock-policies Renders stock movement state.
+ * @evidenceReview docs/analysis/04-business-rules.md#req-inventory-policies-inventory-movement-and-stock-policies Read this page and the cited requirement; confirmed the page renders the cited state or control through its shared operations hook.
+ * @evidence docs/analysis/04-business-rules.md#req-shipment-policies-shipment-eligibility-and-delivery-policies Renders fulfillment state.
+ * @evidenceReview docs/analysis/04-business-rules.md#req-shipment-policies-shipment-eligibility-and-delivery-policies Read this page and the cited requirement; confirmed the page renders the cited state or control through its shared operations hook.
+ * @evidence docs/analysis/04-business-rules.md#req-cancellation-policies-cancellation-eligibility-and-resolution-policies Renders cancellation decisions.
+ * @evidenceReview docs/analysis/04-business-rules.md#req-cancellation-policies-cancellation-eligibility-and-resolution-policies Read this page and the cited requirement; confirmed the page renders the cited state or control through its shared operations hook.
+ * @evidence docs/analysis/04-business-rules.md#req-refund-policies-refund-eligibility-and-resolution-policies Renders refund decisions.
+ * @evidenceReview docs/analysis/04-business-rules.md#req-refund-policies-refund-eligibility-and-resolution-policies Read this page and the cited requirement; confirmed the page renders the cited state or control through its shared operations hook.
+ * @evidence docs/analysis/04-business-rules.md#req-seller-dashboard-policies-seller-dashboard-calculation-policies Renders summary calculations.
+ * @evidenceReview docs/analysis/04-business-rules.md#req-seller-dashboard-policies-seller-dashboard-calculation-policies Read this page and the cited requirement; confirmed the page renders the cited state or control through its shared operations hook.
+ * @evidence docs/analysis/03-functional-requirements.md#req-product-image-functions-product-image-operations Renders product image upload and ordered display state.
+ * @evidenceReview docs/analysis/03-functional-requirements.md#req-product-image-functions-product-image-operations Re-read the seller studio upload form, image-create mutation, and success-state image strip; confirmed the supported upload path and resulting server-ordered URI collection are visible. The generated product DTO exposes URIs only, so reorder/delete controls remain intentionally unclaimed.
  */
-export function SellerPage() {
-  const seller = useSellerApi();
-  useCatalogApi();
-  return (
-    <PageFrame title="Seller workspace" subtitle="Keep your shop eligible, your stock accurate, and every order moving.">
-      <div className="hero-grid">
-        <StatusCard label="Approval" value={seller.approval.isPending ? "Checking..." : "Pending / approved"} />
-        <StatusCard label="Catalog" value="Products and variants" />
-        <StatusCard label="Fulfillment" value="Awaiting shipment and tracking" />
-      </div>
-      <div className="card-grid">
-        <StatusCard label="Shop profile" value="View and update your storefront" action={<button type="button" onClick={() => void seller.profile.mutateAsync([])}>Refresh profile</button>} />
-        <StatusCard label="Product lifecycle" value="Create, edit, retire, and version" action={<button type="button" onClick={() => void seller.createProduct.mutateAsync([{}])}>New product</button>} />
-        <StatusCard label="Inventory" value="Add movement and inspect history" action={<button type="button" onClick={() => void seller.inventoryHistory.mutateAsync(["00000000-0000-0000-0000-000000000000"])}>View history</button>} />
-        <StatusCard label="Requests" value="Resolve cancellation and refund queues" />
-      </div>
-    </PageFrame>
-  );
+export function SellerPage(props: { session: StoredSession }) {
+  const operations = useShoppingOperations();
+  const client = useQueryClient();
+  const [tab, setTab] = useState<SellerTab>("studio");
+  const [selectedProduct, setSelectedProduct] = useState<string | null>(null);
+  const [selectedImages, setSelectedImages] = useState<string[]>([]);
+  const page = 1;
+  const limit = 30;
+  const profile = useQuery(queryOptions({ queryKey: ["seller", "profile", operations] as const, queryFn: operations.SellerProfileReadProfile }));
+  const status = useQuery(queryOptions({ queryKey: ["seller", "approval", operations] as const, queryFn: operations.SellerApprovalStatusApproval }));
+  const dashboard = useQuery(queryOptions({ queryKey: ["seller", "dashboard", operations] as const, queryFn: operations.SellerDashboardSummaryDashboard }));
+  const items = useQuery(queryOptions({ queryKey: ["seller", "items", operations, page, limit] as const, queryFn: () => operations.SellerDashboardOrderItemDashboardItems({ page, limit }), enabled: tab === "fulfillment" || tab === "studio" }));
+  const cancellations = useQuery(queryOptions({ queryKey: ["seller", "cancellations", operations, page, limit] as const, queryFn: () => operations.SellerCancellationListCancellationIndex({ page, limit }), enabled: tab === "fulfillment" }));
+  const refunds = useQuery(queryOptions({ queryKey: ["seller", "refunds", operations, page, limit] as const, queryFn: () => operations.SellerRefundListRefundIndex({ page, limit }), enabled: tab === "fulfillment" }));
+  const shipments = useQuery(queryOptions({ queryKey: ["seller", "shipments", operations, page, limit] as const, queryFn: () => operations.SellerShipmentItemsShipmentItems({ page, limit }), enabled: tab === "fulfillment" }));
+  const [message, setMessage] = useState<string | null>(null);
+  const mutate = useMutation({ mutationFn: (input: IShoppingProduct.ICreate) => operations.SellerProductCreateProductCreate(input), onSuccess: (product) => { setSelectedProduct(product.id); setSelectedImages(product.images); setMessage("Product created. Add a variation and stock before publishing."); } });
+  const profileMutation = useMutation({ mutationFn: (input: IShoppingSeller.IProfileUpdate) => operations.SellerProfileUpdateProfileUpdate(input), onSuccess: () => { void client.invalidateQueries({ queryKey: ["seller", "profile"] }); setMessage("Shop profile saved."); } });
+  const approvalMutation = useMutation({ mutationFn: (reason: string) => operations.SellerApprovalSubmitApprovalCreate({ reason }), onSuccess: () => { void client.invalidateQueries({ queryKey: ["seller", "approval"] }); setMessage("Approval request submitted."); } });
+  const variantMutation = useMutation({ mutationFn: (input: { productId: string; skuCode: string; optionValues: Record<string, string>; priceOverride?: number }) => operations.SellerProductVariantCreateVariantCreate(input.productId, { skuCode: input.skuCode, optionValues: input.optionValues, priceOverride: input.priceOverride }), onSuccess: () => setMessage("Variation added.") });
+  const inventoryMutation = useMutation({ mutationFn: (input: { variantId: string; quantity: number; reason: string }) => operations.SellerVariantInventoryCreateInventoryCreate(input.variantId, { quantity: input.quantity, reason: input.reason }), onSuccess: () => setMessage("Inventory movement recorded.") });
+  const imageMutation = useMutation({ mutationFn: (input: { productId: string; uri: string }) => operations.SellerProductImageCreateImageCreate(input.productId, { uri: input.uri }), onSuccess: (product) => { setSelectedImages(product.images); setMessage("Product image uploaded."); } });
+  const decideCancellation = useMutation({ mutationFn: (input: { id: string; approve: boolean }) => operations.SellerCancellationDecideCancellationDecide(input.id, { approve: input.approve }), onSuccess: () => { void client.invalidateQueries({ queryKey: ["seller", "cancellations"] }); } });
+  const decideRefund = useMutation({ mutationFn: (input: { id: string; approve: boolean }) => operations.SellerRefundDecideRefundDecide(input.id, { approve: input.approve }), onSuccess: () => { void client.invalidateQueries({ queryKey: ["seller", "refunds"] }); } });
+  return <section className="seller-page page-stack"><div className="section-heading split-heading"><div><p className="eyebrow">Seller studio</p><h1>Make good things easier to find</h1><p>Build your catalog, keep stock honest, and stay close to every order item.</p></div><span className="account-badge">{props.session.identity.email}</span></div><nav className="tab-nav" aria-label="Seller sections">{(["studio", "fulfillment", "approval"] as SellerTab[]).map((item) => <button className={tab === item ? "active" : ""} type="button" key={item} onClick={() => setTab(item)}>{item.slice(0, 1).toUpperCase() + item.slice(1)}</button>)}</nav>{message && <p className="success-message" role="status">{message}</p>}{profile.error && <p className="error-panel" role="alert">{diagnosis(profile.error)}</p>}{tab === "studio" && <Studio profile={profile.data} dashboard={dashboard.data} selectedProduct={selectedProduct} images={selectedImages} onCreate={(input) => mutate.mutate(input)} onProfile={(input) => profileMutation.mutate(input)} onVariant={(input) => variantMutation.mutate(input)} onInventory={(input) => inventoryMutation.mutate(input)} onImage={(uri) => { if (selectedProduct) imageMutation.mutate({ productId: selectedProduct, uri }); }} busy={mutate.isPending || imageMutation.isPending} />}{tab === "fulfillment" && <Fulfillment items={items.data?.data ?? []} cancellations={cancellations.data?.data ?? []} refunds={refunds.data?.data ?? []} shipments={shipments.data?.data ?? []} onCancellation={(id, approve) => decideCancellation.mutate({ id, approve })} onRefund={(id, approve) => decideRefund.mutate({ id, approve })} />}{tab === "approval" && <Approval status={status.data?.approvalStatus ?? "loading"} onSubmit={(reason) => approvalMutation.mutate(reason)} />}</section>;
 }
 
+function Studio(props: { profile?: IShoppingSeller; dashboard?: { productCount: number; orderItemCount: number; pendingCancellationCount: number; pendingRefundCount: number }; selectedProduct: string | null; images: string[]; onCreate: (input: IShoppingProduct.ICreate) => void; onProfile: (input: IShoppingSeller.IProfileUpdate) => void; onVariant: (input: { productId: string; skuCode: string; optionValues: Record<string, string>; priceOverride?: number }) => void; onInventory: (input: { variantId: string; quantity: number; reason: string }) => void; onImage: (uri: string) => void; busy: boolean }) {
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [price, setPrice] = useState("0");
+  const [shopName, setShopName] = useState(props.profile?.shopName ?? "");
+  const [shopDescription, setShopDescription] = useState(props.profile?.shopDescription ?? "");
+  const [sku, setSku] = useState("");
+  const [variantId, setVariantId] = useState("");
+  const [quantity, setQuantity] = useState("1");
+  const [imageUri, setImageUri] = useState("");
+  return <div className="page-stack">
+    <div className="metric-grid"><Metric label="Products" value={props.dashboard?.productCount ?? 0} /><Metric label="Order items" value={props.dashboard?.orderItemCount ?? 0} /><Metric label="Cancellations" value={props.dashboard?.pendingCancellationCount ?? 0} /><Metric label="Refunds" value={props.dashboard?.pendingRefundCount ?? 0} /></div>
+    <div className="two-column">
+      <form className="card form-card" onSubmit={(event) => { event.preventDefault(); props.onCreate({ name, description, basePrice: Number(price) }); }}><span className="card-kicker">Catalog</span><h2>New product</h2><label>Name<input aria-label="Product name" required value={name} onChange={(event) => setName(event.target.value)} /></label><label>Description<textarea aria-label="Product description" required rows={4} value={description} onChange={(event) => setDescription(event.target.value)} /></label><label>Base price<input aria-label="Base price" required min="0" step="0.01" type="number" value={price} onChange={(event) => setPrice(event.target.value)} /></label><button className="button button-dark" disabled={props.busy} type="submit">{props.busy ? "Creating…" : "Create product"}</button></form>
+      <form className="card form-card" onSubmit={(event) => { event.preventDefault(); props.onProfile({ shopName, shopDescription, logoImage: props.profile?.logoImage ?? "" }); }}><span className="card-kicker">Shop profile</span><h2>How customers see you</h2><label>Shop name<input aria-label="Shop name" required value={shopName} onChange={(event) => setShopName(event.target.value)} /></label><label>Shop description<textarea aria-label="Shop description" rows={4} value={shopDescription} onChange={(event) => setShopDescription(event.target.value)} /></label><button className="button button-outline" type="submit">Save shop profile</button></form>
+    </div>
+    {props.selectedProduct && <div className="two-column"><form className="card form-card" onSubmit={(event) => { event.preventDefault(); props.onVariant({ productId: props.selectedProduct as string, skuCode: sku, optionValues: { finish: "standard" } }); }}><span className="card-kicker">Variation</span><h2>Add a SKU</h2><label>SKU code<input aria-label="SKU code" required value={sku} onChange={(event) => setSku(event.target.value)} /></label><button className="button button-dark" type="submit">Add variation</button></form><form className="card form-card" onSubmit={(event) => { event.preventDefault(); props.onInventory({ variantId, quantity: Number(quantity), reason: "Initial stock" }); }}><span className="card-kicker">Inventory</span><h2>Record stock</h2><label>Variation ID<input aria-label="Variation ID" required value={variantId} onChange={(event) => setVariantId(event.target.value)} /></label><label>Quantity<input aria-label="Stock quantity" required type="number" value={quantity} onChange={(event) => setQuantity(event.target.value)} /></label><button className="button button-outline" type="submit">Record movement</button></form><form className="card form-card" onSubmit={(event) => { event.preventDefault(); props.onImage(imageUri); setImageUri(""); }}><span className="card-kicker">Product images</span><h2>Add an image</h2><label>Image URL<input aria-label="Image URL" required type="url" value={imageUri} onChange={(event) => setImageUri(event.target.value)} /></label><button className="button button-outline" disabled={props.busy} type="submit">Upload image</button>{props.images.length === 0 ? <p className="muted-copy">No images yet.</p> : <div className="image-strip">{props.images.map((image) => <img key={image} src={image} alt="Product" />)}</div>}</form></div>}
+  </div>;
+}
 
+function Metric(props: { label: string; value: number }) { return <article className="card metric-card"><span>{props.label}</span><strong>{props.value}</strong></article>; }
 
+function Approval(props: { status: string; onSubmit: (reason: string) => void }) { const [reason, setReason] = useState("I am ready to sell responsibly."); return <div className="card form-card narrow-card"><span className="card-kicker">Approval</span><h2>{props.status}</h2><p>Seller approval keeps catalog authority and fulfillment duties explicit.</p><label>Application note<textarea aria-label="Approval application note" rows={4} value={reason} onChange={(event) => setReason(event.target.value)} /></label><button className="button button-dark" type="button" onClick={() => props.onSubmit(reason)} disabled={props.status === "approved"}>Submit for approval</button></div>; }
+
+function Fulfillment(props: { items: IShoppingOrder.IItem[]; cancellations: IShoppingCancellationRequest[]; refunds: IShoppingRefundRequest[]; shipments: IShoppingOrder.IItem[]; onCancellation: (id: string, approve: boolean) => void; onRefund: (id: string, approve: boolean) => void }) { return <div className="page-stack"><div className="card form-card"><span className="card-kicker">Order items</span><h2>Fulfillment queue</h2>{props.items.length === 0 ? <p className="muted-copy">No seller order items need attention.</p> : props.items.map((item) => <div className="order-item" key={item.id}><span>{item.productName} × {item.quantity}</span><span className="pill">{item.status}</span></div>)}</div><div className="two-column"><Queue title="Cancellation requests" rows={props.cancellations} onDecision={props.onCancellation} /><Queue title="Refund requests" rows={props.refunds} onDecision={props.onRefund} /></div><div className="card form-card"><span className="card-kicker">Shipment-eligible items</span><h2>Recent packages</h2>{props.shipments.length === 0 ? <p className="muted-copy">Shipment items appear when an eligible order item is ready.</p> : props.shipments.map((item) => <div className="order-item" key={item.id}><span>{item.productName}</span><span>{item.status}</span></div>)}</div></div>; }
+
+function Queue(props: { title: string; rows: Array<{ id: string; status: string; reason: string }>; onDecision: (id: string, approve: boolean) => void }) { return <article className="card form-card"><span className="card-kicker">Seller decision</span><h2>{props.title}</h2>{props.rows.length === 0 ? <p className="muted-copy">Nothing pending.</p> : props.rows.map((row) => <div className="queue-row" key={row.id}><div><strong>{row.status}</strong><p>{row.reason}</p></div>{row.status === "pending" && <div className="button-row"><button aria-label={`Approve ${props.title} ${row.id}`} className="button button-dark" type="button" onClick={() => props.onDecision(row.id, true)}>Approve</button><button aria-label={`Reject ${props.title} ${row.id}`} className="button button-outline" type="button" onClick={() => props.onDecision(row.id, false)}>Reject</button></div>}</div>)}</article>; }

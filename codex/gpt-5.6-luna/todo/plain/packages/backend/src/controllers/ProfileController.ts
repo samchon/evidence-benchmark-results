@@ -1,30 +1,35 @@
 import type * as api from "@benchmark/todo-api";
-import { Controller } from "@nestjs/common";
-import * as core from "@nestia/core";
-import { UserAuth, type UserPayload } from "../auth/AuthProvider";
-import { ProfileProvider } from "../providers/ProfileProvider";
+import { TypedBody, TypedRoute } from "@nestia/core";
+import { Controller, UseGuards } from "@nestjs/common";
 
-/** Current user's private profile. */
-@Controller("profile")
+import { UserAuth, UserGuard } from "../decorators/UserAuth";
+import { AuthProvider, type UserPayload } from "../providers/AuthProvider";
+
+/** The authenticated account's private one-to-one profile. */
+@Controller("todo/user/profile")
+@UseGuards(UserGuard)
 export class ProfileController {
   /**
-   * Read the display name for the authenticated account.
-   * @param actor Authenticated caller whose private profile is read.
-   * @returns The caller's current display name only.
-   * @throws 401 when unauthenticated; 404 when the account profile is absent.
+   * Return the current account's private display profile.
+   *
+   * @returns The authenticated owner's profile
    * @tag Profile
    */
-  @core.TypedRoute.Get()
-  public async at(@UserAuth() actor: UserPayload): Promise<api.IProfile> { return ProfileProvider.at(actor); }
+  @TypedRoute.Get()
+  public async at(@UserAuth() user: UserPayload): Promise<api.IUser> {
+    return AuthProvider.profile({ user });
+  }
 
   /**
-   * Replace only the authenticated account's display name.
-   * @param actor Authenticated caller whose private profile is changed.
-   * @param input Trimmed display-name replacement.
-   * @returns The updated private display name.
-   * @throws 401 when unauthenticated; 422 for an empty or overlong name.
+   * Replace only the current account's display name.
+   * Refuses a blank or overlong trimmed name.
+   *
+   * @param body Replacement display name
+   * @returns The updated private profile
    * @tag Profile
    */
-  @core.TypedRoute.Put()
-  public async update(@UserAuth() actor: UserPayload, @core.TypedBody() input: api.IProfile.IUpdate): Promise<api.IProfile> { return ProfileProvider.update(actor, input); }
+  @TypedRoute.Put()
+  public async update(@UserAuth() user: UserPayload, @TypedBody() body: api.IUser.IUpdateProfile): Promise<api.IUser> {
+    return AuthProvider.updateProfile({ user, displayName: body.displayName });
+  }
 }

@@ -1,2 +1,0 @@
-import * as core from "@nestia/core"; import { Controller } from "@nestjs/common"; import type { IAuth } from "@benchmark/erp-api"; import { UserProvider } from "../providers/UserProvider";
-/** Updates the authenticated user's global profile. */ @Controller("auth-profile-update") export class AuthProfileUpdateController { @core.TypedRoute.Put() public async update(@core.TypedHeaders() headers: IAuth.IHeaders, @core.TypedBody() input: IAuth.IProfileUpdate): Promise<IAuth.IUser> { return UserProvider.updateProfile(headers, input); } }

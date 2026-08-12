@@ -1,17 +1,77 @@
 # Frontend screen plan
 
-The static SPA is organized around the four actor-facing workspaces and one
-operational surface. Every page owns loading, refusal, empty, retry, and
-success messaging while hooks own generated-SDK calls.
+Each row assigns one requirement family to the existing page that presents its user-observable boundary.
 
-| Screen | Route | Requirement coverage | Hooks |
-| --- | --- | --- | --- |
-| Home | `/` | product discovery and entry points | catalog, customer, seller, admin, system |
-| Customer | `/customer` | identity, profile, addresses, cart, checkout, orders, reviews | customer, catalog |
-| Seller | `/seller` | seller lifecycle, catalog, inventory, fulfillment, requests | seller, catalog |
-| Administrator | `/admin` | governance, moderation, categories, orders, dispute resolution | admin |
-| Operations | `/operations` | health, tracking, automation | system |
-
-The existing Playwright scaffold and responsive review continue to exercise the
-home page. Journey tests link to these exported page functions and walk the
-same routes a user sees.
+- REQ-NFR-AUDIT-INTEGRITY — admin-page.tsx
+- REQ-NFR-PURCHASE-CONSISTENCY — customer-page.tsx
+- REQ-NFR-HISTORY-CONTINUITY — customer-page.tsx
+- REQ-CUSTOMER-IDENTITY — auth-page.tsx
+- REQ-SELLER-IDENTITY — auth-page.tsx
+- REQ-ADMIN-AUTHORITY — admin-page.tsx
+- REQ-ACCESS-BOUNDARIES — auth-page.tsx
+- REQ-CUSTOMER-PROFILE-DOMAIN — customer-page.tsx
+- REQ-SHIPPING-ADDRESS-DOMAIN — customer-page.tsx
+- REQ-SELLER-PROFILE-DOMAIN — seller-page.tsx
+- REQ-SELLER-ACCOUNT-LIFECYCLE — seller-page.tsx
+- REQ-CATEGORY-DOMAIN — admin-page.tsx
+- REQ-PRODUCT-DOMAIN — catalog-page.tsx
+- REQ-PRODUCT-LIFECYCLE — admin-page.tsx
+- REQ-PRODUCT-VARIANT-DOMAIN — seller-page.tsx
+- REQ-VARIANT-LIFECYCLE — seller-page.tsx
+- REQ-INVENTORY-DOMAIN — seller-page.tsx
+- REQ-SNAPSHOT-DOMAIN — admin-page.tsx
+- REQ-WISHLIST-DOMAIN — customer-page.tsx
+- REQ-CART-DOMAIN — customer-page.tsx
+- REQ-ORDER-DOMAIN — customer-page.tsx
+- REQ-ORDER-ITEM-LIFECYCLE — customer-page.tsx
+- REQ-ORDER-LIFECYCLE — customer-page.tsx
+- REQ-SHIPMENT-DOMAIN — seller-page.tsx
+- REQ-CANCELLATION-DOMAIN — customer-page.tsx
+- REQ-REFUND-DOMAIN — customer-page.tsx
+- REQ-REVIEW-DOMAIN — customer-page.tsx
+- REQ-REVIEW-LIFECYCLE — customer-page.tsx
+- REQ-ADMIN-REQUEST-DOMAIN — admin-page.tsx
+- REQ-CREDENTIAL-POLICIES — auth-page.tsx
+- REQ-ADDRESS-POLICIES — customer-page.tsx
+- REQ-SELLER-ACCOUNT-POLICIES — seller-page.tsx
+- REQ-CATEGORY-POLICIES — admin-page.tsx
+- REQ-PRODUCT-POLICIES — catalog-page.tsx
+- REQ-VARIANT-POLICIES — seller-page.tsx
+- REQ-INVENTORY-POLICIES — seller-page.tsx
+- REQ-SNAPSHOT-POLICIES — admin-page.tsx
+- REQ-SEARCH-POLICIES — catalog-page.tsx
+- REQ-WISHLIST-POLICIES — customer-page.tsx
+- REQ-CART-POLICIES — customer-page.tsx
+- REQ-CHECKOUT-POLICIES — customer-page.tsx
+- REQ-ORDER-POLICIES — customer-page.tsx
+- REQ-SHIPMENT-POLICIES — seller-page.tsx
+- REQ-CANCELLATION-POLICIES — customer-page.tsx
+- REQ-REFUND-POLICIES — customer-page.tsx
+- REQ-REVIEW-POLICIES — customer-page.tsx
+- REQ-CUSTOMER-ACCOUNT-POLICIES — customer-page.tsx
+- REQ-ADMIN-GOVERNANCE-POLICIES — admin-page.tsx
+- REQ-ADMIN-OVERSIGHT-POLICIES — admin-page.tsx
+- REQ-SELLER-DASHBOARD-POLICIES — seller-page.tsx
+- REQ-CUSTOMER-PROFILE-FUNCTIONS — customer-page.tsx
+- REQ-SHIPPING-ADDRESS-FUNCTIONS — customer-page.tsx
+- REQ-SELLER-PROFILE-FUNCTIONS — seller-page.tsx
+- REQ-SELLER-ACCOUNT-FUNCTIONS — seller-page.tsx
+- REQ-CATEGORY-FUNCTIONS — admin-page.tsx
+- REQ-PRODUCT-FUNCTIONS — seller-page.tsx
+- REQ-PRODUCT-IMAGE-FUNCTIONS — seller-page.tsx
+- REQ-VARIANT-FUNCTIONS — seller-page.tsx
+- REQ-INVENTORY-FUNCTIONS — seller-page.tsx
+- REQ-PRODUCT-DISCOVERY — catalog-page.tsx
+- REQ-WISHLIST-FUNCTIONS — catalog-page.tsx
+- REQ-CART-FUNCTIONS — customer-page.tsx
+- REQ-CHECKOUT-JOURNEY — customer-page.tsx
+- REQ-ORDER-HISTORY-FUNCTIONS — customer-page.tsx
+- REQ-SHIPPING-FUNCTIONS — seller-page.tsx
+- REQ-CANCELLATION-FUNCTIONS — customer-page.tsx
+- REQ-REVIEW-FUNCTIONS — customer-page.tsx
+- REQ-REFUND-FUNCTIONS — customer-page.tsx
+- REQ-SELLER-DASHBOARD — seller-page.tsx
+- REQ-ADMIN-REQUEST-FUNCTIONS — admin-page.tsx
+- REQ-ADMIN-GRADE-FUNCTIONS — admin-page.tsx
+- REQ-USER-OVERSIGHT — admin-page.tsx
+- REQ-ORDER-OVERSIGHT — admin-page.tsx

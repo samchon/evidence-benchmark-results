@@ -1,29 +1,35 @@
 # Frontend verification
 
-Verified 2026-08-05.
+Date: 2026-08-10
 
-## Environment
+## Automated gates
 
-- Backend `pnpm dev` running at `http://127.0.0.1:37123`.
-- Frontend `pnpm dev` running at `http://127.0.0.1:5183`.
-- Simulation journeys use `VITE_API_SIMULATE=true`.
-- Live journeys use `VITE_API_SIMULATE=false` against the running backend.
+- `pnpm --filter @benchmark/todo-frontend plan` — passed: 73/73 requirement sections are delivered by a screen
+  or recorded as an omission.
+- `pnpm lint` — passed.
+- `pnpm --filter @benchmark/todo-frontend test:contract` — passed: the
+  simulated typed-client scaffold rendered in 1/1 contract test.
+- `pnpm --filter @benchmark/todo-frontend ui:review` — passed: auth layout
+  checks passed at 390, 834, and 1440 pixels in 3/3 tests.
+- `pnpm --filter @benchmark/todo-frontend readme:screens` — passed: the
+  landing-page screenshot test passed in 1/1 test.
+- `pnpm --filter @benchmark/todo-frontend test:e2e` with
+  `VITE_API_HOST=http://127.0.0.1:37001` and
+  `VITE_API_SIMULATE=false` — passed: production build completed and 13/13 live
+  journeys passed.
 
-## Automated
+The live journey suite covers account creation, todo creation and editing,
+history values, completion transitions, trash/restore/erase, list filters,
+profile update and password replacement, stale-version refusal, URL state,
+session invalidation, account isolation, generic login and recovery refusal,
+description preservation, and refused profile-edit behavior.
+Contract-mode verification remains available through the frontend package's
+`pnpm --filter @benchmark/todo-frontend test:contract` command.
 
-- `pnpm lint` passed.
-- `pnpm build` passed.
-- `VITE_API_SIMULATE=true pnpm exec playwright test tests/journeys` passed: 5/5.
-- `VITE_API_SIMULATE=true pnpm ui:review` passed: 3/3.
-- `VITE_API_SIMULATE=true pnpm readme:screens` passed: 1/1.
-- `VITE_API_HOST=http://127.0.0.1:37123 VITE_API_SIMULATE=false pnpm test:e2e` passed: 5/5.
+## Manual browser gate
 
-## Browser flows
-
-Journeys cover registration/login, recovery, todo creation and editing,
-completion, trash recovery and permanent deletion, profile/security, session
-controls, and the health status at mobile, tablet, and desktop widths.
-
-The live run used the separately running backend on port 37123; the frontend
-dev server remained active on port 5183 throughout the implementation and
-verification passes.
+The interactive evidence is recorded in
+[`interactive-review.md`](./interactive-review.md). It covers auth at 390,
+834, and 1440 pixels; the active workspace and empty state at desktop width;
+responsive protected-shell checks for todo, trash, and account surfaces; and
+the development state gallery at all three widths.

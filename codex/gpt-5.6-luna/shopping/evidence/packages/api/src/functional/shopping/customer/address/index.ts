@@ -6,6 +6,7 @@
 //================================================================
 export * as list from "./list/index";
 export * as create from "./create/index";
+export * as detail from "./detail/index";
 export * as update from "./update/index";
 export * as _delete from "./_delete/index";
 export * as _default from "./_default/index";

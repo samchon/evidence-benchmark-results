@@ -1,2 +1,0 @@
-import * as core from "@nestia/core"; import { Controller } from "@nestjs/common"; import type { IAuth } from "@benchmark/erp-api"; import { JournalProvider } from "../providers/JournalProvider";
-/** Deletes a draft journal. */ @Controller("journal-delete") export class JournalDeleteController { @core.TypedRoute.Delete(":id") public async remove(@core.TypedHeaders() headers: IAuth.IHeaders, @core.TypedParam("id") id: string): Promise<{ success: true }> { return JournalProvider.remove(headers, id); } }

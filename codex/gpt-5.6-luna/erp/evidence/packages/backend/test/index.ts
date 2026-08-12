@@ -10,7 +10,12 @@ void TestAutomation.execute({
   close: (backend) => backend.close(),
 }).then(
   (report) => {
-    if (report.executions.some((execution) => execution.error !== null))
+    if (
+      report.executions.some(
+        (execution) =>
+          execution.error !== undefined && execution.error !== null,
+      )
+    )
       process.exitCode = 1;
     console.log(
       `TEST_AUTOMATION_REPORT=${JSON.stringify({

@@ -1,2 +1,0 @@
-import * as core from "@nestia/core"; import { Controller } from "@nestjs/common"; import type { IAuth, ICurrency, IPage } from "@benchmark/erp-api"; import { ReferenceDataProvider } from "../providers/ReferenceDataProvider";
-/** Lists supported currencies. */ @Controller("currency-search") export class CurrencyIndexController { @core.TypedRoute.Patch() public async index(@core.TypedHeaders() headers: IAuth.IHeaders, @core.TypedBody() input: ICurrency.IRequest): Promise<IPage<ICurrency>> { return ReferenceDataProvider.currencyIndex({ headers, input }); } }

@@ -1,0 +1,315 @@
+/// One seller shipment package.
+///
+/// @evidence docs/analysis/02-domain-model.md#req-shipment-domain-shipment-model Represents
+/// seller-scoped tracking and package delivery state.
+/// @evidence docs/analysis/03-functional-requirements.md#req-shipping-functions-shipping-and-delivery-operations Stores shipment state.
+/// @evidence docs/analysis/04-business-rules.md#req-shipment-policies-shipment-eligibility-and-delivery-policies Stores delivery state.
+/// @evidence docs/analysis/02-domain-model.md#req-shipment-domain-1-define-shipment-information Stores the persisted state required by this unit.
+/// @evidence docs/analysis/02-domain-model.md#req-shipment-domain-2-relate-a-shipment-to-its-seller-and-items Stores the persisted state required by this unit.
+/// @evidence docs/analysis/02-domain-model.md#req-shipment-domain-3-permit-split-and-bundled-fulfillment Stores the persisted state required by this unit.
+/// @evidence docs/analysis/02-domain-model.md#req-shipment-domain-4-separate-shipments-by-seller Stores the persisted state required by this unit.
+/// @evidence docs/analysis/02-domain-model.md#req-shipment-domain-5-share-tracking-and-delivery-by-package Stores the persisted state required by this unit.
+/// @evidence docs/analysis/03-functional-requirements.md#req-shipping-functions-1-list-items-awaiting-shipment Stores the persisted state required by this unit.
+/// @evidence docs/analysis/03-functional-requirements.md#req-shipping-functions-2-create-a-shipment Stores the persisted state required by this unit.
+/// @evidence docs/analysis/03-functional-requirements.md#req-shipping-functions-3-view-shipment-tracking Stores the persisted state required by this unit.
+/// @evidence docs/analysis/03-functional-requirements.md#req-shipping-functions-4-confirm-shipment-delivery Stores the persisted state required by this unit.
+/// @evidence docs/analysis/03-functional-requirements.md#req-shipping-functions-5-auto-confirm-shipment-delivery Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-shipment-policies-1-select-eligible-paid-items-for-shipment Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-shipment-policies-2-keep-one-seller-and-destination-per-shipment Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-shipment-policies-3-require-complete-shared-tracking-information Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-shipment-policies-4-ship-all-package-items-together Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-shipment-policies-5-confirm-delivery-for-the-whole-shipment Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-shipment-policies-6-complete-unconfirmed-shipments-after-fourteen-days Stores the persisted state required by this unit.
+model shopping_shipments {
+  /// Application UUID.
+  id String @id
+  /// Parent order identifier.
+  order_id String
+  /// Seller responsible for the package.
+  seller_id String
+  /// Carrier name.
+  carrier String
+  /// Carrier tracking number.
+  tracking_number String
+  /// Shipment creation instant.
+  shipped_at DateTime
+  /// Delivery confirmation or automatic completion instant.
+  delivered_at DateTime?
+  /// Order owner.
+  order shopping_orders @relation(fields: [order_id], references: [id], onDelete: Restrict)
+  /// Seller owner.
+  seller shopping_sellers @relation(fields: [seller_id], references: [id], onDelete: Restrict)
+  /// Included order items.
+  items shopping_shipment_items[]
+  @@index([seller_id, shipped_at])
+}
+
+/// Join row assigning one whole order item to a shipment.
+model shopping_shipment_items {
+  /// Application UUID.
+  id String @id
+  /// Shipment identifier.
+  shipment_id String
+  /// Order item identifier.
+  order_item_id String @unique
+  /// Shipment.
+  shipment shopping_shipments @relation(fields: [shipment_id], references: [id], onDelete: Restrict)
+  /// Order item.
+  order_item shopping_order_items @relation(fields: [order_item_id], references: [id], onDelete: Restrict)
+  @@index([shipment_id])
+}
+
+/// Customer request to cancel one paid order item.
+/// @evidence docs/analysis/02-domain-model.md#req-cancellation-domain-1-open-a-cancellation-request Stores the persisted state required by this unit.
+/// @evidence docs/analysis/02-domain-model.md#req-cancellation-domain-2-approve-a-cancellation-request Stores the persisted state required by this unit.
+/// @evidence docs/analysis/02-domain-model.md#req-cancellation-domain-3-reject-a-cancellation-request Stores the persisted state required by this unit.
+/// @evidence docs/analysis/02-domain-model.md#req-cancellation-domain-4-preserve-cancellation-decision-history Stores the persisted state required by this unit.
+/// @evidence docs/analysis/02-domain-model.md#req-cancellation-domain-5-relate-cancellation-participants-and-target Stores the persisted state required by this unit.
+/// @evidence docs/analysis/03-functional-requirements.md#req-cancellation-functions-1-request-item-cancellation Stores the persisted state required by this unit.
+/// @evidence docs/analysis/03-functional-requirements.md#req-cancellation-functions-2-list-pending-cancellations Stores the persisted state required by this unit.
+/// @evidence docs/analysis/03-functional-requirements.md#req-cancellation-functions-3-approve-item-cancellation Stores the persisted state required by this unit.
+/// @evidence docs/analysis/03-functional-requirements.md#req-cancellation-functions-4-reject-item-cancellation Stores the persisted state required by this unit.
+/// @evidence docs/analysis/03-functional-requirements.md#req-cancellation-functions-5-commit-approved-cancellation-effects Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-cancellation-policies-1-admit-a-cancellation-request-for-a-paid-item Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-cancellation-policies-2-keep-one-pending-cancellation-decision-per-item Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-cancellation-policies-3-limit-ordinary-cancellation-response-to-the-item-seller Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-cancellation-policies-4-decide-a-pending-cancellation-once Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-cancellation-policies-5-apply-an-approved-cancellation-atomically Stores the persisted state required by this unit.
+model shopping_cancellation_requests {
+  /// Application UUID.
+  id String @id
+  /// Target order item.
+  order_item_id String
+  /// Purchasing customer identifier.
+  customer_id String
+  /// Target seller identifier.
+  seller_id String
+  /// Customer reason.
+  reason String
+  /// Pending, approved, or rejected.
+  status String
+  /// Submission instant.
+  created_at DateTime
+  /// Decision instant.
+  decided_at DateTime?
+  /// Deciding seller or administrator identifier.
+  decided_by String?
+  /// Target order item.
+  order_item shopping_order_items @relation(fields: [order_item_id], references: [id], onDelete: Restrict)
+  /// Decision evidence.
+  snapshots shopping_cancellation_snapshots[]
+  @@index([seller_id, status, created_at])
+  @@index([customer_id, created_at])
+}
+
+/// Immutable cancellation decision evidence.
+model shopping_cancellation_snapshots {
+  /// Application UUID.
+  id String @id
+  /// Request identifier.
+  request_id String
+  /// Request reason at decision time.
+  reason String
+  /// Prior status.
+  before_status String
+  /// Resulting status.
+  after_status String
+  /// Decision actor.
+  decided_by String
+  /// Decision instant.
+  created_at DateTime
+  /// Request whose decision was captured.
+  request shopping_cancellation_requests @relation(fields: [request_id], references: [id], onDelete: Restrict)
+  @@index([request_id, created_at])
+}
+
+/// Customer request to refund one delivered order item.
+/// @evidence docs/analysis/02-domain-model.md#req-refund-domain-1-open-a-refund-request Stores the persisted state required by this unit.
+/// @evidence docs/analysis/02-domain-model.md#req-refund-domain-2-approve-a-refund-request Stores the persisted state required by this unit.
+/// @evidence docs/analysis/02-domain-model.md#req-refund-domain-3-reject-a-refund-request Stores the persisted state required by this unit.
+/// @evidence docs/analysis/02-domain-model.md#req-refund-domain-4-preserve-refund-decision-history Stores the persisted state required by this unit.
+/// @evidence docs/analysis/02-domain-model.md#req-refund-domain-5-relate-refund-participants-and-target Stores the persisted state required by this unit.
+/// @evidence docs/analysis/03-functional-requirements.md#req-refund-functions-1-request-an-item-refund Stores the persisted state required by this unit.
+/// @evidence docs/analysis/03-functional-requirements.md#req-refund-functions-2-list-pending-refunds Stores the persisted state required by this unit.
+/// @evidence docs/analysis/03-functional-requirements.md#req-refund-functions-3-approve-an-item-refund Stores the persisted state required by this unit.
+/// @evidence docs/analysis/03-functional-requirements.md#req-refund-functions-4-reject-an-item-refund Stores the persisted state required by this unit.
+/// @evidence docs/analysis/03-functional-requirements.md#req-refund-functions-5-commit-approved-refund-effects Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-refund-policies-1-admit-a-timely-refund-request-for-a-delivered-item Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-refund-policies-2-close-the-refund-window-after-seven-days Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-refund-policies-3-keep-one-pending-refund-decision-per-item Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-refund-policies-4-limit-ordinary-refund-response-to-the-item-seller Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-refund-policies-5-decide-a-pending-refund-once Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-refund-policies-6-apply-an-approved-refund-atomically Stores the persisted state required by this unit.
+model shopping_refund_requests {
+  /// Application UUID.
+  id String @id
+  /// Target order item.
+  order_item_id String
+  /// Purchasing customer identifier.
+  customer_id String
+  /// Target seller identifier.
+  seller_id String
+  /// Customer reason.
+  reason String
+  /// Pending, approved, or rejected.
+  status String
+  /// Delivery deadline copied for audit.
+  deadline_at DateTime
+  /// Submission instant.
+  created_at DateTime
+  /// Decision instant.
+  decided_at DateTime?
+  /// Deciding seller or administrator identifier.
+  decided_by String?
+  /// Target order item.
+  order_item shopping_order_items @relation(fields: [order_item_id], references: [id], onDelete: Restrict)
+  /// Decision evidence.
+  snapshots shopping_refund_snapshots[]
+  @@index([seller_id, status, created_at])
+  @@index([customer_id, created_at])
+}
+
+/// Immutable refund decision evidence.
+model shopping_refund_snapshots {
+  /// Application UUID.
+  id String @id
+  /// Request identifier.
+  request_id String
+  /// Request reason at decision time.
+  reason String
+  /// Prior status.
+  before_status String
+  /// Resulting status.
+  after_status String
+  /// Deciding actor.
+  decided_by String
+  /// Decision instant.
+  created_at DateTime
+  /// Request whose decision was captured.
+  request shopping_refund_requests @relation(fields: [request_id], references: [id], onDelete: Restrict)
+  @@index([request_id, created_at])
+}
+
+/// One verified product review.
+///
+/// @evidence docs/analysis/02-domain-model.md#req-review-domain-review-model Represents the
+/// customer-product-order review identity and live rating lifecycle.
+/// @evidence docs/analysis/03-functional-requirements.md#req-review-functions-review-operations Stores review operations.
+/// @evidence docs/analysis/04-business-rules.md#req-review-policies-review-eligibility-ordering-and-rating-policies Stores review policy state.
+/// @evidence docs/analysis/02-domain-model.md#req-review-domain-1-define-review-information Stores the persisted state required by this unit.
+/// @evidence docs/analysis/02-domain-model.md#req-review-domain-2-relate-a-review-to-its-purchase Stores the persisted state required by this unit.
+/// @evidence docs/analysis/02-domain-model.md#req-review-domain-3-limit-reviews-per-purchase Stores the persisted state required by this unit.
+/// @evidence docs/analysis/02-domain-model.md#req-review-domain-4-retire-a-review-from-ratings Stores the persisted state required by this unit.
+/// @evidence docs/analysis/02-domain-model.md#req-review-domain-5-anonymize-reviews-after-customer-deletion Stores the persisted state required by this unit.
+/// @evidence docs/analysis/02-domain-model.md#req-review-lifecycle-1-publish-an-eligible-review Stores the persisted state required by this unit.
+/// @evidence docs/analysis/02-domain-model.md#req-review-lifecycle-2-edit-a-published-review Stores the persisted state required by this unit.
+/// @evidence docs/analysis/02-domain-model.md#req-review-lifecycle-3-delete-a-published-review Stores the persisted state required by this unit.
+/// @evidence docs/analysis/02-domain-model.md#req-review-lifecycle-4-anonymize-reviews-on-account-closure Stores the persisted state required by this unit.
+/// @evidence docs/analysis/03-functional-requirements.md#req-review-functions-2-edit-an-authored-review Stores the persisted state required by this unit.
+/// @evidence docs/analysis/03-functional-requirements.md#req-review-functions-3-delete-an-authored-review Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-review-policies-1-require-a-verified-delivered-purchase Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-review-policies-2-validate-review-rating-and-optional-text Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-review-policies-4-keep-review-mutation-with-the-author Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-review-policies-5-order-live-reviews-by-publication-time Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-review-policies-7-anonymize-retained-reviews-after-account-deletion Stores the persisted state required by this unit.
+model shopping_reviews {
+  /// Application UUID.
+  id String @id
+  /// Author identifier retained for history.
+  customer_id String
+  /// Reviewed product identifier retained after deletion.
+  product_id String
+  /// Qualifying order identifier.
+  order_id String
+  /// Rating from one through five.
+  rating Int
+  /// Optional review text.
+  text String?
+  /// Original publication instant.
+  published_at DateTime
+  /// Last edit instant.
+  updated_at DateTime
+  /// Retirement instant; account closure does not set this.
+  deleted_at DateTime?
+  /// Whether the author identity is presented anonymously.
+  anonymized Boolean
+  /// Customer author.
+  customer shopping_customers @relation(fields: [customer_id], references: [id], onDelete: Restrict)
+  /// Product target.
+  product shopping_products @relation(fields: [product_id], references: [id], onDelete: Restrict)
+  /// Immutable review edits.
+  snapshots shopping_review_snapshots[]
+  @@unique([customer_id, product_id, order_id])
+  @@index([product_id, deleted_at, published_at])
+}
+
+/// Immutable review before-and-after evidence.
+model shopping_review_snapshots {
+  /// Application UUID.
+  id String @id
+  /// Retained review identifier.
+  review_id String
+  /// Prior rating.
+  before_rating Int
+  /// Resulting rating.
+  after_rating Int
+  /// Prior text, including null as absent.
+  before_text String?
+  /// Resulting text, including null as absent.
+  after_text String?
+  /// Changed-field description.
+  changed_fields String
+  /// Capture instant.
+  created_at DateTime
+  /// Review whose edit was captured.
+  review shopping_reviews @relation(fields: [review_id], references: [id], onDelete: Restrict)
+  @@index([review_id, created_at])
+}
+
+/// Administrator application by an existing customer or seller identity.
+///
+/// @evidence docs/analysis/02-domain-model.md#req-admin-request-domain-administrator-request-lifecycle Represents
+/// the pending and final governance request history.
+/// @evidence docs/analysis/03-functional-requirements.md#req-admin-request-functions-administrator-application-operations Stores administrator applications.
+model shopping_administrator_requests {
+  /// Application UUID.
+  id String @id
+  /// Customer or seller discriminator.
+  actor_type String
+  /// Applicant identity identifier.
+  actor_id String
+  /// Applicant reason.
+  reason String
+  /// Pending, approved, or rejected.
+  status String
+  /// Decision actor identifier.
+  decided_by String?
+  /// Submission instant.
+  created_at DateTime
+  /// Decision instant, absent while pending.
+  decided_at DateTime?
+  @@index([actor_type, actor_id, status, created_at])
+}
+
+/// Immutable administrator moderation and force-resolution evidence.
+model shopping_moderation_events {
+  /// Application UUID.
+  id String @id
+  /// Administrator actor identifier.
+  administrator_id String
+  /// Target kind.
+  target_type String
+  /// Target identifier.
+  target_id String
+  /// Action kind.
+  action String
+  /// Nonblank policy reason.
+  reason String
+  /// Prior state.
+  before_state String
+  /// Resulting state.
+  after_state String
+  /// Action instant.
+  created_at DateTime
+  @@index([target_type, target_id, created_at])
+}

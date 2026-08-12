@@ -1,99 +1,93 @@
 import type * as api from "@benchmark/todo-api";
-import { Controller } from "@nestjs/common";
-import * as core from "@nestia/core";
+import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
+import { Controller, UseGuards } from "@nestjs/common";
 import { tags } from "typia";
-import { UserAuth, type UserPayload } from "../auth/AuthProvider";
+
+import { UserAuth, UserGuard } from "../decorators/UserAuth";
+import { type UserPayload } from "../providers/AuthProvider";
 import { TodoProvider } from "../providers/TodoProvider";
 
-/** Active todo operations for the authenticated owner. */
-@Controller("todo")
+/** Active Todo operations and the complete content-edit history surface. */
+@Controller("todo/user/todo")
+@UseGuards(UserGuard)
 export class TodoController {
   /**
-   * Browse the owner's active todos with filter, sort, and pagination.
-   * @param actor Authenticated owner whose active collection is queried.
-   * @param input Completion filter, supported date sort, and bounded page.
-   * @returns One page of compact active todo summaries and totals.
-   * @throws 401 when unauthenticated; 422 for unsupported controls.
+   * Browse the authenticated owner's active Todos with completion filtering and stable date sorting.
+   * Refuses unsupported filters, sort choices, or pagination values.
+   *
+   * @param input Completion, sort, and page selection
+   * @returns One page of compact active Todo summaries
    * @tag Todo
    */
-  @core.TypedRoute.Patch()
-  public async index(@UserAuth() actor: UserPayload, @core.TypedBody() input: api.ITodo.IRequest): Promise<api.IPage<api.ITodo.ISummary>> { return TodoProvider.index(actor, input); }
-
+  @TypedRoute.Patch()
+  public async index(@UserAuth() user: UserPayload, @TypedBody() input: api.ITodo.IRequest): Promise<api.IPage<api.ITodo.ISummary>> { return TodoProvider.index({ user, input }); }
   /**
-   * Create one active incomplete todo owned by the caller.
-   * @param actor Authenticated owner of the new todo.
-   * @param input Required title and independent optional content/date fields.
-   * @returns The newly created active todo.
-   * @throws 401 when unauthenticated; 422 for invalid content or dates.
+   * Create an incomplete active Todo owned permanently by the authenticated user.
+   * Refuses invalid content or an incoherent date interval.
+   *
+   * @param body Todo content and optional planning dates
+   * @returns The created Todo detail
    * @tag Todo
    */
-  @core.TypedRoute.Post()
-  public async create(@UserAuth() actor: UserPayload, @core.TypedBody() input: api.ITodo.ICreate): Promise<api.ITodo> { return TodoProvider.create(actor, input); }
-
+  @TypedRoute.Post()
+  public async create(@UserAuth() user: UserPayload, @TypedBody() body: api.ITodo.ICreate): Promise<api.ITodo> { return TodoProvider.create({ user, body }); }
   /**
-   * Read one owned active todo.
-   * @param actor Authenticated owner of the requested todo.
-   * @param id Stable todo identifier.
-   * @returns Full active todo content and state.
-   * @throws 401 when unauthenticated; 404 when absent, trashed, or foreign.
+   * View one active Todo owned by the authenticated user.
+   * Returns `404` for absent, trashed, or other-owned targets.
+   *
+   * @param id Active Todo identifier
+   * @returns Full active Todo detail
    * @tag Todo
    */
-  @core.TypedRoute.Get(":id")
-  public async at(@UserAuth() actor: UserPayload, @core.TypedParam("id") id: string & tags.Format<"uuid">): Promise<api.ITodo> { return TodoProvider.at(actor, id, "active"); }
-
+  @TypedRoute.Get(":id")
+  public async at(@UserAuth() user: UserPayload, @TypedParam("id") id: string & tags.Format<"uuid">): Promise<api.ITodo> { return TodoProvider.at({ user, id }); }
   /**
-   * Edit owned active todo content and append one history entry.
-   * @param actor Authenticated owner performing the edit.
-   * @param id Stable todo identifier.
-   * @param input Changed content plus the required revision read before editing.
-   * @returns The updated active todo.
-   * @throws 401/404 for authority or state failures; 409 for stale revision; 422 for invalid or no-op content.
+   * Edit active Todo content and append one immutable history entry atomically.
+   * Refuses invalid, no-op, stale, trashed, absent, or other-owned edits.
+   *
+   * @param id Active Todo identifier
+   * @param body Changed content and version read at edit start
+   * @returns The updated Todo detail
    * @tag Todo
    */
-  @core.TypedRoute.Put(":id")
-  public async update(@UserAuth() actor: UserPayload, @core.TypedParam("id") id: string & tags.Format<"uuid">, @core.TypedBody() input: api.ITodo.IUpdate): Promise<api.ITodo> { return TodoProvider.update(actor, id, input); }
-
+  @TypedRoute.Put(":id")
+  public async update(@UserAuth() user: UserPayload, @TypedParam("id") id: string & tags.Format<"uuid">, @TypedBody() body: api.ITodo.IUpdate): Promise<api.ITodo> { return TodoProvider.update({ user, id, body }); }
   /**
-   * Mark an owned active todo complete, idempotently.
-   * @param actor Authenticated owner performing the state command.
-   * @param id Stable todo identifier.
-   * @returns The active todo with complete status.
-   * @throws 401/404 when unauthenticated or not an owned active todo.
+   * Mark an owned active Todo complete; repeating the state is idempotent.
+   *
+   * @param id Active Todo identifier
+   * @returns The resulting Todo detail
    * @tag Todo
    */
-  @core.TypedRoute.Put(":id/complete")
-  public async complete(@UserAuth() actor: UserPayload, @core.TypedParam("id") id: string & tags.Format<"uuid">): Promise<api.ITodo> { return TodoProvider.complete(actor, id, true); }
-
+  @TypedRoute.Put(":id/complete")
+  public async complete(@UserAuth() user: UserPayload, @TypedParam("id") id: string & tags.Format<"uuid">): Promise<api.ITodo> { return TodoProvider.completion({ user, id, value: "complete" }); }
   /**
-   * Mark an owned active todo incomplete, idempotently.
-   * @param actor Authenticated owner performing the state command.
-   * @param id Stable todo identifier.
-   * @returns The active todo with incomplete status.
-   * @throws 401/404 when unauthenticated or not an owned active todo.
+   * Mark an owned active Todo incomplete; repeating the state is idempotent.
+   *
+   * @param id Active Todo identifier
+   * @returns The resulting Todo detail
    * @tag Todo
    */
-  @core.TypedRoute.Put(":id/incomplete")
-  public async incomplete(@UserAuth() actor: UserPayload, @core.TypedParam("id") id: string & tags.Format<"uuid">): Promise<api.ITodo> { return TodoProvider.complete(actor, id, false); }
-
+  @TypedRoute.Put(":id/incomplete")
+  public async incomplete(@UserAuth() user: UserPayload, @TypedParam("id") id: string & tags.Format<"uuid">): Promise<api.ITodo> { return TodoProvider.completion({ user, id, value: "incomplete" }); }
   /**
-   * Move an owned active todo to trash without adding content history.
-   * @param actor Authenticated owner performing the soft deletion.
-   * @param id Stable todo identifier.
-   * @returns The same todo in trashed availability.
-   * @throws 401/404 when unauthenticated, foreign, absent, or already trashed.
-   * @tag Todo
+   * Move an owned active Todo into trash without changing content or history.
+   * Refuses an already trashed, absent, or other-owned target.
+   *
+   * @param id Active Todo identifier
+   * @returns The same Todo in trash
+   * @tag Trash
    */
-  @core.TypedRoute.Delete(":id")
-  public async erase(@UserAuth() actor: UserPayload, @core.TypedParam("id") id: string & tags.Format<"uuid">): Promise<api.ITodo> { return TodoProvider.trash(actor, id); }
-
+  @TypedRoute.Delete(":id")
+  public async trash(@UserAuth() user: UserPayload, @TypedParam("id") id: string & tags.Format<"uuid">): Promise<api.ITodo> { return TodoProvider.trash({ user, id }); }
   /**
-   * Read complete content-edit history for an owned active or trashed todo.
-   * @param actor Authenticated owner whose history is read.
-   * @param id Stable todo identifier.
-   * @returns Immutable history entries newest first.
-   * @throws 401/404 when unauthenticated, foreign, or absent.
-   * @tag Todo
+   * View the complete newest-first content-edit history of an owned active or trashed Todo.
+   * Completion, trash, and restore transitions never appear as history entries.
+   *
+   * @param id Owned Todo identifier
+   * @returns Immutable content-edit chronology
+   * @tag History
    */
-  @core.TypedRoute.Get(":id/history")
-  public async history(@UserAuth() actor: UserPayload, @core.TypedParam("id") id: string & tags.Format<"uuid">): Promise<api.ITodoHistory[]> { return TodoProvider.history(actor, id); }
+  @TypedRoute.Get(":id/history")
+  public async history(@UserAuth() user: UserPayload, @TypedParam("id") id: string & tags.Format<"uuid">): Promise<api.ITodoHistory[]> { return TodoProvider.history({ user, id }); }
 }

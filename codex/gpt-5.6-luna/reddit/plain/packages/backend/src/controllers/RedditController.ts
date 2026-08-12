@@ -1,430 +1,568 @@
 import * as core from "@nestia/core";
-import { Controller, Headers, Param } from "@nestjs/common";
-import type { IAuth, IAuthorized, IBan, IBanHistory, IComment, ICommunity, IPage, IPost, IProfile, IReport, IReportHistory, ISubscription, UUID, IVote, IVoteRequest, IModerationTarget, IResult } from "@benchmark/reddit-api";
-import { redditProvider } from "../providers/RedditProvider";
+import { Controller } from "@nestjs/common";
+import type {
+  IAuth,
+  IBan,
+  IComment,
+  ICommunity,
+  ICommunityCreate,
+  ICommunityRequest,
+  IPage,
+  IPost,
+  IProfile,
+  IProfileRequest,
+  IProfileUpdate,
+  IReport,
+  IReportCreate,
+  ISubscription,
+  IVote,
+  IVoteRequest,
+  IAccountDelete,
+  IModerationHistory,
+} from "@benchmark/reddit-api";
+import { Auth } from "../decorators/Auth";
+import type { AuthPayload } from "../utils/AuthUtil";
+import { RedditProvider } from "../providers/RedditProvider";
 
-// Compatibility aliases for previously generated SDK source during regeneration.
-export type IVoteBody = IVoteRequest;
-export type IModerationTargetBody = IModerationTarget;
-export type { IModerationTarget };
-/**
- * Public and authenticated Reddit operations.
- *
- * Public reads are explicitly marked in each operation's summary; protected
- * commands derive the actor from the Authorization header and delegate all
- * ownership, visibility, refusal, and persistence rules to the provider.
- *
- * @tag reddit
- */
-@Controller("reddit")
+/** Publishes the complete requirement-derived Reddit API contract. */
+@Controller()
 export class RedditController {
   /**
-   * Register an active account, create its initial profile, and start a session. Invalid fields and reserved identities are refused; the issued access token is retained in Authorization.
+   * Register a public account, create its initial profile, and start its first session.
+   * The anonymous caller chooses the email, username, and password; the created
+   * identity is the owner of the returned session. Rejects duplicate identities
+   * and invalid credentials, and returns the public identity plus access and
+   * refresh tokens.
    *
-   * @param body Account registration payload.
-   * @returns The operation result.
-   * @tag reddit
-   * @setHeader token Authorization
+   * @param body New account credentials
+   * @returns The created public identity and session tokens
+   * @setHeader accessToken Authorization
+   * @tag Auth
    */
-  @core.TypedRoute.Post("auth/user/join") public join(@core.TypedBody() body: IAuth.IJoin): IAuthorized { return redditProvider.join(body); }
+  @core.TypedRoute.Post("auth/join")
+  public join(@core.TypedBody() body: IAuth.IJoin): Promise<IAuth.IAuthorized> { return RedditProvider.join(body); }
   /**
-   * Authenticate an active account without changing roles or subscriptions. Unknown, deleted, or wrong credentials receive the same refusal; the new session token is retained in Authorization.
+   * Authenticate an active account and start an independent session.
+   * The anonymous caller must provide the registered email and password; the
+   * session belongs only to that account. Rejects unknown, deleted, or
+   * incorrectly authenticated identities and returns fresh session tokens.
    *
-   * @param body Login credentials.
-   * @returns The operation result.
-   * @tag reddit
-   * @setHeader token Authorization
+   * @param body Registered account credentials
+   * @returns The authenticated public identity and session tokens
+   * @setHeader accessToken Authorization
+   * @tag Auth
    */
-  @core.TypedRoute.Post("auth/user/login") public login(@core.TypedBody() body: IAuth.ILogin): IAuthorized { return redditProvider.login(body); }
+  @core.TypedRoute.Post("auth/login")
+  public login(@core.TypedBody() body: IAuth.ILogin): Promise<IAuth.IAuthorized> { return RedditProvider.login(body); }
   /**
-   * Rotate the presented refresh session for the same active account. Missing, revoked, expired, or deleted sessions are refused.
+   * Continue one active session with its refresh proof.
+   * The anonymous caller presents a valid refresh token; the existing session
+   * is renewed and the returned access token authenticates that same account.
+   * Rejects invalid or expired refresh proofs and proofs for revoked sessions.
    *
-   * @param header Request value used by this operation.
-   * @param body Refresh token payload.
-   * @returns The operation result.
-   * @tag reddit
-   * @setHeader token Authorization
+   * @param body Refresh proof
+   * @returns The continued public identity and renewed session tokens
+   * @setHeader accessToken Authorization
+   * @tag Auth
    */
-  @core.TypedRoute.Post("auth/user/refresh") public refresh(@Headers("authorization") header: string | undefined, @core.TypedBody() body: IAuth.IRefresh): IAuthorized { return redditProvider.refresh(header, body); }
+  @core.TypedRoute.Post("auth/refresh")
+  public refresh(@core.TypedBody() body: IAuth.IRefresh): Promise<IAuth.IAuthorized> { return RedditProvider.refresh(body); }
   /**
-   * Request a one-time recovery proof with a neutral result for known and unknown emails.
+   * Revoke only the authenticated caller's current session.
+   * The caller owns the session selected by the access token; no other session
+   * is changed. Rejects an absent, expired, or revoked session and returns the
+   * successful revocation transition.
    *
-   * @param body Recovery request email.
-   * @returns The operation result.
-   * @tag reddit
+   * @param actor Current authenticated session
+   * @returns Whether the current session was revoked
+   * @tag Auth
    */
-  @core.TypedRoute.Post("auth/user/recovery/request") public recoveryRequest(@core.TypedBody() body: IAuth.IRecoveryRequest): IResult { return redditProvider.recoveryRequest(body); }
+  @core.TypedRoute.Post("auth/logout")
+  public logout(@Auth() actor: AuthPayload | null): Promise<boolean> { return RedditProvider.logout(actor); }
   /**
-   * Consume the latest unexpired recovery proof, replace the password, revoke all sessions, and issue a new session. Invalid proofs are refused.
+   * Revoke every active session belonging to the authenticated account.
+   * The caller may affect only sessions owned by that account; all active
+   * sessions are revoked while the operation itself reports success.
+   * Rejects an absent, expired, or revoked session.
    *
-   * @param body Recovery proof and replacement password.
-   * @returns The operation result.
-   * @tag reddit
-   * @setHeader token Authorization
+   * @param actor Current authenticated session
+   * @returns Whether the account's active sessions were revoked
+   * @tag Auth
    */
-  @core.TypedRoute.Post("auth/user/recovery/complete") public recoveryComplete(@core.TypedBody() body: IAuth.IRecoveryComplete): IAuthorized { return redditProvider.recoveryComplete(body); }
+  @core.TypedRoute.Post("auth/logout-all")
+  public logoutAll(@Auth() actor: AuthPayload | null): Promise<boolean> { return RedditProvider.logoutAll(actor); }
   /**
-   * Revoke only the authenticated session in use; account state and other sessions remain unchanged.
+   * Replace the authenticated account password and revoke every other session.
+   * Only the current account may change its password and it must confirm the
+   * current password. Rejects a failed confirmation or invalid new password;
+   * the current session remains usable and other sessions are revoked.
    *
-   * @param header Request value used by this operation.
-   * @returns The operation result.
-   * @tag reddit
+   * @param actor Current authenticated session
+   * @param body Current and replacement passwords
+   * @returns Whether the password transition succeeded
+   * @tag Auth
    */
-  @core.TypedRoute.Post("user/session/logout") public logout(@Headers("authorization") header: string | undefined): IResult { redditProvider.logout(header); return { success: true }; }
+  @core.TypedRoute.Put("auth/password")
+  public password(@Auth() actor: AuthPayload | null, @core.TypedBody() body: IAuth.IPassword): Promise<boolean> { return RedditProvider.changePassword(actor, body); }
   /**
-   * Revoke every session for the authenticated account, including the caller's session.
+   * Request a password-recovery proof through the registered email boundary.
+   * An anonymous caller supplies an email address; known active accounts receive
+   * a persisted delivery effect, while unknown or deleted accounts receive the
+   * same neutral success result. The proof is never returned by this operation.
    *
-   * @param header Request value used by this operation.
-   * @returns The operation result.
-   * @tag reddit
+   * @param body Recovery email address
+   * @returns Neutral success regardless of account discovery
+   * @tag Auth
    */
-  @core.TypedRoute.Post("user/session/revoke-all") public logoutAll(@Headers("authorization") header: string | undefined): IResult { redditProvider.logoutAll(header); return { success: true }; }
+  @core.TypedRoute.Post("auth/recovery/request")
+  public recoveryRequest(@core.TypedBody() body: IAuth.IRecoveryRequest): Promise<boolean> { return RedditProvider.recoveryRequest(body); }
   /**
-   * Replace the current password after proof, retaining this session and revoking every other session. Wrong or identical passwords are refused.
+   * Consume a valid password-recovery proof and replace the account password.
+   * The anonymous caller presents the delivered proof; successful consumption
+   * revokes every existing session. Rejects unknown, expired, used, or invalid
+   * proofs and returns the password transition result.
    *
-   * @param header Request value used by this operation.
-   * @param body New password payload.
-   * @returns The operation result.
-   * @tag reddit
+   * @param body Recovery proof and replacement password
+   * @returns Whether the recovery transition succeeded
+   * @tag Auth
    */
-  @core.TypedRoute.Put("user/password") public changePassword(@Headers("authorization") header: string | undefined, @core.TypedBody() body: IAuth.IChangePassword): IResult { redditProvider.changePassword(header, body); return { success: true }; }
+  @core.TypedRoute.Post("auth/recovery/complete")
+  public recoveryComplete(@core.TypedBody() body: IAuth.IRecoveryComplete): Promise<boolean> { return RedditProvider.recoveryComplete(body); }
   /**
-   * Permanently delete the authenticated account after password proof, cascading authored state, votes, roles, reports, sessions, and ownership succession atomically.
+   * Permanently withdraw the authenticated account after password confirmation.
+   * Only the current account may request deletion and must confirm its password;
+   * authored content is de-identified or removed and community ownership is
+   * transferred or archived according to the remaining subscribers. Rejects a
+   * failed confirmation or absent session.
    *
-   * @param header Request value used by this operation.
-   * @param body Password confirmation payload.
-   * @returns The operation result.
-   * @tag reddit
+   * @param actor Current authenticated session
+   * @param body Deletion password confirmation
+   * @returns Whether the account withdrawal succeeded
+   * @tag Auth
    */
-  @core.TypedRoute.Delete("user/account") public deleteAccount(@Headers("authorization") header: string | undefined, @core.TypedBody() body: IAuth.IDeleteAccount): IResult { return redditProvider.deleteAccount(header, body.password); }
-  /**
-   * Publicly view one available profile and its current karma and authored pages; deleted or unknown usernames are not found.
-   *
-   * @param username Request value used by this operation.
-   * @returns The operation result.
-   * @tag reddit
-   */
-  @core.TypedRoute.Get("user/profile/:username") public profile(@Param("username") username: string): IProfile { return redditProvider.profile(undefined, username); }
-  /**
-   * Publicly view a profile with independent post and comment continuations; deleted or unknown usernames are not found.
-   *
-   * @param username Request value used by this operation.
-   * @param body Independent profile page inputs.
-   * @returns The operation result.
-   * @tag reddit
-   */
-  @core.TypedRoute.Patch("user/profile/:username") public profilePage(@Param("username") username: string, @core.TypedBody() body: IProfile.IRequest): IProfile { return redditProvider.profile(undefined, username, body); }
-  /**
-   * Edit only the authenticated user's display name, biography, and avatar; invalid or blank supplied values leave the profile unchanged.
-   *
-   * @param header Request value used by this operation.
-   * @param body Profile fields to replace.
-   * @returns The operation result.
-   * @tag reddit
-   */
-  @core.TypedRoute.Put("user/profile") public updateProfile(@Headers("authorization") header: string | undefined, @core.TypedBody() body: IProfile.IUpdate): IProfile { return redditProvider.updateProfile(header, body); }
+  @core.TypedRoute.Post("auth/account/delete")
+  public deleteAccount(@Auth() actor: AuthPayload | null, @core.TypedBody() body: IAccountDelete): Promise<boolean> { return RedditProvider.deleteAccount(actor, body.password); }
 
   /**
-   * Create an active community and bootstrap the caller as owner and subscriber; invalid or conflicting fields create nothing.
+   * Read a public profile by username with independently paged authored posts
+   * and comments. The anonymous caller may read only an active public identity;
+   * deleted identities are refused. The response includes public profile fields,
+   * karma, avatar, and the requested page results.
    *
-   * @param header Request value used by this operation.
-   * @param body Community creation fields.
-   * @returns The operation result.
-   * @tag reddit
+   * @param username Public profile username
+   * @param body Post and comment pagination requests
+   * @returns The public profile and its two authored-content pages
+   * @tag Profile
    */
-  @core.TypedRoute.Post("community") public createCommunity(@Headers("authorization") header: string | undefined, @core.TypedBody() body: ICommunity.ICreate): ICommunity { return redditProvider.createCommunity(header, body); }
+  @core.TypedRoute.Patch("profile/:username")
+  public profile(@core.TypedParam("username") username: string, @core.TypedBody() body: IProfileRequest): Promise<IProfile> { return RedditProvider.profile(username, body.posts, body.comments); }
   /**
-   * Publicly browse or name-search active and archived communities in normalized-name order.
+   * Edit only the authenticated account's public profile fields.
+   * The caller owns the profile selected by its session and may change display
+   * name, biography, or avatar; the identity and authored content remain stable.
+   * Rejects an absent session or invalid media and returns the persisted profile.
    *
-   * @param body Community search and pagination inputs.
-   * @returns The operation result.
-   * @tag reddit
+   * @param actor Current authenticated session
+   * @param body Editable public profile fields
+   * @returns The updated public profile
+   * @tag Profile
    */
-  @core.TypedRoute.Patch("community") public listCommunities(@core.TypedBody() body: ICommunity.IRequest): IPage<ICommunity> { return redditProvider.listCommunities(body); }
-  /**
-   * Publicly read one community's description, lifecycle status, owner, and subscriber count. Unknown identifiers are not found.
-   *
-   * @param id Request value used by this operation.
-   * @returns The operation result.
-   * @tag reddit
-   */
-  @core.TypedRoute.Get("community/:id") public getCommunity(@Param("id") id: UUID): ICommunity { return redditProvider.getCommunity(id); }
-  /**
-   * Subscribe the authenticated caller to an active community; duplicate subscription is a no-op and archives are refused.
-   *
-   * @param header Request value used by this operation.
-   * @param id Request value used by this operation.
-   * @returns The operation result.
-   * @tag reddit
-   */
-  @core.TypedRoute.Post("community/:id/subscription") public subscribe(@Headers("authorization") header: string | undefined, @Param("id") id: UUID): ICommunity { return redditProvider.subscribe(header, id); }
-  /**
-   * End only the authenticated caller's subscription, including a residual archived subscription.
-   *
-   * @param header Request value used by this operation.
-   * @param id Request value used by this operation.
-   * @returns The operation result.
-   * @tag reddit
-   */
-  @core.TypedRoute.Delete("community/:id/subscription") public unsubscribe(@Headers("authorization") header: string | undefined, @Param("id") id: UUID): ICommunity { return redditProvider.unsubscribe(header, id); }
-  /**
-   * Privately list every current subscription of the authenticated caller, including archived residuals.
-   *
-   * @param header Request value used by this operation.
-   * @param body Pagination inputs.
-   * @returns The operation result.
-   * @tag reddit
-   */
-  @core.TypedRoute.Patch("user/subscription") public subscriptions(@Headers("authorization") header: string | undefined, @core.TypedBody() body: IPage.IRequest): IPage<ISubscription> { return redditProvider.subscriptions(header, body); }
+  @core.TypedRoute.Put("profile")
+  public updateProfile(@Auth() actor: AuthPayload | null, @core.TypedBody() body: IProfileUpdate): Promise<IProfile> { return RedditProvider.updateProfile(actor, body); }
 
   /**
-   * Create one typed post for a subscribed, unbanned caller in an active community; invalid payloads and eligibility are refused.
+   * Create an active community and bootstrap owner and subscriber authority.
+   * The authenticated caller becomes the owner and first subscriber; duplicate
+   * names, invalid descriptions, and invalid icons are refused. The response is
+   * the newly persisted community.
    *
-   * @param header Request value used by this operation.
-   * @param communityId Request value used by this operation.
-   * @param body Post creation fields.
-   * @returns The operation result.
-   * @tag reddit
+   * @param actor Current authenticated session
+   * @param body Community name, description, and icon
+   * @returns The created community with owner and subscriber count
+   * @tag Community
    */
-  @core.TypedRoute.Post("community/:communityId/post") public createPost(@Headers("authorization") header: string | undefined, @Param("communityId") communityId: UUID, @core.TypedBody() body: IPost.ICreate): IPost { return redditProvider.createPost(header, communityId, body); }
+  @core.TypedRoute.Post("communities")
+  public createCommunity(@Auth() actor: AuthPayload | null, @core.TypedBody() body: ICommunityCreate): Promise<ICommunity> { return RedditProvider.createCommunity(actor, body); }
   /**
-   * Publicly read one available post with its complete payload, score, count, author, and community.
+   * Browse or name-search the public community catalog.
+   * The anonymous caller may read active and archived public communities; the
+   * optional search is case-insensitive and the page is stable and bounded.
+   * Invalid pagination or continuation is refused or reset as documented.
    *
-   * @param id Request value used by this operation.
-   * @returns The operation result.
-   * @tag reddit
+   * @param body Search, pagination, and continuation request
+   * @returns One page of public communities
+   * @tag Community
    */
-  @core.TypedRoute.Get("post/:id") public getPost(@Param("id") id: UUID): IPost { return redditProvider.getPost(id); }
+  @core.TypedRoute.Patch("communities")
+  public communities(@core.TypedBody() body: ICommunityRequest): Promise<IPage<ICommunity>> { return RedditProvider.communities(body); }
   /**
-   * Let only the post author edit title and same-type payload in an active community; identity, type, and invalid edits are refused.
+   * Subscribe the authenticated account to an active community.
+   * The caller owns the membership; archived communities are refused, while
+   * an already-active membership is a no-change success. The response reports
+   * the community's current subscriber state.
    *
-   * @param header Request value used by this operation.
-   * @param id Request value used by this operation.
-   * @param body Post fields to replace.
-   * @returns The operation result.
-   * @tag reddit
+   * @param actor Current authenticated session
+   * @param communityId Target community
+   * @returns The community after membership activation
+   * @tag Subscription
    */
-  @core.TypedRoute.Put("post/:id") public updatePost(@Headers("authorization") header: string | undefined, @Param("id") id: UUID, @core.TypedBody() body: IPost.IUpdate): IPost { return redditProvider.updatePost(header, id, body); }
+  @core.TypedRoute.Post("community/:communityId/subscribe")
+  public subscribe(@Auth() actor: AuthPayload | null, @core.TypedParam("communityId") communityId: string): Promise<ICommunity> { return RedditProvider.subscribe(actor, communityId); }
   /**
-   * Permanently delete the caller's own available post and all dependent comments, votes, reports, and karma contributions.
+   * End the authenticated account's subscription without deleting participation.
+   * The caller may remove only its own membership; the community remains public
+   * and authored content is retained. An absent membership is a successful no-op.
    *
-   * @param header Request value used by this operation.
-   * @param id Request value used by this operation.
-   * @returns The operation result.
-   * @tag reddit
+   * @param actor Current authenticated session
+   * @param communityId Target community
+   * @returns The community after membership termination
+   * @tag Subscription
    */
-  @core.TypedRoute.Delete("post/:id") public deletePost(@Headers("authorization") header: string | undefined, @Param("id") id: UUID): IResult { redditProvider.deletePost(header, id); return { success: true }; }
+  @core.TypedRoute.Delete("community/:communityId/subscribe")
+  public unsubscribe(@Auth() actor: AuthPayload | null, @core.TypedParam("communityId") communityId: string): Promise<ICommunity> { return RedditProvider.unsubscribe(actor, communityId); }
   /**
-   * Let a current owner or moderator delete any available post in the exact active community scope.
+   * List the authenticated account's active subscriptions.
+   * The caller sees only its own active memberships in a stable bounded page;
+   * archived or ended memberships are excluded. Rejects an absent session.
    *
-   * @param header Request value used by this operation.
-   * @param communityId Request value used by this operation.
-   * @param id Request value used by this operation.
-   * @returns The operation result.
-   * @tag reddit
+   * @param actor Current authenticated session
+   * @param body Pagination and continuation request
+   * @returns One page of the caller's active subscriptions
+   * @tag Subscription
    */
-  @core.TypedRoute.Delete("community/:communityId/post/:id") public moderateDeletePost(@Headers("authorization") header: string | undefined, @Param("communityId") communityId: UUID, @Param("id") id: UUID): IResult { redditProvider.deletePost(header, id, true, communityId); return { success: true }; }
-  /**
-   * Authenticated home feed restricted to the caller's current subscriptions, including residual archived subscriptions.
-   *
-   * @param header Request value used by this operation.
-   * @param body Feed sorting and pagination inputs.
-   * @returns The operation result.
-   * @tag reddit
-   */
-  @core.TypedRoute.Patch("feed/home") public homeFeed(@Headers("authorization") header: string | undefined, @core.TypedBody() body: IPost.IRequest): IPage<IPost.ISummary> { return redditProvider.feed(header, "home", undefined, body); }
-  /**
-   * Public platform-wide feed across active and archived communities with validated sorting and pagination.
-   *
-   * @param body Feed sorting and pagination inputs.
-   * @returns The operation result.
-   * @tag reddit
-   */
-  @core.TypedRoute.Patch("feed/popular") public popularFeed(@core.TypedBody() body: IPost.IRequest): IPage<IPost.ISummary> { return redditProvider.feed(undefined, "popular", undefined, body); }
-  /**
-   * Public feed for one active or archived community; unknown communities are not found.
-   *
-   * @param communityId Request value used by this operation.
-   * @param body Feed sorting and pagination inputs.
-   * @returns The operation result.
-   * @tag reddit
-   */
-  @core.TypedRoute.Patch("community/:communityId/feed") public communityFeed(@Param("communityId") communityId: UUID, @core.TypedBody() body: IPost.IRequest): IPage<IPost.ISummary> { return redditProvider.feed(undefined, "community", communityId, body); }
+  @core.TypedRoute.Patch("subscriptions")
+  public subscriptions(@Auth() actor: AuthPayload | null, @core.TypedBody() body: IPage.IRequest): Promise<IPage<ISubscription>> { return RedditProvider.subscriptions(actor, body); }
 
   /**
-   * Create a nonblank top-level comment or same-post reply for an authenticated, unbanned caller in an active community.
+   * Publish one validated text, link, or image post in an active community.
+   * The authenticated caller must be an active subscriber and not be banned;
+   * exactly one valid payload kind is persisted. Invalid content, membership,
+   * or moderation state is refused.
    *
-   * @param header Request value used by this operation.
-   * @param postId Request value used by this operation.
-   * @param body Comment creation fields.
-   * @returns The operation result.
-   * @tag reddit
+   * @param actor Current authenticated session
+   * @param body Community and type-specific post payload
+   * @returns The persisted post and public ownership data
+   * @tag Post
    */
-  @core.TypedRoute.Post("post/:postId/comment") public createComment(@Headers("authorization") header: string | undefined, @Param("postId") postId: UUID, @core.TypedBody() body: IComment.ICreate): IComment { return redditProvider.createComment(header, postId, body); }
+  @core.TypedRoute.Post("posts")
+  public createPost(@Auth() actor: AuthPayload | null, @core.TypedBody() body: IPost.ICreate): Promise<IPost> { return RedditProvider.createPost(actor, body); }
   /**
-   * Publicly read recursively nested comments with independent sibling sorting and root pagination.
+   * Read one available post publicly.
+   * The anonymous caller may read a post whose community and post are active;
+   * missing or deleted posts are refused. The response includes its public
+   * payload, author, community, score, and comment count.
    *
-   * @param postId Request value used by this operation.
-   * @param body Comment sorting and pagination inputs.
-   * @returns The operation result.
-   * @tag reddit
+   * @param id Target post identifier
+   * @returns The public post detail
+   * @tag Post
    */
-  @core.TypedRoute.Patch("post/:postId/comment") public listComments(@Param("postId") postId: UUID, @core.TypedBody() body: IComment.IRequest): IPage<IComment> { return redditProvider.listComments(postId, body); }
+  @core.TypedRoute.Get("post/:id")
+  public post(@core.TypedParam("id") id: string): Promise<IPost> { return RedditProvider.post(id); }
   /**
-   * Let only the author replace nonblank text on an available comment in an active community.
+   * Browse the authenticated home feed scoped to the caller's active subscriptions.
+   * The caller sees only public posts from those communities, in the requested
+   * stable order and page; invalid sort, range, or continuation is refused or reset.
    *
-   * @param header Request value used by this operation.
-   * @param id Request value used by this operation.
-   * @param body Comment fields to replace.
-   * @returns The operation result.
-   * @tag reddit
+   * @param actor Current authenticated session
+   * @param body Feed sort, range, pagination, and continuation request
+   * @returns One page of subscribed-community post summaries
+   * @tag Feed
    */
-  @core.TypedRoute.Put("comment/:id") public updateComment(@Headers("authorization") header: string | undefined, @Param("id") id: UUID, @core.TypedBody() body: IComment.IUpdate): IComment { return redditProvider.updateComment(header, id, body); }
+  @core.TypedRoute.Patch("feed/home")
+  public homeFeed(@Auth() actor: AuthPayload | null, @core.TypedBody() body: IPost.IRequest): Promise<IPage<IPost.ISummary>> { return RedditProvider.feed(actor, "home", null, body); }
   /**
-   * Permanently remove the caller's own comment content while preserving required neutral reply markers.
+   * Browse the public all-community popular feed.
+   * The anonymous caller sees public posts across active and archived communities
+   * according to the requested sort, range, and stable page; invalid requests are refused.
    *
-   * @param header Request value used by this operation.
-   * @param id Request value used by this operation.
-   * @returns The operation result.
-   * @tag reddit
+   * @param body Feed sort, range, pagination, and continuation request
+   * @returns One page of public post summaries
+   * @tag Feed
    */
-  @core.TypedRoute.Delete("comment/:id") public deleteComment(@Headers("authorization") header: string | undefined, @Param("id") id: UUID): IResult { redditProvider.deleteComment(header, id); return { success: true }; }
+  @core.TypedRoute.Patch("feed/popular")
+  public popularFeed(@core.TypedBody() body: IPost.IRequest): Promise<IPage<IPost.ISummary>> { return RedditProvider.feed(null, "popular", null, body); }
   /**
-   * Let a current owner or moderator remove any available comment in the exact active community scope.
+   * Browse one public community feed.
+   * The anonymous caller may read public posts in the identified community,
+   * including an archived community, using the requested stable sort and page.
+   * Unknown communities or invalid feed requests are refused.
    *
-   * @param header Request value used by this operation.
-   * @param communityId Request value used by this operation.
-   * @param id Request value used by this operation.
-   * @returns The operation result.
-   * @tag reddit
+   * @param communityId Target community
+   * @param body Feed sort, range, pagination, and continuation request
+   * @returns One page of that community's public post summaries
+   * @tag Feed
    */
-  @core.TypedRoute.Delete("community/:communityId/comment/:id") public moderateDeleteComment(@Headers("authorization") header: string | undefined, @Param("communityId") communityId: UUID, @Param("id") id: UUID): IResult { redditProvider.deleteComment(header, id, true, communityId); return { success: true }; }
+  @core.TypedRoute.Patch("community/:communityId/feed")
+  public communityFeed(@core.TypedParam("communityId") communityId: string, @core.TypedBody() body: IPost.IRequest): Promise<IPage<IPost.ISummary>> { return RedditProvider.feed(null, "community", communityId, body); }
   /**
-   * Apply an upvote, downvote, or removal to an available post and update score and author karma together.
+   * Edit an authored post without changing its type or identity.
+   * The authenticated caller must own the post and may update only its editable
+   * fields while its community remains active and available. Invalid payloads,
+   * ownership, or moderation state are refused.
    *
-   * @param header Request value used by this operation.
-   * @param postId Request value used by this operation.
-   * @param body Vote value.
-   * @returns The operation result.
-   * @tag reddit
+   * @param actor Current authenticated session
+   * @param id Target post identifier
+   * @param body Editable post fields
+   * @returns The updated post
+   * @tag Post
    */
-  @core.TypedRoute.Put("post/:postId/vote") public votePost(@Headers("authorization") header: string | undefined, @Param("postId") postId: UUID, @core.TypedBody() body: IVoteRequest): IVote { return redditProvider.vote(header, postId, "post", body.value); }
+  @core.TypedRoute.Put("post/:id")
+  public updatePost(@Auth() actor: AuthPayload | null, @core.TypedParam("id") id: string, @core.TypedBody() body: IPost.IUpdate): Promise<IPost> { return RedditProvider.updatePost(actor, id, body); }
   /**
-   * Apply an upvote, downvote, or removal to an available comment and update score and author karma together.
+   * Permanently delete an authored post.
+   * The authenticated caller may delete only its own available post; the public
+   * post and its dependent content become unavailable while required history is retained.
    *
-   * @param header Request value used by this operation.
-   * @param commentId Request value used by this operation.
-   * @param body Vote value.
-   * @returns The operation result.
-   * @tag reddit
+   * @param actor Current authenticated session
+   * @param id Target post identifier
+   * @returns Whether the authored post was deleted
+   * @tag Post
    */
-  @core.TypedRoute.Put("comment/:commentId/vote") public voteComment(@Headers("authorization") header: string | undefined, @Param("commentId") commentId: UUID, @core.TypedBody() body: IVoteRequest): IVote { return redditProvider.vote(header, commentId, "comment", body.value); }
+  @core.TypedRoute.Delete("post/:id")
+  public deleteOwnPost(@Auth() actor: AuthPayload | null, @core.TypedParam("id") id: string): Promise<boolean> { return RedditProvider.deleteOwnPost(actor, id); }
+  /**
+   * Delete any available post in a community where the authenticated caller is
+   * an owner or moderator. Other communities, missing authority, and unavailable
+   * posts are refused; the target is removed and moderation history is retained.
+   *
+   * @param actor Current authenticated moderator session
+   * @param id Target post identifier
+   * @returns Whether the moderated post was deleted
+   * @tag Moderation
+   */
+  @core.TypedRoute.Delete("moderation/post/:id")
+  public deleteModeratedPost(@Auth() actor: AuthPayload | null, @core.TypedParam("id") id: string): Promise<boolean> { return RedditProvider.deleteModeratedPost(actor, id); }
 
   /**
-   * Let a current owner or moderator appoint an active user in this exact active community; duplicate assignment is a no-op.
+   * Add a top-level comment or same-post reply to an available post.
+   * The authenticated caller may participate without subscribing, but banned or
+   * unavailable targets are refused; a reply must belong to the same post.
    *
-   * @param header Request value used by this operation.
-   * @param communityId Request value used by this operation.
-   * @param body Moderation target identifier.
-   * @returns The operation result.
-   * @tag reddit
+   * @param actor Current authenticated session
+   * @param body Post, optional parent, and comment text
+   * @returns The persisted comment and its public author
+   * @tag Comment
    */
-  @core.TypedRoute.Post("community/:communityId/moderator") public appointModerator(@Headers("authorization") header: string | undefined, @Param("communityId") communityId: UUID, @core.TypedBody() body: IModerationTarget): ICommunity { return redditProvider.appointModerator(header, communityId, body.userId); }
+  @core.TypedRoute.Post("comments")
+  public createComment(@Auth() actor: AuthPayload | null, @core.TypedBody() body: IComment.ICreate): Promise<IComment> { return RedditProvider.createComment(actor, body); }
   /**
-   * Let only the current owner revoke another moderator in this exact active community; owner and peer targets are protected.
+   * View a recursively nested public comment thread for an available post.
+   * The anonymous caller receives stable root pagination and descendant replies;
+   * deleted parents remain neutral markers when required to preserve replies.
    *
-   * @param header Request value used by this operation.
-   * @param communityId Request value used by this operation.
-   * @param userId Request value used by this operation.
-   * @returns The operation result.
-   * @tag reddit
+   * @param postId Target post identifier
+   * @param body Comment sort, pagination, and continuation request
+   * @returns One page of recursively nested public comments
+   * @tag Comment
    */
-  @core.TypedRoute.Delete("community/:communityId/moderator/:userId") public removeModerator(@Headers("authorization") header: string | undefined, @Param("communityId") communityId: UUID, @Param("userId") userId: UUID): ICommunity { return redditProvider.removeModerator(header, communityId, userId); }
+  @core.TypedRoute.Patch("post/:postId/comments")
+  public comments(@core.TypedParam("postId") postId: string, @core.TypedBody() body: IComment.IRequest): Promise<IPage<IComment>> { return RedditProvider.comments(postId, body); }
   /**
-   * Let a current owner or moderator activate a participation ban in this exact active community; the owner is protected.
+   * Edit an authored comment's text.
+   * The authenticated caller must own the available comment and its post; blank,
+   * invalid, or unauthorized edits are refused and the persisted comment is returned.
    *
-   * @param header Request value used by this operation.
-   * @param communityId Request value used by this operation.
-   * @param userId Request value used by this operation.
-   * @returns The operation result.
-   * @tag reddit
+   * @param actor Current authenticated session
+   * @param id Target comment identifier
+   * @param body Replacement comment text
+   * @returns The updated comment
+   * @tag Comment
    */
-  @core.TypedRoute.Post("community/:communityId/ban/:userId") public ban(@Headers("authorization") header: string | undefined, @Param("communityId") communityId: UUID, @Param("userId") userId: UUID): ICommunity { return redditProvider.ban(header, communityId, userId, true); }
+  @core.TypedRoute.Put("comment/:id")
+  public updateComment(@Auth() actor: AuthPayload | null, @core.TypedParam("id") id: string, @core.TypedBody() body: IComment.IUpdate): Promise<IComment> { return RedditProvider.updateComment(actor, id, body); }
   /**
-   * Let a current owner or moderator end a participation ban in this exact active community; absent bans are no-ops.
+   * Delete an authored comment while preserving required reply markers.
+   * The authenticated caller may delete only its own available comment; reply-free
+   * comments disappear and parents with replies become neutral markers.
    *
-   * @param header Request value used by this operation.
-   * @param communityId Request value used by this operation.
-   * @param userId Request value used by this operation.
-   * @returns The operation result.
-   * @tag reddit
+   * @param actor Current authenticated session
+   * @param id Target comment identifier
+   * @returns Whether the authored comment was deleted
+   * @tag Comment
    */
-  @core.TypedRoute.Delete("community/:communityId/ban/:userId") public unban(@Headers("authorization") header: string | undefined, @Param("communityId") communityId: UUID, @Param("userId") userId: UUID): ICommunity { return redditProvider.ban(header, communityId, userId, false); }
+  @core.TypedRoute.Delete("comment/:id")
+  public deleteOwnComment(@Auth() actor: AuthPayload | null, @core.TypedParam("id") id: string): Promise<boolean> { return RedditProvider.deleteOwnComment(actor, id); }
   /**
-   * Privately list active bans for current owners and moderators of this exact active community.
+   * Delete any available comment in a community where the authenticated caller is
+   * an owner or moderator. Cross-community, unauthorized, and unavailable targets
+   * are refused; required reply markers and moderation history are retained.
    *
-   * @param header Request value used by this operation.
-   * @param communityId Request value used by this operation.
-   * @param body Pagination inputs.
-   * @returns The operation result.
-   * @tag reddit
+   * @param actor Current authenticated moderator session
+   * @param id Target comment identifier
+   * @returns Whether the moderated comment was deleted
+   * @tag Moderation
    */
-  @core.TypedRoute.Patch("community/:communityId/ban") public listBans(@Headers("authorization") header: string | undefined, @Param("communityId") communityId: UUID, @core.TypedBody() body: IPage.IRequest): IPage<IBan> { return redditProvider.listBans(header, communityId, body); }
+  @core.TypedRoute.Delete("moderation/comment/:id")
+  public deleteModeratedComment(@Auth() actor: AuthPayload | null, @core.TypedParam("id") id: string): Promise<boolean> { return RedditProvider.deleteModeratedComment(actor, id); }
+
   /**
-   * Privately list resolved and active ban history for current owners and moderators of this exact active community.
+   * Enter or replace one signed vote on an available post or comment.
+   * The authenticated caller owns at most one signed value per target; changing
+   * direction replaces its prior contribution and updates score and karma.
+   * Invalid or unavailable targets are refused.
    *
-   * @param header Request value used by this operation.
-   * @param communityId Request value used by this operation.
-   * @param body Pagination inputs.
-   * @returns The operation result.
-   * @tag reddit
+   * @param actor Current authenticated session
+   * @param body Target identifier and vote value
+   * @returns The persisted vote
+   * @tag Vote
    */
-  @core.TypedRoute.Patch("community/:communityId/ban/history") public listBanHistory(@Headers("authorization") header: string | undefined, @Param("communityId") communityId: UUID, @core.TypedBody() body: IPage.IRequest): IPage<IBanHistory> { return redditProvider.listBanHistory(header, communityId, body); }
+  @core.TypedRoute.Post("votes")
+  public vote(@Auth() actor: AuthPayload | null, @core.TypedBody() body: IVoteRequest): Promise<IVote> { return RedditProvider.vote(actor, body); }
   /**
-   * Let any authenticated caller report available active-community content with a nonblank reason; duplicate unresolved work is refused.
+   * Remove the authenticated caller's current post vote.
+   * Only that caller's contribution is removed; an absent vote is a successful
+   * no-op and the target's score and author karma are adjusted when present.
    *
-   * @param header Request value used by this operation.
-   * @param body Report target and reason.
-   * @returns The operation result.
-   * @tag reddit
+   * @param actor Current authenticated session
+   * @param postId Target post identifier
+   * @returns Whether the removal operation succeeded, including an absent-vote no-op
+   * @tag Vote
    */
-  @core.TypedRoute.Post("report") public report(@Headers("authorization") header: string | undefined, @core.TypedBody() body: IReport.ICreate): IReport { return redditProvider.report(header, body); }
+  @core.TypedRoute.Delete("votes/post/:postId")
+  public removePostVote(@Auth() actor: AuthPayload | null, @core.TypedParam("postId") postId: string): Promise<boolean> { return RedditProvider.removeVoteTarget(actor, postId, null); }
   /**
-   * Privately list unresolved reports for current owners and moderators of this exact active community.
+   * Remove the authenticated caller's current comment vote.
+   * Only that caller's contribution is removed; an absent vote is a successful
+   * no-op and the target's score and author karma are adjusted when present.
    *
-   * @param header Request value used by this operation.
-   * @param communityId Request value used by this operation.
-   * @param body Pagination inputs.
-   * @returns The operation result.
-   * @tag reddit
+   * @param actor Current authenticated session
+   * @param commentId Target comment identifier
+   * @returns Whether the removal operation succeeded, including an absent-vote no-op
+   * @tag Vote
    */
-  @core.TypedRoute.Patch("community/:communityId/report") public listReports(@Headers("authorization") header: string | undefined, @Param("communityId") communityId: UUID, @core.TypedBody() body: IPage.IRequest): IPage<IReport> { return redditProvider.listReports(header, communityId, body); }
+  @core.TypedRoute.Delete("votes/comment/:commentId")
+  public removeCommentVote(@Auth() actor: AuthPayload | null, @core.TypedParam("commentId") commentId: string): Promise<boolean> { return RedditProvider.removeVoteTarget(actor, null, commentId); }
+
   /**
-   * Privately list resolved report outcomes for current owners and moderators of this exact active community.
+   * Submit one unresolved private report for an available post or comment.
+   * The authenticated caller may report an available target; duplicate unresolved
+   * reports, invalid reasons, and unavailable targets are refused. The report is
+   * visible only to scoped moderators.
    *
-   * @param header Request value used by this operation.
-   * @param communityId Request value used by this operation.
-   * @param body Pagination inputs.
-   * @returns The operation result.
-   * @tag reddit
+   * @param actor Current authenticated session
+   * @param body Target identifier and report reason
+   * @returns The persisted unresolved report
+   * @tag Report
    */
-  @core.TypedRoute.Patch("community/:communityId/report/history") public listReportHistory(@Headers("authorization") header: string | undefined, @Param("communityId") communityId: UUID, @core.TypedBody() body: IPage.IRequest): IPage<IReportHistory> { return redditProvider.listReportHistory(header, communityId, body); }
+  @core.TypedRoute.Post("reports")
+  public report(@Auth() actor: AuthPayload | null, @core.TypedBody() body: IReportCreate): Promise<IReport> { return RedditProvider.report(actor, body); }
   /**
-   * Let a current scoped owner or moderator approve unresolved work, deleting its available target and dependent state.
+   * Read unresolved reports in a community owned or moderated by the caller.
+   * The authenticated owner or moderator sees only that community's private
+   * queue in a stable page; other actors and communities are refused.
    *
-   * @param header Request value used by this operation.
-   * @param id Request value used by this operation.
-   * @returns The operation result.
-   * @tag reddit
+   * @param actor Current authenticated moderator session
+   * @param communityId Target community
+   * @param body Pagination and continuation request
+   * @returns One page of unresolved private reports
+   * @tag Report
    */
-  @core.TypedRoute.Post("report/:id/approve") public approve(@Headers("authorization") header: string | undefined, @Param("id") id: UUID): IReport { return redditProvider.resolveReport(header, id, true); }
+  @core.TypedRoute.Patch("community/:communityId/reports")
+  public reports(@Auth() actor: AuthPayload | null, @core.TypedParam("communityId") communityId: string, @core.TypedBody() body: IPage.IRequest): Promise<IPage<IReport>> { return RedditProvider.reports(actor, communityId, body); }
   /**
-   * Let a current scoped owner or moderator dismiss unresolved work while retaining its available target.
+   * Approve a scoped unresolved report and delete its target.
+   * Only the community owner or moderator may decide the report; the target is
+   * removed atomically with the decision and a retained moderation-history entry.
+   * Repeated or cross-community decisions are refused.
    *
-   * @param header Request value used by this operation.
-   * @param id Request value used by this operation.
-   * @returns The operation result.
-   * @tag reddit
+   * @param actor Current authenticated moderator session
+   * @param id Target report identifier
+   * @returns Whether the report was approved
+   * @tag Report
    */
-  @core.TypedRoute.Post("report/:id/dismiss") public dismiss(@Headers("authorization") header: string | undefined, @Param("id") id: UUID): IReport { return redditProvider.resolveReport(header, id, false); }
+  @core.TypedRoute.Put("report/:id/approve")
+  public approveReport(@Auth() actor: AuthPayload | null, @core.TypedParam("id") id: string): Promise<boolean> { return RedditProvider.decideReport(actor, id, "approved"); }
+  /**
+   * Dismiss a scoped unresolved report and retain its target.
+   * Only the community owner or moderator may decide the report; the target stays
+   * publicly available and a retained history entry records the dismissal.
+   * Repeated or cross-community decisions are refused.
+   *
+   * @param actor Current authenticated moderator session
+   * @param id Target report identifier
+   * @returns Whether the report was dismissed
+   * @tag Report
+   */
+  @core.TypedRoute.Put("report/:id/dismiss")
+  public dismissReport(@Auth() actor: AuthPayload | null, @core.TypedParam("id") id: string): Promise<boolean> { return RedditProvider.decideReport(actor, id, "dismissed"); }
+
+  /**
+   * Appoint a moderator in a community owned by the caller or moderated by it.
+   * The target user must be active; owners and current moderators may appoint,
+   * existing assignments are successful no-ops, and the new role is scoped to this community.
+   *
+   * @param actor Current authenticated owner or moderator session
+   * @param communityId Target community
+   * @param userId Active user receiving the role
+   * @returns Whether the role was assigned
+   * @tag Moderation
+   */
+  @core.TypedRoute.Post("community/:communityId/moderators/:userId")
+  public assignModerator(@Auth() actor: AuthPayload | null, @core.TypedParam("communityId") communityId: string, @core.TypedParam("userId") userId: string): Promise<boolean> { return RedditProvider.assignModerator(actor, communityId, userId); }
+  /**
+   * Revoke a moderator assignment as the current community owner.
+   * Only the owner may remove a role; owners cannot be removed and absent roles
+   * are successful no-ops. The response reports whether a role changed.
+   *
+   * @param actor Current authenticated owner session
+   * @param communityId Target community
+   * @param userId Moderator whose role is removed
+   * @returns Whether the role was removed
+   * @tag Moderation
+   */
+  @core.TypedRoute.Delete("community/:communityId/moderators/:userId")
+  public removeModerator(@Auth() actor: AuthPayload | null, @core.TypedParam("communityId") communityId: string, @core.TypedParam("userId") userId: string): Promise<boolean> { return RedditProvider.removeModerator(actor, communityId, userId); }
+  /**
+   * Start an active community ban.
+   * An owner or moderator may ban an active non-owner user in its community;
+   * owner targets and unauthorized scopes are refused. The ban blocks posting
+   * and commenting while public reads, voting, and reporting remain available.
+   *
+   * @param actor Current authenticated owner or moderator session
+   * @param communityId Target community
+   * @param userId User receiving the ban
+   * @returns Whether the target is now actively banned
+   * @tag Moderation
+   */
+  @core.TypedRoute.Post("community/:communityId/bans/:userId")
+  public ban(@Auth() actor: AuthPayload | null, @core.TypedParam("communityId") communityId: string, @core.TypedParam("userId") userId: string): Promise<boolean> { return RedditProvider.ban(actor, communityId, userId); }
+  /**
+   * End an active community ban.
+   * An owner or moderator may end a ban in its community; an absent ban is a
+   * successful no-op and active moderation scope is required.
+   *
+   * @param actor Current authenticated owner or moderator session
+   * @param communityId Target community
+   * @param userId Banned user
+   * @returns Whether an active ban was ended
+   * @tag Moderation
+   */
+  @core.TypedRoute.Delete("community/:communityId/bans/:userId")
+  public unban(@Auth() actor: AuthPayload | null, @core.TypedParam("communityId") communityId: string, @core.TypedParam("userId") userId: string): Promise<boolean> { return RedditProvider.unban(actor, communityId, userId); }
+  /**
+   * List active bans in a community for its current owner or moderators.
+   * The authenticated caller sees only the scoped private list in stable bounded
+   * pages; ended bans are excluded and other actors are refused.
+   *
+   * @param actor Current authenticated moderator session
+   * @param communityId Target community
+   * @param body Pagination and continuation request
+   * @returns One page of active community bans
+   * @tag Moderation
+   */
+  @core.TypedRoute.Patch("community/:communityId/bans")
+  public banned(@Auth() actor: AuthPayload | null, @core.TypedParam("communityId") communityId: string, @core.TypedBody() body: IPage.IRequest): Promise<IPage<IBan>> { return RedditProvider.banned(actor, communityId, body); }
+  /**
+   * List private resolved-report and moderation history for current moderators.
+   * The authenticated owner or moderator sees only the selected community's
+   * retained decisions and role events in stable bounded pages; other actors are refused.
+   *
+   * @param actor Current authenticated moderator session
+   * @param communityId Target community
+   * @param body Pagination and continuation request
+   * @returns One page of private moderation history
+   * @tag Moderation
+   */
+  @core.TypedRoute.Patch("community/:communityId/moderation-history")
+  public history(@Auth() actor: AuthPayload | null, @core.TypedParam("communityId") communityId: string, @core.TypedBody() body: IPage.IRequest): Promise<IPage<IModerationHistory>> { return RedditProvider.history(actor, communityId, body); }
 }

@@ -1,103 +1,134 @@
 import type * as api from "@benchmark/todo-api";
-import { Controller } from "@nestjs/common";
-import * as core from "@nestia/core";
-import { AuthProvider, UserAuth, type UserPayload } from "../auth/AuthProvider";
+import { TypedBody, TypedRoute } from "@nestia/core";
+import { Controller, UseGuards } from "@nestjs/common";
 
-/** Public and private account-security operations. */
-@Controller("auth/user")
+import { AuthProvider, type UserPayload } from "../providers/AuthProvider";
+import { UserAuth, UserGuard } from "../decorators/UserAuth";
+
+/** Public authentication and protected account-security operations. */
+@Controller("todo/auth/user")
 export class AuthController {
   /**
    * Register a private account and issue its first session.
-   * @param input Email, password, and initial display name.
-   * @returns The new private session and profile display name.
-   * @throws 409 for a duplicate canonical email; 422 for invalid input.
+   *
+   * Duplicate canonical email, credential, and display-name violations are
+   * refused without creating any account state.
+   *
+   * @param body Registration credentials and initial profile name
+   * @returns The new authenticated session and private profile
+   * @tag Authentication
    * @setHeader token.access Authorization
-   * @tag Auth
    */
-  @core.TypedRoute.Post("join")
-  public async join(@core.TypedBody() input: api.IAuth): Promise<api.IAuth.IAuthorized> { return AuthProvider.join(input); }
+  @TypedRoute.Post("join")
+  public async join(@TypedBody() body: api.IUser.IJoin): Promise<api.IUser.IAuthorized> {
+    return AuthProvider.join({ body });
+  }
 
   /**
-   * Authenticate an existing account without revealing credential failure details.
-   * @param input Existing email and password.
-   * @returns A new session for the authenticated account.
-   * @throws 401 for either an unknown email or an incorrect password.
+   * Log in with an existing email and password.
+   *
+   * Unknown emails and wrong passwords have the same generic refusal.
+   *
+   * @param body Login credentials
+   * @returns A new independent authenticated session
+   * @tag Authentication
    * @setHeader token.access Authorization
-   * @tag Auth
    */
-  @core.TypedRoute.Post("login")
-  public async login(@core.TypedBody() input: api.IAuth.ILogin): Promise<api.IAuth.IAuthorized> { return AuthProvider.login(input); }
+  @TypedRoute.Post("login")
+  public async login(@TypedBody() body: api.IUser.ILogin): Promise<api.IUser.IAuthorized> {
+    return AuthProvider.login({ body });
+  }
 
   /**
-   * Continue a valid session by exchanging its refresh token.
-   * @param input Previously issued refresh token.
-   * @returns Refreshed tokens for the same account and session.
-   * @throws 401 when the token is missing, expired, invalid, or revoked.
+   * Continue one valid session with its refresh token.
+   *
+   * @tag Authentication
    * @setHeader token.access Authorization
-   * @tag Auth
    */
-  @core.TypedRoute.Post("refresh")
-  public async refresh(@core.TypedBody() input: api.IAuth.IRefresh): Promise<api.IAuth.IAuthorized> { return AuthProvider.refresh(input); }
+  @TypedRoute.Post("refresh")
+  public async refresh(@TypedBody() body: api.IUser.IRefresh): Promise<api.IUser.IAuthorized> {
+    return AuthProvider.refresh({ body });
+  }
 
   /**
-   * End only the current authenticated session.
-   * @param actor Authenticated caller resolved from the bearer access token.
-   * @returns A success marker after the current session is revoked.
-   * @throws 401 when no valid caller session is present.
-   * @tag Auth
+   * Start forgotten-password recovery without disclosing account existence.
+   *
+   * An existing account receives a recorded email effect; the response is
+   * identical when no account matches.
+   *
+   * @param body Email identity to notify when it exists
+   * @returns A non-disclosing acknowledgement
+   * @tag Authentication
    */
-  @core.TypedRoute.Post("logout")
-  public async logout(@UserAuth() actor: UserPayload): Promise<{ success: true }> { return AuthProvider.logout(actor); }
+  @TypedRoute.Post("recovery/request")
+  public async recoveryRequest(@TypedBody() body: api.IUser.IRecoveryRequest): Promise<api.IOperationResult> {
+    return AuthProvider.requestRecovery({ body });
+  }
+
+  /**
+   * Consume the one-time email proof and issue a replacement session.
+   * Refuses an unknown, expired, consumed, or incorrect proof.
+   *
+   * @param body Email, delivered proof, and replacement password
+   * @returns A new authenticated session
+   * @tag Authentication
+   * @setHeader token.access Authorization
+   */
+  @TypedRoute.Post("recovery/confirm")
+  public async recoveryConfirm(@TypedBody() body: api.IUser.IRecoveryConfirm): Promise<api.IUser.IAuthorized> {
+    return AuthProvider.confirmRecovery({ body });
+  }
+}
+
+/** Authenticated account-management operations. */
+@Controller("todo/user")
+@UseGuards(UserGuard)
+export class AccountController {
+  /**
+   * End only the current authenticated session; other account sessions remain valid.
+   *
+   * @returns A successful acknowledgement
+   * @tag Authentication
+   */
+  @TypedRoute.Post("logout")
+  public async logout(@UserAuth() user: UserPayload): Promise<api.IOperationResult> {
+    return AuthProvider.logout({ user });
+  }
 
   /**
    * End every session belonging to the current account.
-   * @param actor Authenticated caller whose account sessions are revoked.
-   * @returns A success marker after all account sessions are revoked.
-   * @throws 401 when no valid caller session is present.
-   * @tag Auth
+   *
+   * @returns A successful acknowledgement
+   * @tag Authentication
    */
-  @core.TypedRoute.Post("logout-all")
-  public async logoutAll(@UserAuth() actor: UserPayload): Promise<{ success: true }> { return AuthProvider.logoutAll(actor); }
+  @TypedRoute.Post("logout-all")
+  public async logoutAll(@UserAuth() user: UserPayload): Promise<api.IOperationResult> {
+    return AuthProvider.logoutAll({ user });
+  }
 
   /**
-   * Replace the current password and invalidate all old sessions.
-   * @param actor Authenticated caller whose credential is changed.
-   * @param input Current password and accepted replacement password.
-   * @returns A success marker after the credential transaction commits.
-   * @throws 401 when unauthenticated; 403 for a wrong current password; 422 for invalid or reused input.
-   * @tag Auth
+   * Replace the password after proving the current password; all sessions end.
+   * Refuses an incorrect, reused, or invalid password.
+   *
+   * @param body Current and replacement passwords
+   * @returns A successful acknowledgement
+   * @tag Authentication
    */
-  @core.TypedRoute.Put("password")
-  public async changePassword(@UserAuth() actor: UserPayload, @core.TypedBody() input: api.IAuth.IChangePassword): Promise<{ success: true }> { return AuthProvider.changePassword(actor, input); }
+  @TypedRoute.Put("password")
+  public async changePassword(@UserAuth() user: UserPayload, @TypedBody() body: api.IUser.IChangePassword): Promise<api.IOperationResult> {
+    return AuthProvider.changePassword({ user, body });
+  }
 
   /**
-   * Start non-disclosing forgotten-password recovery.
-   * @param input Email identity requesting an out-of-band recovery proof.
-   * @returns A proof-shaped response with no account-existence signal.
-   * @throws 422 for an invalid email value.
-   * @tag Auth
+   * Permanently delete the account, profile, sessions, Todos, trash, and history.
+   * Refuses an incorrect current password.
+   *
+   * @param body Current password confirmation
+   * @returns A successful acknowledgement
+   * @tag Authentication
    */
-  @core.TypedRoute.Post("recover/start")
-  public async recoverStart(@core.TypedBody() input: api.IAuth.IRecoverStart): Promise<{ proof: string }> { return AuthProvider.recoverStart(input); }
-
-  /**
-   * Complete forgotten-password recovery with the proven email identity.
-   * @param input Registered email, one-time proof, and replacement password.
-   * @returns A success marker after credential and session invalidation commit.
-   * @throws 401 for an invalid or reused proof; 422 for an invalid replacement.
-   * @tag Auth
-   */
-  @core.TypedRoute.Post("recover")
-  public async recover(@core.TypedBody() input: api.IAuth.IRecoverPassword): Promise<{ success: true }> { return AuthProvider.recover(input); }
-
-  /**
-   * Permanently delete the current account and all owned private data.
-   * @param actor Authenticated caller whose account is removed.
-   * @param input Current password confirmation.
-   * @returns A success marker after cascading account deletion commits.
-   * @throws 401 when unauthenticated; 403 for a wrong current password.
-   * @tag Auth
-   */
-  @core.TypedRoute.Delete("account")
-  public async deleteAccount(@UserAuth() actor: UserPayload, @core.TypedBody() input: api.IAuth.IDeleteAccount): Promise<{ success: true }> { return AuthProvider.deleteAccount(actor, input); }
+  @TypedRoute.Post("account/delete")
+  public async deleteAccount(@UserAuth() user: UserPayload, @TypedBody() body: api.IUser.IDeleteAccount): Promise<api.IOperationResult> {
+    return AuthProvider.deleteAccount({ user, body });
+  }
 }

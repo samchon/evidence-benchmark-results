@@ -1,2 +1,0 @@
-import * as core from "@nestia/core"; import { Controller } from "@nestjs/common"; import type { IAuth, ICycleCount, IPage } from "@benchmark/erp-api"; import { InventoryOperationsProvider } from "../providers/InventoryOperationsProvider";
-/** Lists cycle counts. */ @Controller("cycle-count-search") export class CycleCountIndexController { @core.TypedRoute.Patch() public async index(@core.TypedHeaders() h: IAuth.IHeaders, @core.TypedBody() input: ICycleCount.IRequest): Promise<IPage<ICycleCount>> { return InventoryOperationsProvider.countIndex(h, input); } }

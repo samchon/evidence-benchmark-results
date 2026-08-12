@@ -1,4 +1,4 @@
-import type { IDiagnosis } from "@benchmark/shopping2-api";
+import type { IDiagnosis } from "@benchmark/shopping-api";
 import { HttpException, type HttpExceptionOptions } from "@nestjs/common";
 
 /** Creates consistently shaped HTTP exceptions. */

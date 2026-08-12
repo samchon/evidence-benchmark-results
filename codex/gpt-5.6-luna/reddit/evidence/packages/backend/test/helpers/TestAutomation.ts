@@ -1,4 +1,4 @@
-import * as api from "@benchmark/reddit2-api";
+import * as api from "@benchmark/reddit-api";
 import { DynamicExecutor } from "@nestia/e2e";
 
 import { MyConfiguration } from "../../src/MyConfiguration";

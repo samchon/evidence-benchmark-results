@@ -1,2 +1,0 @@
-import * as core from "@nestia/core"; import { Controller } from "@nestjs/common"; import type { IAuth, IPage, ITaxJurisdiction } from "@benchmark/erp-api"; import { TaxProvider } from "../providers/TaxProvider";
-/** Lists tax jurisdictions. */ @Controller("tax-jurisdiction-search") export class TaxJurisdictionIndexController { @core.TypedRoute.Patch() public async index(@core.TypedHeaders() headers: IAuth.IHeaders, @core.TypedBody() input: ITaxJurisdiction.IRequest): Promise<IPage<ITaxJurisdiction>> { return TaxProvider.jurisdictionIndex(headers, input); } }

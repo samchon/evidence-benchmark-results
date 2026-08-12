@@ -1,0 +1,211 @@
+/// One platform account, including reserved identifiers retained after deletion.
+/// @evidence docs/analysis/01-actors-and-auth.md#req-auth-reg-account-provisioning-and-login Stores the private sign-in identity and permanent account lifecycle.
+/// @evidenceReview docs/analysis/01-actors-and-auth.md#req-auth-reg-account-provisioning-and-login Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/01-actors-and-auth.md#req-auth-reg-001-register-a-user-account Persists the account facts created during registration.
+/// @evidenceReview docs/analysis/01-actors-and-auth.md#req-auth-reg-001-register-a-user-account Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/01-actors-and-auth.md#req-auth-reg-002-refuse-conflicting-registration Enforces durable email and username uniqueness.
+/// @evidenceReview docs/analysis/01-actors-and-auth.md#req-auth-reg-002-refuse-conflicting-registration Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/01-actors-and-auth.md#req-auth-reg-003-log-in-with-credentials Stores the credential identity used for login.
+/// @evidenceReview docs/analysis/01-actors-and-auth.md#req-auth-reg-003-log-in-with-credentials Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/01-actors-and-auth.md#req-auth-reg-004-refuse-ineligible-login Retains deleted-account state for login refusal.
+/// @evidenceReview docs/analysis/01-actors-and-auth.md#req-auth-reg-004-refuse-ineligible-login Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/01-actors-and-auth.md#req-auth-mgmt-account-management-lifecycle Represents account management state.
+/// @evidenceReview docs/analysis/01-actors-and-auth.md#req-auth-mgmt-account-management-lifecycle Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/01-actors-and-auth.md#req-auth-mgmt-001-change-the-current-password Stores the mutable password representation.
+/// @evidenceReview docs/analysis/01-actors-and-auth.md#req-auth-mgmt-001-change-the-current-password Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/01-actors-and-auth.md#req-auth-mgmt-003-delete-a-user-account Retains the account while deletion effects complete.
+/// @evidenceReview docs/analysis/01-actors-and-auth.md#req-auth-mgmt-003-delete-a-user-account Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/01-actors-and-auth.md#req-auth-mgmt-004-apply-permanent-deleted-account-status Stores deletion and identifier reservation state.
+/// @evidenceReview docs/analysis/01-actors-and-auth.md#req-auth-mgmt-004-apply-permanent-deleted-account-status Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/01-actors-and-auth.md#req-auth-role-community-scoped-authority Relates one account to scoped authority records.
+/// @evidenceReview docs/analysis/01-actors-and-auth.md#req-auth-role-community-scoped-authority Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-karma-karma-model Stores the single signed karma balance.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-karma-karma-model Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-karma-001-define-the-single-signed-karma-total Owns the persisted signed karma total.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-karma-001-define-the-single-signed-karma-total Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-karma-002-define-karma-contribution-mappings Provides the balance updated by vote transitions.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-karma-002-define-karma-contribution-mappings Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/04-business-rules.md#req-rule-identity-account-identity-rules Represents durable identity policy state.
+/// @evidenceReview docs/analysis/04-business-rules.md#req-rule-identity-account-identity-rules Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/04-business-rules.md#req-rule-identity-001-enforce-case-insensitive-email-and-username-uniqueness Stores normalized unique identifiers.
+/// @evidenceReview docs/analysis/04-business-rules.md#req-rule-identity-001-enforce-case-insensitive-email-and-username-uniqueness Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/04-business-rules.md#req-rule-identity-003-reserve-deleted-account-identifiers Retains normalized identifiers after deletion.
+/// @evidenceReview docs/analysis/04-business-rules.md#req-rule-identity-003-reserve-deleted-account-identifiers Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/05-non-functional.md#req-nfr-privacy-account-and-moderation-privacy Separates private credentials from public records.
+/// @evidenceReview docs/analysis/05-non-functional.md#req-nfr-privacy-account-and-moderation-privacy Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/05-non-functional.md#req-nfr-privacy-001-keep-credentials-and-email-private Stores secrets without exposing them as public content.
+/// @evidenceReview docs/analysis/05-non-functional.md#req-nfr-privacy-001-keep-credentials-and-email-private Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+model reddit_users {
+  /// Application-assigned UUID.
+  id String @id
+  /// Original email spelling used only for the owning account.
+  email String
+  /// Trimmed case-folded email used for uniqueness and sign-in.
+  email_normalized String @unique
+  /// Public username spelling.
+  username String
+  /// Trimmed case-folded username used for uniqueness.
+  username_normalized String @unique
+  /// One-way password representation.
+  password_hash String
+  /// Signed karma from currently available authored content.
+  karma Int
+  /// Permanent deletion marker; identifiers remain reserved when non-null.
+  deleted_at DateTime?
+  /// Account creation instant.
+  created_at DateTime
+  /// Last account mutation instant.
+  updated_at DateTime
+
+  /// Public profile owned by this account.
+  profile reddit_profiles?
+  /// Sessions issued to this account.
+  sessions reddit_user_sessions[]
+  /// Recovery proofs issued to this account.
+  recovery_proofs reddit_recovery_proofs[]
+  /// Recorded effects addressed to this account's email.
+  effects reddit_effects[]
+  /// Communities currently owned by this account.
+  owned_communities reddit_communities[] @relation("communityOwner")
+  /// Subscriptions held by this account.
+  subscriptions reddit_subscriptions[]
+  /// Moderator assignments held by this account.
+  moderator_assignments reddit_moderator_assignments[]
+  /// Posts authored by this account.
+  posts reddit_posts[]
+  /// Comments authored by this account.
+  comments reddit_comments[]
+  /// Votes cast by this account.
+  votes reddit_votes[]
+  /// Reports submitted by this account.
+  reports reddit_reports[]
+  /// Bans applied to this account by communities.
+  bans_received reddit_bans[] @relation("banTarget")
+  /// Bans this account applied as a moderator.
+  bans_applied reddit_bans[] @relation("banModerator")
+  /// Moderation actions performed by this account.
+  moderation_actions reddit_moderation_actions[] @relation("moderationActor")
+}
+
+/// Public attributes belonging one-to-one to an account.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-profile-user-profile-model Represents the public profile aggregate.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-profile-user-profile-model Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-profile-001-define-public-profile-attributes Stores editable public attributes.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-profile-001-define-public-profile-attributes Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-profile-002-relate-profiles-to-karma-and-authored-content Relates the profile to its account and authored records.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-profile-002-relate-profiles-to-karma-and-authored-content Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-profile-003-establish-initial-profile-values Stores registration-time profile defaults.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-profile-003-establish-initial-profile-values Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/04-business-rules.md#req-rule-profile-profile-validation-rules Represents profile validation state.
+/// @evidenceReview docs/analysis/04-business-rules.md#req-rule-profile-profile-validation-rules Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/04-business-rules.md#req-rule-profile-001-validate-profile-field-changes Stores the three editable fields and optional avatar.
+/// @evidenceReview docs/analysis/04-business-rules.md#req-rule-profile-001-validate-profile-field-changes Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/04-business-rules.md#req-rule-media-uploaded-image-rules Represents accepted image-bearing profile state.
+/// @evidenceReview docs/analysis/04-business-rules.md#req-rule-media-uploaded-image-rules Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/04-business-rules.md#req-rule-media-001-validate-uploaded-image-format-and-size Retains accepted avatar payloads after validation.
+/// @evidenceReview docs/analysis/04-business-rules.md#req-rule-media-001-validate-uploaded-image-format-and-size Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/04-business-rules.md#req-rule-media-002-present-uploaded-images-and-post-thumbnails Retains the public avatar presentation.
+/// @evidenceReview docs/analysis/04-business-rules.md#req-rule-media-002-present-uploaded-images-and-post-thumbnails Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/05-non-functional.md#req-nfr-privacy-003-preserve-public-profiles-and-community-content Represents public profile content separately from private identity.
+/// @evidenceReview docs/analysis/05-non-functional.md#req-nfr-privacy-003-preserve-public-profiles-and-community-content Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+model reddit_profiles {
+  /// Application-assigned UUID.
+  id String @id
+  /// Owning account identifier.
+  user_id String @unique
+  /// Public display name.
+  display_name String
+  /// Public biography, possibly empty.
+  bio String
+  /// Optional accepted avatar payload.
+  avatar String?
+  /// Optional bounded avatar presentation payload.
+  avatar_thumbnail String?
+  /// Profile creation instant.
+  created_at DateTime
+  /// Last profile mutation instant.
+  updated_at DateTime
+
+  /// Owning account.
+  user reddit_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+}
+
+/// One authenticated connection, independently revocable from other sessions.
+/// @evidence docs/analysis/01-actors-and-auth.md#req-auth-session-session-and-logout-lifecycle Represents independent authenticated sessions.
+/// @evidenceReview docs/analysis/01-actors-and-auth.md#req-auth-session-session-and-logout-lifecycle Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/01-actors-and-auth.md#req-auth-session-001-maintain-concurrent-sessions Persists multiple sessions per account.
+/// @evidenceReview docs/analysis/01-actors-and-auth.md#req-auth-session-001-maintain-concurrent-sessions Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/01-actors-and-auth.md#req-auth-session-002-continue-an-authenticated-session Stores session validity and renewal state.
+/// @evidenceReview docs/analysis/01-actors-and-auth.md#req-auth-session-002-continue-an-authenticated-session Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/01-actors-and-auth.md#req-auth-session-003-log-out-the-current-session Stores current-session revocation.
+/// @evidenceReview docs/analysis/01-actors-and-auth.md#req-auth-session-003-log-out-the-current-session Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/01-actors-and-auth.md#req-auth-session-004-revoke-all-active-sessions Makes all active sessions addressable for revocation.
+/// @evidenceReview docs/analysis/01-actors-and-auth.md#req-auth-session-004-revoke-all-active-sessions Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/05-non-functional.md#req-nfr-privacy-001-keep-credentials-and-email-private Keeps session proofs server-side.
+/// @evidenceReview docs/analysis/05-non-functional.md#req-nfr-privacy-001-keep-credentials-and-email-private Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+model reddit_user_sessions {
+  /// Application-assigned UUID.
+  id String @id
+  /// Owning account identifier.
+  user_id String
+  /// Hash of the current refresh proof.
+  refresh_token_hash String
+  /// Session expiration instant.
+  expires_at DateTime
+  /// Revocation instant, or null while active.
+  revoked_at DateTime?
+  /// Session creation instant.
+  created_at DateTime
+  /// Owning account.
+  user reddit_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id, revoked_at])
+}
+
+/// A one-time password recovery proof that is never returned as account data.
+/// @evidence docs/analysis/01-actors-and-auth.md#req-auth-mgmt-002-recover-a-forgotten-password Stores one-time recovery state and expiry.
+/// @evidenceReview docs/analysis/01-actors-and-auth.md#req-auth-mgmt-002-recover-a-forgotten-password Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/05-non-functional.md#req-nfr-privacy-001-keep-credentials-and-email-private Keeps recovery proofs outside public responses.
+/// @evidenceReview docs/analysis/05-non-functional.md#req-nfr-privacy-001-keep-credentials-and-email-private Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+model reddit_recovery_proofs {
+  /// Application-assigned UUID.
+  id String @id
+  /// Account authorized by the proof.
+  user_id String
+  /// Hash of the delivered one-time proof.
+  proof_hash String
+  /// Expiration instant.
+  expires_at DateTime
+  /// Consumption instant, or null while unused.
+  used_at DateTime?
+  /// Proof creation instant.
+  created_at DateTime
+  /// Account owning the proof.
+  user reddit_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id, created_at])
+}
+
+/// A durable record for an external delivery the local workspace cannot perform.
+/// @evidence docs/analysis/01-actors-and-auth.md#req-auth-mgmt-002-recover-a-forgotten-password Records the recovery delivery boundary.
+/// @evidenceReview docs/analysis/01-actors-and-auth.md#req-auth-mgmt-002-recover-a-forgotten-password Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/05-non-functional.md#req-nfr-privacy-001-keep-credentials-and-email-private Stores the delivery payload without publishing it as profile data.
+/// @evidenceReview docs/analysis/05-non-functional.md#req-nfr-privacy-001-keep-credentials-and-email-private Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+model reddit_effects {
+  /// Application-assigned UUID.
+  id String @id
+  /// Optional account addressed by the effect.
+  user_id String?
+  /// Destination address, such as a registered email.
+  recipient String
+  /// Effect kind.
+  kind String
+  /// Structured payload retained for the delivery boundary.
+  payload String
+  /// Effect recording instant.
+  created_at DateTime
+  /// Account addressed by the effect when it still exists.
+  user reddit_users? @relation(fields: [user_id], references: [id], onDelete: SetNull)
+
+  @@index([recipient, created_at])
+}

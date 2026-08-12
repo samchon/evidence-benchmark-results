@@ -5,7 +5,8 @@
  */
 //================================================================
 export * as admin from "./admin/index";
-export * as customer from "./customer/index";
+export * as auth from "./auth/index";
+export * as category from "./category/index";
+export * as product from "./product/index";
 export * as seller from "./seller/index";
-export * as catalog from "./catalog/index";
-export * as shipping from "./shipping/index";
+export * as customer from "./customer/index";

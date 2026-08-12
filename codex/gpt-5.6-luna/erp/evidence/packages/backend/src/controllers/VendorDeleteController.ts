@@ -1,2 +1,0 @@
-import * as core from "@nestia/core"; import { Controller } from "@nestjs/common"; import type { IAuth } from "@benchmark/erp-api"; import { PartyProvider } from "../providers/PartyProvider";
-/** Deletes a vendor with no retained purchase history. */ @Controller("vendor-delete") export class VendorDeleteController { @core.TypedRoute.Delete(":id") public async remove(@core.TypedHeaders() headers: IAuth.IHeaders, @core.TypedParam("id") id: string): Promise<{ success: true }> { return PartyProvider.vendorDelete(headers, id); } }

@@ -1,2 +1,0 @@
-import * as core from "@nestia/core"; import { Controller } from "@nestjs/common"; import type { IAuth, IBom } from "@benchmark/erp-api"; import { ManufacturingProvider } from "../providers/ManufacturingProvider";
-/** Releases or obsoletes a BOM. */ @Controller("bom-status") export class BomStatusController { @core.TypedRoute.Post(":id") public async status(@core.TypedHeaders() h: IAuth.IHeaders, @core.TypedParam("id") id: string, @core.TypedBody() input: IBom.IStatus): Promise<IBom> { return ManufacturingProvider.bomStatus(h, id, input); } }

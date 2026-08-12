@@ -8,66 +8,92 @@
 
 ```mermaid
 erDiagram
-"users" {
+"reddit_users" {
   String id PK
   String email
   String email_normalized UK
   String username
   String username_normalized UK
   String password_hash
+  Int karma
   DateTime deleted_at "nullable"
   DateTime created_at
+  DateTime updated_at
 }
-"profiles" {
+"reddit_profiles" {
   String id PK
   String user_id FK,UK
   String display_name
   String bio
-  String avatar_url "nullable"
-  Int karma
+  String avatar "nullable"
+  String avatar_thumbnail "nullable"
   DateTime created_at
+  DateTime updated_at
 }
-"sessions" {
+"reddit_user_sessions" {
   String id PK
   String user_id FK
-  String refresh_token_hash UK
-  DateTime created_at
+  String refresh_token_hash
   DateTime expires_at
   DateTime revoked_at "nullable"
+  DateTime created_at
 }
-"recovery_proofs" {
+"reddit_recovery_proofs" {
   String id PK
   String user_id FK
-  String token_hash UK
-  DateTime created_at
+  String proof_hash
   DateTime expires_at
   DateTime used_at "nullable"
+  DateTime created_at
 }
-"communities" {
+"reddit_effects" {
+  String id PK
+  String user_id FK "nullable"
+  String recipient
+  String kind
+  String payload
+  DateTime created_at
+}
+"reddit_communities" {
   String id PK
   String name
   String name_normalized UK
   String description
-  String icon_url "nullable"
+  String icon
   String status
   String owner_id FK "nullable"
   DateTime created_at
+  DateTime updated_at
 }
-"subscriptions" {
+"reddit_subscriptions" {
   String id PK
   String user_id FK
   String community_id FK
-  DateTime created_at
+  Boolean active
+  DateTime started_at
   DateTime ended_at "nullable"
+  DateTime created_at
 }
-"moderators" {
+"reddit_moderator_assignments" {
   String id PK
   String user_id FK
   String community_id FK
-  DateTime created_at
+  Boolean active
+  DateTime started_at
   DateTime revoked_at "nullable"
+  DateTime created_at
 }
-"posts" {
+"reddit_bans" {
+  String id PK
+  String community_id FK
+  String user_id FK
+  String moderator_id FK
+  Boolean active
+  DateTime activated_at
+  DateTime ended_at "nullable"
+  DateTime created_at
+}
+"reddit_posts" {
   String id PK
   String author_id FK
   String community_id FK
@@ -75,243 +101,299 @@ erDiagram
   String type
   String text "nullable"
   String url "nullable"
-  String image_url "nullable"
+  String image "nullable"
+  String thumbnail "nullable"
+  Int score
+  Int comment_count
   DateTime created_at
-  DateTime updated_at "nullable"
+  DateTime updated_at
   DateTime deleted_at "nullable"
 }
-"comments" {
+"reddit_comments" {
   String id PK
-  String author_id FK
+  String author_id FK "nullable"
   String post_id FK
   String parent_id FK "nullable"
   String text "nullable"
+  Int score
+  Boolean deleted
   DateTime created_at
-  DateTime updated_at "nullable"
+  DateTime updated_at
   DateTime deleted_at "nullable"
 }
-"votes" {
+"reddit_votes" {
   String id PK
   String user_id FK
   String post_id FK "nullable"
   String comment_id FK "nullable"
   Int value
   DateTime created_at
-  DateTime updated_at "nullable"
 }
-"reports" {
+"reddit_reports" {
   String id PK
-  String reporter_id FK
+  String reporter_id FK "nullable"
   String community_id FK
   String post_id FK "nullable"
   String comment_id FK "nullable"
   String reason
-  String status
+  String outcome "nullable"
+  String moderator_id "nullable"
+  DateTime decided_at "nullable"
   DateTime created_at
-  DateTime resolved_at "nullable"
-  String resolver_id FK "nullable"
 }
-"bans" {
+"reddit_moderation_actions" {
   String id PK
-  String user_id FK
   String community_id FK
-  String actor_id FK
+  String moderator_id FK "nullable"
+  String reporter_id "nullable"
+  String outcome
+  String target_type
+  String target_id
+  String target_description "nullable"
+  String reason
+  DateTime decided_at
   DateTime created_at
-  DateTime ended_at "nullable"
 }
-"profiles" |o--|| "users" : user
-"sessions" }o--|| "users" : user
-"recovery_proofs" }o--|| "users" : user
-"communities" }o--o| "users" : owner
-"subscriptions" }o--|| "users" : user
-"subscriptions" }o--|| "communities" : community
-"moderators" }o--|| "users" : user
-"moderators" }o--|| "communities" : community
-"posts" }o--|| "users" : author
-"posts" }o--|| "communities" : community
-"comments" }o--|| "users" : author
-"comments" }o--|| "posts" : post
-"comments" }o--o| "comments" : parent
-"votes" }o--|| "users" : user
-"votes" }o--o| "posts" : post
-"votes" }o--o| "comments" : comment
-"reports" }o--|| "users" : reporter
-"reports" }o--|| "communities" : community
-"reports" }o--o| "posts" : post
-"reports" }o--o| "comments" : comment
-"reports" }o--o| "users" : resolver
-"bans" }o--|| "users" : user
-"bans" }o--|| "communities" : community
-"bans" }o--|| "users" : actor
+"reddit_profiles" |o--|| "reddit_users" : user
+"reddit_user_sessions" }o--|| "reddit_users" : user
+"reddit_recovery_proofs" }o--|| "reddit_users" : user
+"reddit_effects" }o--o| "reddit_users" : user
+"reddit_communities" }o--o| "reddit_users" : owner
+"reddit_subscriptions" }o--|| "reddit_users" : user
+"reddit_subscriptions" }o--|| "reddit_communities" : community
+"reddit_moderator_assignments" }o--|| "reddit_users" : user
+"reddit_moderator_assignments" }o--|| "reddit_communities" : community
+"reddit_bans" }o--|| "reddit_communities" : community
+"reddit_bans" }o--|| "reddit_users" : user
+"reddit_bans" }o--|| "reddit_users" : moderator
+"reddit_posts" }o--|| "reddit_users" : author
+"reddit_posts" }o--|| "reddit_communities" : community
+"reddit_comments" }o--o| "reddit_users" : author
+"reddit_comments" }o--|| "reddit_posts" : post
+"reddit_comments" }o--o| "reddit_comments" : parent
+"reddit_votes" }o--|| "reddit_users" : user
+"reddit_votes" }o--o| "reddit_posts" : post
+"reddit_votes" }o--o| "reddit_comments" : comment
+"reddit_reports" }o--o| "reddit_users" : reporter
+"reddit_reports" }o--|| "reddit_communities" : community
+"reddit_reports" }o--o| "reddit_posts" : post
+"reddit_reports" }o--o| "reddit_comments" : comment
+"reddit_moderation_actions" }o--|| "reddit_communities" : community
+"reddit_moderation_actions" }o--o| "reddit_users" : moderator
 ```
 
-### `users`
+### `reddit_users`
 
-Platform account with private credentials and a permanently reservable identity.
-
-Properties as follows:
-
-- `id`: UUID primary key.
-- `email`: Case-preserved sign-in email.
-- `email_normalized`: Lower-cased sign-in email used for uniqueness.
-- `username`: Public username.
-- `username_normalized`: Lower-cased username used for uniqueness.
-- `password_hash`: Password hash; never exposed.
-- `deleted_at`: Permanent deletion instant; null while active.
-- `created_at`: Creation instant.
-
-### `profiles`
-
-Public profile belonging one-to-one to an account.
+One platform account, including reserved identifiers retained after deletion.
 
 Properties as follows:
 
-- `id`: UUID primary key.
+- `id`: Application-assigned UUID.
+- `email`: Original email spelling used only for the owning account.
+- `email_normalized`: Trimmed case-folded email used for uniqueness and sign-in.
+- `username`: Public username spelling.
+- `username_normalized`: Trimmed case-folded username used for uniqueness.
+- `password_hash`: One-way password representation.
+- `karma`: Signed karma from currently available authored content.
+- `deleted_at`: Permanent deletion marker; identifiers remain reserved when non-null.
+- `created_at`: Account creation instant.
+- `updated_at`: Last account mutation instant.
+
+### `reddit_profiles`
+
+Public attributes belonging one-to-one to an account.
+
+Properties as follows:
+
+- `id`: Application-assigned UUID.
 - `user_id`: Owning account identifier.
 - `display_name`: Public display name.
 - `bio`: Public biography, possibly empty.
-- `avatar_url`: Optional public avatar URL or data reference.
-- `karma`: Signed karma aggregate.
-- `created_at`: Creation instant.
+- `avatar`: Optional accepted avatar payload.
+- `avatar_thumbnail`: Optional bounded avatar presentation payload.
+- `created_at`: Profile creation instant.
+- `updated_at`: Last profile mutation instant.
 
-### `sessions`
+### `reddit_user_sessions`
 
-Independent authenticated connection for one account.
+One authenticated connection, independently revocable from other sessions.
 
 Properties as follows:
 
-- `id`: UUID primary key.
-- `user_id`: Account identifier.
-- `refresh_token_hash`: Hash of the refresh proof.
+- `id`: Application-assigned UUID.
+- `user_id`: Owning account identifier.
+- `refresh_token_hash`: Hash of the current refresh proof.
+- `expires_at`: Session expiration instant.
+- `revoked_at`: Revocation instant, or null while active.
 - `created_at`: Session creation instant.
-- `expires_at`: Expiration instant.
-- `revoked_at`: Revocation instant; null while active.
 
-### `recovery_proofs`
+### `reddit_recovery_proofs`
 
-One-time password recovery proof.
+A one-time password recovery proof that is never returned as account data.
 
 Properties as follows:
 
-- `id`: UUID primary key.
-- `user_id`: Account identifier.
-- `token_hash`: Hash of the emailed proof.
-- `created_at`: Creation instant.
+- `id`: Application-assigned UUID.
+- `user_id`: Account authorized by the proof.
+- `proof_hash`: Hash of the delivered one-time proof.
 - `expires_at`: Expiration instant.
-- `used_at`: Consumption instant; null while unused.
+- `used_at`: Consumption instant, or null while unused.
+- `created_at`: Proof creation instant.
 
-### `communities`
+### `reddit_effects`
 
-Public discussion community and its current owner.
+A durable record for an external delivery the local workspace cannot perform.
 
 Properties as follows:
 
-- `id`: UUID primary key.
-- `name`: Case-preserved public name.
-- `name_normalized`: Lower-cased searchable name.
-- `description`: Public description.
-- `icon_url`: Optional public icon reference.
+- `id`: Application-assigned UUID.
+- `user_id`: Optional account addressed by the effect.
+- `recipient`: Destination address, such as a registered email.
+- `kind`: Effect kind.
+- `payload`: Structured payload retained for the delivery boundary.
+- `created_at`: Effect recording instant.
+
+### `reddit_communities`
+
+A public discussion community and its current ownership state.
+
+Properties as follows:
+
+- `id`: Application-assigned UUID.
+- `name`: Public community name spelling.
+- `name_normalized`: Trimmed case-folded name used for uniqueness and search ordering.
+- `description`: Public community description.
+- `icon`: Accepted public icon payload.
 - `status`: Active or archived lifecycle state.
-- `owner_id`: Current owner account identifier; null once archived.
-- `created_at`: Creation instant.
+- `owner_id`: Current owner account identifier, null only after archival.
+- `created_at`: Community creation instant.
+- `updated_at`: Last community mutation instant.
 
-### `subscriptions`
+### `reddit_subscriptions`
 
-User membership in a community, retaining tenure after ending.
+One user-community subscription with retained tenure and end state.
 
 Properties as follows:
 
-- `id`: UUID primary key.
+- `id`: Application-assigned UUID.
 - `user_id`: Subscriber account identifier.
 - `community_id`: Community identifier.
-- `created_at`: Activation instant.
-- `ended_at`: End instant; null while active.
+- `active`: Whether this relationship is currently active.
+- `started_at`: Current subscription start instant.
+- `ended_at`: End instant for the current subscription, or null while active.
+- `created_at`: Relationship creation instant.
 
-### `moderators`
+### `reddit_moderator_assignments`
 
-Community-scoped moderator assignment with tenure and revocation.
+A scoped moderator assignment with revocation retained as history.
 
 Properties as follows:
 
-- `id`: UUID primary key.
+- `id`: Application-assigned UUID.
 - `user_id`: Moderator account identifier.
 - `community_id`: Community identifier.
-- `created_at`: Assignment instant.
-- `revoked_at`: Revocation instant; null while current.
+- `active`: Whether this assignment is currently active.
+- `started_at`: Assignment start instant used for succession tenure.
+- `revoked_at`: Revocation instant, or null while active.
+- `created_at`: Assignment creation instant.
 
-### `posts`
+### `reddit_bans`
 
-User-authored post with exactly one type-specific payload.
+One community ban, active until explicitly ended.
 
 Properties as follows:
 
-- `id`: UUID primary key.
-- `author_id`: Author account identifier.
+- `id`: Application-assigned UUID.
 - `community_id`: Community identifier.
-- `title`: Required public title.
-- `type`: text, link, or image.
-- `text`: Text payload when type is text.
-- `url`: URL payload when type is link.
-- `image_url`: Image payload reference when type is image.
-- `created_at`: Immutable creation instant.
-- `updated_at`: Last edit instant.
-- `deleted_at`: Deletion instant; null while available.
-
-### `comments`
-
-Nested user-authored comment; parent is optional for top-level comments.
-
-Properties as follows:
-
-- `id`: UUID primary key.
-- `author_id`: Author account identifier.
-- `post_id`: Parent post identifier.
-- `parent_id`: Immediate parent comment identifier; null for top-level.
-- `text`: Comment text, nulled when content is deleted.
-- `created_at`: Immutable creation instant.
-- `updated_at`: Last edit instant.
-- `deleted_at`: Deletion instant; null while available.
-
-### `votes`
-
-One user's current vote on one post or comment target.
-
-Properties as follows:
-
-- `id`: UUID primary key.
-- `user_id`: Voter account identifier.
-- `post_id`: Post target, mutually exclusive with comment_id.
-- `comment_id`: Comment target, mutually exclusive with post_id.
-- `value`: +1 upvote or -1 downvote.
-- `created_at`: Creation instant.
-- `updated_at`: Last transition instant.
-
-### `reports`
-
-Content report with unresolved and terminal moderation outcomes.
-
-Properties as follows:
-
-- `id`: UUID primary key.
-- `reporter_id`: Reporter account identifier.
-- `community_id`: Community owning the target.
-- `post_id`: Post target, mutually exclusive with comment_id.
-- `comment_id`: Comment target, mutually exclusive with post_id.
-- `reason`: Trimmed report reason.
-- `status`: unresolved, approved, or dismissed.
-- `created_at`: Submission instant.
-- `resolved_at`: Resolution instant.
-- `resolver_id`: Moderator who resolved the report.
-
-### `bans`
-
-Community ban history with active and ended periods.
-
-Properties as follows:
-
-- `id`: UUID primary key.
 - `user_id`: Banned account identifier.
-- `community_id`: Community identifier.
-- `actor_id`: Acting moderator account identifier.
-- `created_at`: Activation instant.
-- `ended_at`: End instant; null while active.
+- `moderator_id`: Account that applied the ban.
+- `active`: Whether the restriction is active.
+- `activated_at`: Ban activation instant.
+- `ended_at`: Unban instant, or null while active.
+- `created_at`: Ban record creation instant.
+
+### `reddit_posts`
+
+A post with exactly one type-specific payload and immutable identity links.
+
+Properties as follows:
+
+- `id`: Application-assigned UUID.
+- `author_id`: Owning author identifier.
+- `community_id`: Containing community identifier.
+- `title`: Reader-facing title.
+- `type`: Text, link, or image discriminator.
+- `text`: Text payload for text posts.
+- `url`: URL payload for link posts.
+- `image`: Full image payload for image posts.
+- `thumbnail`: Bounded image preview payload.
+- `score`: Materialized active vote score.
+- `comment_count`: Materialized count of available comments.
+- `created_at`: Original creation instant used by all rankings and age displays.
+- `updated_at`: Last content edit instant.
+- `deleted_at`: Permanent deletion marker used before dependent cleanup.
+
+### `reddit_comments`
+
+A recursive comment node whose deleted row may preserve descendant position.
+
+Properties as follows:
+
+- `id`: Application-assigned UUID.
+- `author_id`: Owning author identifier, null after de-identifying deletion.
+- `post_id`: Containing post identifier.
+- `parent_id`: Immediate parent comment, or null for a top-level comment.
+- `text`: Comment text, null after content deletion.
+- `score`: Materialized active vote score.
+- `deleted`: Whether the row is a neutral deleted marker.
+- `created_at`: Original creation instant.
+- `updated_at`: Last content edit instant.
+- `deleted_at`: Content deletion instant, or null while available.
+
+### `reddit_votes`
+
+One signed vote on exactly one post or comment.
+
+Properties as follows:
+
+- `id`: Application-assigned UUID.
+- `user_id`: Voter account identifier.
+- `post_id`: Post target, when this is a post vote.
+- `comment_id`: Comment target, when this is a comment vote.
+- `value`: Signed direction, +1 or -1.
+- `created_at`: Vote creation or latest transition instant.
+
+### `reddit_reports`
+
+A pending or resolved report on one available content target.
+
+Properties as follows:
+
+- `id`: Application-assigned UUID.
+- `reporter_id`: Reporting account identifier, nullable after de-identification.
+- `community_id`: Community containing the target.
+- `post_id`: Post target, when this is a post report.
+- `comment_id`: Comment target, when this is a comment report.
+- `reason`: Trimmed report reason.
+- `outcome`: Null while unresolved; otherwise approved or dismissed.
+- `moderator_id`: Decision actor, nullable after de-identification.
+- `decided_at`: Decision instant, or null while unresolved.
+- `created_at`: Report submission instant.
+
+### `reddit_moderation_actions`
+
+Private resolved moderation action with only requirement-prescribed details.
+
+Properties as follows:
+
+- `id`: Application-assigned UUID.
+- `community_id`: Community where the action occurred.
+- `moderator_id`: Acting moderator, nullable after account deletion.
+- `reporter_id`: Former reporter, nullable after account deletion.
+- `outcome`: Approved or dismissed outcome.
+- `target_type`: Target kind.
+- `target_id`: Target identifier retained only as a non-public correlation.
+- `target_description`: Target description when it still exists.
+- `reason`: Original report reason.
+- `decided_at`: Decision instant.
+- `created_at`: History creation instant.

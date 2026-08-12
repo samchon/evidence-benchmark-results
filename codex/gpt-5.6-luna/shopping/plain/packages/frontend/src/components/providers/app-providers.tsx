@@ -3,6 +3,8 @@ import { useState, type ReactNode } from "react";
 import { BrowserRouter } from "react-router-dom";
 import { Toaster } from "sonner";
 
+import { AuthProvider } from "@/lib/auth";
+
 /** Installs the shared routing, query, and notification providers. */
 export function AppProviders(props: { children: ReactNode }) {
   const [queryClient] = useState(
@@ -23,8 +25,10 @@ export function AppProviders(props: { children: ReactNode }) {
   return (
     <BrowserRouter>
       <QueryClientProvider client={queryClient}>
-        {props.children}
-        <Toaster position="top-right" richColors />
+        <AuthProvider>
+          {props.children}
+          <Toaster position="top-right" richColors />
+        </AuthProvider>
       </QueryClientProvider>
     </BrowserRouter>
   );

@@ -20,18 +20,14 @@ export namespace MyConfiguration {
 
   /** Absolute workspace package root for source and compiled execution. */
   export const ROOT = (() => {
-    const candidates = [
-      __dirname,
-      path.resolve(__dirname, ".."),
-      path.resolve(__dirname, "../.."),
-      path.resolve(__dirname, "../../.."),
-    ];
-    const root = candidates.find(
-      (directory) =>
-        fs.existsSync(path.join(directory, "package.json")) &&
-        fs.existsSync(path.join(directory, "prisma")),
-    );
-    return (root ?? path.resolve(__dirname, "..")).replaceAll("\\", "/");
+    const split: string[] = __dirname.split(path.sep);
+    return (
+      split.at(-1) === "src" && split.at(-2) === "bin"
+        ? path.resolve(__dirname, "../..")
+        : fs.existsSync(path.resolve(__dirname, ".env"))
+          ? __dirname
+          : path.resolve(__dirname, "..")
+    ).replaceAll("\\", "/");
   })();
 }
 

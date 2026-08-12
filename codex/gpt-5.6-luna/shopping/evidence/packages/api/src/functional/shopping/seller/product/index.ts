@@ -7,4 +7,5 @@
 export * as create from "./create/index";
 export * as update from "./update/index";
 export * as _delete from "./_delete/index";
+export * as image from "./image/index";
 export * as variant from "./variant/index";

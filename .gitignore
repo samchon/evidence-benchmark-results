@@ -2,12 +2,28 @@
 **/.env
 **/.env.*
 !**/.env.example
-**/lib/
-**/bin/
-**/dist/
+**/.DS_Store
+
+# Measurement rig rather than application. `.npmrc` pins pnpm's virtual store to
+# an absolute path on the measuring machine, `.benchmark-deps` holds the packed
+# toolchain each workspace installs from, and `.playwright-mcp` is the browser
+# tool's own console and page scratch.
+**/.npmrc
+**/.benchmark-deps/
+**/.playwright-mcp/
+**/.build-cache/
+**/.ttsc-repair-*/
+
+# Build output, named the way each workspace names it. A blanket `**/lib/` would
+# also swallow `packages/frontend/src/lib`, which is where the hooks live.
+**/packages/api/lib/
+**/packages/backend/bin/
+**/packages/backend/lib/
+**/packages/backend/src/prisma/
+**/packages/frontend/dist/
+**/packages/*/.nestia-debug-out/
 **/test-results/
 **/playwright-report/
-**/.DS_Store
 
 **/*.log
 **/*.err
@@ -15,6 +31,4 @@
 **/*.sqlite
 **/*.sqlite-*
 **/*.tsbuildinfo
-**/*manifest*.txt
-**/*.manifest
 **/*.tmp

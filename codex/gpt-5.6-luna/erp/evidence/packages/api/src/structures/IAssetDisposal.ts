@@ -1,23 +1,73 @@
-import type { tags } from "typia"; import type { IPage } from "../typings";
+import { tags } from "typia";
+
+import type { IErpRecord } from "./IErpRecord";
+
 /**
- * @evidence prisma:asset_disposals Exposes the persisted asset_disposals record.
+ * AssetDisposal public representation.
+ * @evidence docs/analysis/02-domain-model.md#req-dom-asset-disposal-asset-disposals Exposes the aggregate contract represented by this DTO.
+ * @evidenceReview docs/analysis/02-domain-model.md#req-dom-asset-disposal-asset-disposals Read the DTO declaration and checked its public and inherited fields against the cited requirement.
+ * @evidence prisma:asset_disposals Represents the persisted asset_disposals model.
+ * @evidenceReview prisma:asset_disposals Read the DTO declaration and compared its concrete record shape with the cited Prisma model.
  */
-export interface IAssetDisposal {
-  /** @evidence prisma:asset_disposals.id Carries the persisted id value. */
+export interface IAssetDisposal extends IErpRecord {
+  /** id.
+   * @evidence prisma:asset_disposals.id Carries the persisted id value.
+   * @evidenceReview prisma:asset_disposals.id Read the DTO property and compared its type with the cited Prisma column.
+   */
   id: string & tags.Format<"uuid">;
-  /** @evidence prisma:asset_disposals.fixed_asset_id Carries the persisted fixedAssetId value. */
-  fixedAssetId: string & tags.Format<"uuid">;
-  /** @evidence prisma:asset_disposals.status Carries the persisted status value. */
-  status: string;
-  /** @evidence prisma:asset_disposals.disposal_date Carries the persisted disposalDate value. */
-  disposalDate: string & tags.Format<"date-time">;
-  /** @evidence prisma:asset_disposals.proceeds Carries the persisted proceeds value. */
-  proceeds: null | number;
-  /** @evidence prisma:asset_disposals.reason Carries the persisted reason value. */
-  reason: null | string;
-  /** @evidence prisma:asset_disposals.created_at Carries the persisted createdAt value. */
+  /** organizationId.
+   * @evidence prisma:asset_disposals.organization_id Carries the persisted organization_id value.
+   * @evidenceReview prisma:asset_disposals.organization_id Read the DTO property and compared its type with the cited Prisma column.
+   */
+  organizationId: string & tags.Format<"uuid">;
+  /** name.
+   * @evidence prisma:asset_disposals.name Carries the persisted name value.
+   * @evidenceReview prisma:asset_disposals.name Read the DTO property and compared its type with the cited Prisma column.
+   */
+  name: null | string;
+  /** status.
+   * @evidence prisma:asset_disposals.status Carries the persisted status value.
+   * @evidenceReview prisma:asset_disposals.status Read the DTO property and compared its type with the cited Prisma column.
+   */
+  status: null | string;
+  /** description.
+   * @evidence prisma:asset_disposals.description Carries the persisted description value.
+   * @evidenceReview prisma:asset_disposals.description Read the DTO property and compared its type with the cited Prisma column.
+   */
+  description: null | string;
+  /** referenceId.
+   * @evidence prisma:asset_disposals.reference_id Carries the persisted reference_id value.
+   * @evidenceReview prisma:asset_disposals.reference_id Read the DTO property and compared its type with the cited Prisma column.
+   */
+  referenceId: null | string & tags.Format<"uuid">;
+  /** quantity.
+   * @evidence prisma:asset_disposals.quantity Carries the persisted quantity value.
+   * @evidenceReview prisma:asset_disposals.quantity Read the DTO property and compared its type with the cited Prisma column.
+   */
+  quantity: null | number;
+  /** amount.
+   * @evidence prisma:asset_disposals.amount Carries the persisted amount value.
+   * @evidenceReview prisma:asset_disposals.amount Read the DTO property and compared its type with the cited Prisma column.
+   */
+  amount: null | number;
+  /** createdAt.
+   * @evidence prisma:asset_disposals.created_at Carries the persisted created_at value.
+   * @evidenceReview prisma:asset_disposals.created_at Read the DTO property and compared its type with the cited Prisma column.
+   */
   createdAt: string & tags.Format<"date-time">;
-  /** @evidence prisma:asset_disposals.updated_at Carries the persisted updatedAt value. */
-  updatedAt: string & tags.Format<"date-time">;
+  /** updatedAt.
+   * @evidence prisma:asset_disposals.updated_at Carries the persisted updated_at value.
+   * @evidenceReview prisma:asset_disposals.updated_at Read the DTO property and compared its type with the cited Prisma column.
+   */
+  updatedAt: null | string & tags.Format<"date-time">;
+  /** deletedAt.
+   * @evidence prisma:asset_disposals.deleted_at Carries the persisted deleted_at value.
+   * @evidenceReview prisma:asset_disposals.deleted_at Read the DTO property and compared its type with the cited Prisma column.
+   */
+  deletedAt: null | string & tags.Format<"date-time">;
+  /** attributes.
+   * @evidence prisma:asset_disposals.attributes Carries aggregate-specific persisted fields.
+   * @evidenceReview prisma:asset_disposals.attributes Read the DTO property and compared its type with the cited Prisma column.
+   */
+  attributes: null | Record<string, unknown>;
 }
-export namespace IAssetDisposal { export interface ICreate { fixedAssetId: string & tags.Format<"uuid">; disposalDate: string & tags.Format<"date-time">; proceeds?: null | number; reason?: null | string; } export interface IRequest extends IPage.IRequest { fixedAssetId?: string; status?: string; } export interface IStatus { status: "draft" | "posted" | "cancelled"; } }

@@ -37,16 +37,16 @@
         "x-samchon-controller": "HealthController"
       }
     },
-    "/reddit/auth/user/join": {
+    "/auth/join": {
       "post": {
-        "summary": "Register an active account, create its initial profile, and start a session. Invalid fields and reserved identities are refused; the issued access token is retained in Authorization",
-        "description": "Register an active account, create its initial profile, and start a session. Invalid fields and reserved identities are refused; the issued access token is retained in Authorization.",
+        "summary": "Register a public account, create its initial profile, and start its first session",
+        "description": "Register a public account, create its initial profile, and start its first session.\nThe anonymous caller chooses the email, username, and password; the created\nidentity is the owner of the returned session. Rejects duplicate identities\nand invalid credentials, and returns the public identity plus access and\nrefresh tokens.",
         "tags": [
-          "reddit"
+          "Auth"
         ],
         "parameters": [],
         "requestBody": {
-          "description": "Account registration payload.",
+          "description": "New account credentials",
           "content": {
             "application/json": {
               "schema": {
@@ -58,35 +58,33 @@
         },
         "responses": {
           "201": {
-            "description": "The operation result.",
+            "description": "The created public identity and session tokens",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/IAuthorized"
+                  "$ref": "#/components/schemas/IAuth.IAuthorized"
                 }
               }
             }
           }
         },
         "x-samchon-accessor": [
-          "reddit",
           "auth",
-          "user",
           "join"
         ],
         "x-samchon-controller": "RedditController"
       }
     },
-    "/reddit/auth/user/login": {
+    "/auth/login": {
       "post": {
-        "summary": "Authenticate an active account without changing roles or subscriptions. Unknown, deleted, or wrong credentials receive the same refusal; the new session token is retained in Authorization",
-        "description": "Authenticate an active account without changing roles or subscriptions. Unknown, deleted, or wrong credentials receive the same refusal; the new session token is retained in Authorization.",
+        "summary": "Authenticate an active account and start an independent session",
+        "description": "Authenticate an active account and start an independent session.\nThe anonymous caller must provide the registered email and password; the\nsession belongs only to that account. Rejects unknown, deleted, or\nincorrectly authenticated identities and returns fresh session tokens.",
         "tags": [
-          "reddit"
+          "Auth"
         ],
         "parameters": [],
         "requestBody": {
-          "description": "Login credentials.",
+          "description": "Registered account credentials",
           "content": {
             "application/json": {
               "schema": {
@@ -98,35 +96,33 @@
         },
         "responses": {
           "201": {
-            "description": "The operation result.",
+            "description": "The authenticated public identity and session tokens",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/IAuthorized"
+                  "$ref": "#/components/schemas/IAuth.IAuthorized"
                 }
               }
             }
           }
         },
         "x-samchon-accessor": [
-          "reddit",
           "auth",
-          "user",
           "login"
         ],
         "x-samchon-controller": "RedditController"
       }
     },
-    "/reddit/auth/user/refresh": {
+    "/auth/refresh": {
       "post": {
-        "summary": "Rotate the presented refresh session for the same active account. Missing, revoked, expired, or deleted sessions are refused",
-        "description": "Rotate the presented refresh session for the same active account. Missing, revoked, expired, or deleted sessions are refused.",
+        "summary": "Continue one active session with its refresh proof",
+        "description": "Continue one active session with its refresh proof.\nThe anonymous caller presents a valid refresh token; the existing session\nis renewed and the returned access token authenticates that same account.\nRejects invalid or expired refresh proofs and proofs for revoked sessions.",
         "tags": [
-          "reddit"
+          "Auth"
         ],
         "parameters": [],
         "requestBody": {
-          "description": "Refresh token payload.",
+          "description": "Refresh proof",
           "content": {
             "application/json": {
               "schema": {
@@ -138,35 +134,126 @@
         },
         "responses": {
           "201": {
-            "description": "The operation result.",
+            "description": "The continued public identity and renewed session tokens",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/IAuthorized"
+                  "$ref": "#/components/schemas/IAuth.IAuthorized"
                 }
               }
             }
           }
         },
         "x-samchon-accessor": [
-          "reddit",
           "auth",
-          "user",
           "refresh"
         ],
         "x-samchon-controller": "RedditController"
       }
     },
-    "/reddit/auth/user/recovery/request": {
+    "/auth/logout": {
       "post": {
-        "summary": "Request a one-time recovery proof with a neutral result for known and unknown emails",
-        "description": "Request a one-time recovery proof with a neutral result for known and unknown emails.",
+        "summary": "Revoke only the authenticated caller's current session",
+        "description": "Revoke only the authenticated caller's current session.\nThe caller owns the session selected by the access token; no other session\nis changed. Rejects an absent, expired, or revoked session and returns the\nsuccessful revocation transition.",
         "tags": [
-          "reddit"
+          "Auth"
+        ],
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "Whether the current session was revoked",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "auth",
+          "logout"
+        ],
+        "x-samchon-controller": "RedditController"
+      }
+    },
+    "/auth/logout-all": {
+      "post": {
+        "summary": "Revoke every active session belonging to the authenticated account",
+        "description": "Revoke every active session belonging to the authenticated account.\nThe caller may affect only sessions owned by that account; all active\nsessions are revoked while the operation itself reports success.\nRejects an absent, expired, or revoked session.",
+        "tags": [
+          "Auth"
+        ],
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "Whether the account's active sessions were revoked",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "auth",
+          "logout_all",
+          "logoutAll"
+        ],
+        "x-samchon-controller": "RedditController"
+      }
+    },
+    "/auth/password": {
+      "put": {
+        "summary": "Replace the authenticated account password and revoke every other session",
+        "description": "Replace the authenticated account password and revoke every other session.\nOnly the current account may change its password and it must confirm the\ncurrent password. Rejects a failed confirmation or invalid new password;\nthe current session remains usable and other sessions are revoked.",
+        "tags": [
+          "Auth"
         ],
         "parameters": [],
         "requestBody": {
-          "description": "Recovery request email.",
+          "description": "Current and replacement passwords",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IAuth.IPassword"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Whether the password transition succeeded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "auth",
+          "password"
+        ],
+        "x-samchon-controller": "RedditController"
+      }
+    },
+    "/auth/recovery/request": {
+      "post": {
+        "summary": "Request a password-recovery proof through the registered email boundary",
+        "description": "Request a password-recovery proof through the registered email boundary.\nAn anonymous caller supplies an email address; known active accounts receive\na persisted delivery effect, while unknown or deleted accounts receive the\nsame neutral success result. The proof is never returned by this operation.",
+        "tags": [
+          "Auth"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "description": "Recovery email address",
           "content": {
             "application/json": {
               "schema": {
@@ -178,20 +265,18 @@
         },
         "responses": {
           "201": {
-            "description": "The operation result.",
+            "description": "Neutral success regardless of account discovery",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/IResult"
+                  "type": "boolean"
                 }
               }
             }
           }
         },
         "x-samchon-accessor": [
-          "reddit",
           "auth",
-          "user",
           "recovery",
           "request",
           "recoveryRequest"
@@ -199,16 +284,16 @@
         "x-samchon-controller": "RedditController"
       }
     },
-    "/reddit/auth/user/recovery/complete": {
+    "/auth/recovery/complete": {
       "post": {
-        "summary": "Consume the latest unexpired recovery proof, replace the password, revoke all sessions, and issue a new session. Invalid proofs are refused",
-        "description": "Consume the latest unexpired recovery proof, replace the password, revoke all sessions, and issue a new session. Invalid proofs are refused.",
+        "summary": "Consume a valid password-recovery proof and replace the account password",
+        "description": "Consume a valid password-recovery proof and replace the account password.\nThe anonymous caller presents the delivered proof; successful consumption\nrevokes every existing session. Rejects unknown, expired, used, or invalid\nproofs and returns the password transition result.",
         "tags": [
-          "reddit"
+          "Auth"
         ],
         "parameters": [],
         "requestBody": {
-          "description": "Recovery proof and replacement password.",
+          "description": "Recovery proof and replacement password",
           "content": {
             "application/json": {
               "schema": {
@@ -220,20 +305,18 @@
         },
         "responses": {
           "201": {
-            "description": "The operation result.",
+            "description": "Whether the recovery transition succeeded",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/IAuthorized"
+                  "type": "boolean"
                 }
               }
             }
           }
         },
         "x-samchon-accessor": [
-          "reddit",
           "auth",
-          "user",
           "recovery",
           "complete",
           "recoveryComplete"
@@ -241,151 +324,51 @@
         "x-samchon-controller": "RedditController"
       }
     },
-    "/reddit/user/session/logout": {
+    "/auth/account/delete": {
       "post": {
-        "summary": "Revoke only the authenticated session in use; account state and other sessions remain unchanged",
-        "description": "Revoke only the authenticated session in use; account state and other sessions remain unchanged.",
+        "summary": "Permanently withdraw the authenticated account after password confirmation",
+        "description": "Permanently withdraw the authenticated account after password confirmation.\nOnly the current account may request deletion and must confirm its password;\nauthored content is de-identified or removed and community ownership is\ntransferred or archived according to the remaining subscribers. Rejects a\nfailed confirmation or absent session.",
         "tags": [
-          "reddit"
-        ],
-        "parameters": [],
-        "responses": {
-          "201": {
-            "description": "The operation result.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/IResult"
-                }
-              }
-            }
-          }
-        },
-        "x-samchon-accessor": [
-          "reddit",
-          "user",
-          "session",
-          "logout"
-        ],
-        "x-samchon-controller": "RedditController"
-      }
-    },
-    "/reddit/user/session/revoke-all": {
-      "post": {
-        "summary": "Revoke every session for the authenticated account, including the caller's session",
-        "description": "Revoke every session for the authenticated account, including the caller's session.",
-        "tags": [
-          "reddit"
-        ],
-        "parameters": [],
-        "responses": {
-          "201": {
-            "description": "The operation result.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/IResult"
-                }
-              }
-            }
-          }
-        },
-        "x-samchon-accessor": [
-          "reddit",
-          "user",
-          "session",
-          "revoke_all",
-          "logoutAll"
-        ],
-        "x-samchon-controller": "RedditController"
-      }
-    },
-    "/reddit/user/password": {
-      "put": {
-        "summary": "Replace the current password after proof, retaining this session and revoking every other session. Wrong or identical passwords are refused",
-        "description": "Replace the current password after proof, retaining this session and revoking every other session. Wrong or identical passwords are refused.",
-        "tags": [
-          "reddit"
+          "Auth"
         ],
         "parameters": [],
         "requestBody": {
-          "description": "New password payload.",
+          "description": "Deletion password confirmation",
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/IAuth.IChangePassword"
+                "$ref": "#/components/schemas/IAccountDelete"
               }
             }
           },
           "required": true
         },
         "responses": {
-          "200": {
-            "description": "The operation result.",
+          "201": {
+            "description": "Whether the account withdrawal succeeded",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/IResult"
+                  "type": "boolean"
                 }
               }
             }
           }
         },
         "x-samchon-accessor": [
-          "reddit",
-          "user",
-          "password",
-          "changePassword"
-        ],
-        "x-samchon-controller": "RedditController"
-      }
-    },
-    "/reddit/user/account": {
-      "delete": {
-        "summary": "Permanently delete the authenticated account after password proof, cascading authored state, votes, roles, reports, sessions, and ownership succession atomically",
-        "description": "Permanently delete the authenticated account after password proof, cascading authored state, votes, roles, reports, sessions, and ownership succession atomically.",
-        "tags": [
-          "reddit"
-        ],
-        "parameters": [],
-        "requestBody": {
-          "description": "Password confirmation payload.",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/IAuth.IDeleteAccount"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "The operation result.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/IResult"
-                }
-              }
-            }
-          }
-        },
-        "x-samchon-accessor": [
-          "reddit",
-          "user",
+          "auth",
           "account",
+          "_delete",
           "deleteAccount"
         ],
         "x-samchon-controller": "RedditController"
       }
     },
-    "/reddit/user/profile/{username}": {
-      "get": {
-        "summary": "Publicly view one available profile and its current karma and authored pages; deleted or unknown usernames are not found",
-        "description": "Publicly view one available profile and its current karma and authored pages; deleted or unknown usernames are not found.",
+    "/profile/{username}": {
+      "patch": {
+        "description": "Read a public profile by username with independently paged authored posts\nand comments. The anonymous caller may read only an active public identity;\ndeleted identities are refused. The response includes public profile fields,\nkarma, avatar, and the requested page results.",
         "tags": [
-          "reddit"
+          "Profile"
         ],
         "parameters": [
           {
@@ -395,12 +378,23 @@
               "type": "string"
             },
             "required": true,
-            "description": "Request value used by this operation."
+            "description": "Public profile username"
           }
         ],
+        "requestBody": {
+          "description": "Post and comment pagination requests",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IProfileRequest"
+              }
+            }
+          },
+          "required": true
+        },
         "responses": {
           "200": {
-            "description": "The operation result.",
+            "description": "The public profile and its two authored-content pages",
             "content": {
               "application/json": {
                 "schema": {
@@ -411,76 +405,26 @@
           }
         },
         "x-samchon-accessor": [
-          "reddit",
-          "user",
           "profile",
           "profile"
         ],
         "x-samchon-controller": "RedditController"
-      },
-      "patch": {
-        "summary": "Publicly view a profile with independent post and comment continuations; deleted or unknown usernames are not found",
-        "description": "Publicly view a profile with independent post and comment continuations; deleted or unknown usernames are not found.",
-        "tags": [
-          "reddit"
-        ],
-        "parameters": [
-          {
-            "name": "username",
-            "in": "path",
-            "schema": {
-              "type": "string"
-            },
-            "required": true,
-            "description": "Request value used by this operation."
-          }
-        ],
-        "requestBody": {
-          "description": "Independent profile page inputs.",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/IProfile.IRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "The operation result.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/IProfile"
-                }
-              }
-            }
-          }
-        },
-        "x-samchon-accessor": [
-          "reddit",
-          "user",
-          "profile",
-          "profilePage"
-        ],
-        "x-samchon-controller": "RedditController"
       }
     },
-    "/reddit/user/profile": {
+    "/profile": {
       "put": {
-        "summary": "Edit only the authenticated user's display name, biography, and avatar; invalid or blank supplied values leave the profile unchanged",
-        "description": "Edit only the authenticated user's display name, biography, and avatar; invalid or blank supplied values leave the profile unchanged.",
+        "summary": "Edit only the authenticated account's public profile fields",
+        "description": "Edit only the authenticated account's public profile fields.\nThe caller owns the profile selected by its session and may change display\nname, biography, or avatar; the identity and authored content remain stable.\nRejects an absent session or invalid media and returns the persisted profile.",
         "tags": [
-          "reddit"
+          "Profile"
         ],
         "parameters": [],
         "requestBody": {
-          "description": "Profile fields to replace.",
+          "description": "Editable public profile fields",
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/IProfile.IUpdate"
+                "$ref": "#/components/schemas/IProfileUpdate"
               }
             }
           },
@@ -488,7 +432,7 @@
         },
         "responses": {
           "200": {
-            "description": "The operation result.",
+            "description": "The updated public profile",
             "content": {
               "application/json": {
                 "schema": {
@@ -499,28 +443,26 @@
           }
         },
         "x-samchon-accessor": [
-          "reddit",
-          "user",
           "profile",
           "updateProfile"
         ],
         "x-samchon-controller": "RedditController"
       }
     },
-    "/reddit/community": {
+    "/communities": {
       "post": {
-        "summary": "Create an active community and bootstrap the caller as owner and subscriber; invalid or conflicting fields create nothing",
-        "description": "Create an active community and bootstrap the caller as owner and subscriber; invalid or conflicting fields create nothing.",
+        "summary": "Create an active community and bootstrap owner and subscriber authority",
+        "description": "Create an active community and bootstrap owner and subscriber authority.\nThe authenticated caller becomes the owner and first subscriber; duplicate\nnames, invalid descriptions, and invalid icons are refused. The response is\nthe newly persisted community.",
         "tags": [
-          "reddit"
+          "Community"
         ],
         "parameters": [],
         "requestBody": {
-          "description": "Community creation fields.",
+          "description": "Community name, description, and icon",
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ICommunity.ICreate"
+                "$ref": "#/components/schemas/ICommunityCreate"
               }
             }
           },
@@ -528,7 +470,7 @@
         },
         "responses": {
           "201": {
-            "description": "The operation result.",
+            "description": "The created community with owner and subscriber count",
             "content": {
               "application/json": {
                 "schema": {
@@ -539,25 +481,24 @@
           }
         },
         "x-samchon-accessor": [
-          "reddit",
-          "community",
+          "communities",
           "createCommunity"
         ],
         "x-samchon-controller": "RedditController"
       },
       "patch": {
-        "summary": "Publicly browse or name-search active and archived communities in normalized-name order",
-        "description": "Publicly browse or name-search active and archived communities in normalized-name order.",
+        "summary": "Browse or name-search the public community catalog",
+        "description": "Browse or name-search the public community catalog.\nThe anonymous caller may read active and archived public communities; the\noptional search is case-insensitive and the page is stable and bounded.\nInvalid pagination or continuation is refused or reset as documented.",
         "tags": [
-          "reddit"
+          "Community"
         ],
         "parameters": [],
         "requestBody": {
-          "description": "Community search and pagination inputs.",
+          "description": "Search, pagination, and continuation request",
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ICommunity.IRequest"
+                "$ref": "#/components/schemas/ICommunityRequest"
               }
             }
           },
@@ -565,7 +506,7 @@
         },
         "responses": {
           "200": {
-            "description": "The operation result.",
+            "description": "One page of public communities",
             "content": {
               "application/json": {
                 "schema": {
@@ -576,74 +517,33 @@
           }
         },
         "x-samchon-accessor": [
-          "reddit",
-          "community",
-          "listCommunities"
+          "communities",
+          "communities"
         ],
         "x-samchon-controller": "RedditController"
       }
     },
-    "/reddit/community/{id}": {
-      "get": {
-        "summary": "Publicly read one community's description, lifecycle status, owner, and subscriber count. Unknown identifiers are not found",
-        "description": "Publicly read one community's description, lifecycle status, owner, and subscriber count. Unknown identifiers are not found.",
-        "tags": [
-          "reddit"
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "schema": {
-              "format": "uuid",
-              "type": "string"
-            },
-            "required": true,
-            "description": "Request value used by this operation."
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "The operation result.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ICommunity"
-                }
-              }
-            }
-          }
-        },
-        "x-samchon-accessor": [
-          "reddit",
-          "community",
-          "getCommunity"
-        ],
-        "x-samchon-controller": "RedditController"
-      }
-    },
-    "/reddit/community/{id}/subscription": {
+    "/community/{communityId}/subscribe": {
       "post": {
-        "summary": "Subscribe the authenticated caller to an active community; duplicate subscription is a no-op and archives are refused",
-        "description": "Subscribe the authenticated caller to an active community; duplicate subscription is a no-op and archives are refused.",
+        "summary": "Subscribe the authenticated account to an active community",
+        "description": "Subscribe the authenticated account to an active community.\nThe caller owns the membership; archived communities are refused, while\nan already-active membership is a no-change success. The response reports\nthe community's current subscriber state.",
         "tags": [
-          "reddit"
+          "Subscription"
         ],
         "parameters": [
           {
-            "name": "id",
+            "name": "communityId",
             "in": "path",
             "schema": {
-              "format": "uuid",
               "type": "string"
             },
             "required": true,
-            "description": "Request value used by this operation."
+            "description": "Target community"
           }
         ],
         "responses": {
           "201": {
-            "description": "The operation result.",
+            "description": "The community after membership activation",
             "content": {
               "application/json": {
                 "schema": {
@@ -654,34 +554,32 @@
           }
         },
         "x-samchon-accessor": [
-          "reddit",
           "community",
-          "subscription",
+          "subscribe",
           "subscribe"
         ],
         "x-samchon-controller": "RedditController"
       },
       "delete": {
-        "summary": "End only the authenticated caller's subscription, including a residual archived subscription",
-        "description": "End only the authenticated caller's subscription, including a residual archived subscription.",
+        "summary": "End the authenticated account's subscription without deleting participation",
+        "description": "End the authenticated account's subscription without deleting participation.\nThe caller may remove only its own membership; the community remains public\nand authored content is retained. An absent membership is a successful no-op.",
         "tags": [
-          "reddit"
+          "Subscription"
         ],
         "parameters": [
           {
-            "name": "id",
+            "name": "communityId",
             "in": "path",
             "schema": {
-              "format": "uuid",
               "type": "string"
             },
             "required": true,
-            "description": "Request value used by this operation."
+            "description": "Target community"
           }
         ],
         "responses": {
           "200": {
-            "description": "The operation result.",
+            "description": "The community after membership termination",
             "content": {
               "application/json": {
                 "schema": {
@@ -692,24 +590,23 @@
           }
         },
         "x-samchon-accessor": [
-          "reddit",
           "community",
-          "subscription",
+          "subscribe",
           "unsubscribe"
         ],
         "x-samchon-controller": "RedditController"
       }
     },
-    "/reddit/user/subscription": {
+    "/subscriptions": {
       "patch": {
-        "summary": "Privately list every current subscription of the authenticated caller, including archived residuals",
-        "description": "Privately list every current subscription of the authenticated caller, including archived residuals.",
+        "summary": "List the authenticated account's active subscriptions",
+        "description": "List the authenticated account's active subscriptions.\nThe caller sees only its own active memberships in a stable bounded page;\narchived or ended memberships are excluded. Rejects an absent session.",
         "tags": [
-          "reddit"
+          "Subscription"
         ],
         "parameters": [],
         "requestBody": {
-          "description": "Pagination inputs.",
+          "description": "Pagination and continuation request",
           "content": {
             "application/json": {
               "schema": {
@@ -721,7 +618,7 @@
         },
         "responses": {
           "200": {
-            "description": "The operation result.",
+            "description": "One page of the caller's active subscriptions",
             "content": {
               "application/json": {
                 "schema": {
@@ -732,35 +629,21 @@
           }
         },
         "x-samchon-accessor": [
-          "reddit",
-          "user",
-          "subscription",
           "subscriptions"
         ],
         "x-samchon-controller": "RedditController"
       }
     },
-    "/reddit/community/{communityId}/post": {
+    "/posts": {
       "post": {
-        "summary": "Create one typed post for a subscribed, unbanned caller in an active community; invalid payloads and eligibility are refused",
-        "description": "Create one typed post for a subscribed, unbanned caller in an active community; invalid payloads and eligibility are refused.",
+        "summary": "Publish one validated text, link, or image post in an active community",
+        "description": "Publish one validated text, link, or image post in an active community.\nThe authenticated caller must be an active subscriber and not be banned;\nexactly one valid payload kind is persisted. Invalid content, membership,\nor moderation state is refused.",
         "tags": [
-          "reddit"
+          "Post"
         ],
-        "parameters": [
-          {
-            "name": "communityId",
-            "in": "path",
-            "schema": {
-              "format": "uuid",
-              "type": "string"
-            },
-            "required": true,
-            "description": "Request value used by this operation."
-          }
-        ],
+        "parameters": [],
         "requestBody": {
-          "description": "Post creation fields.",
+          "description": "Community and type-specific post payload",
           "content": {
             "application/json": {
               "schema": {
@@ -772,7 +655,7 @@
         },
         "responses": {
           "201": {
-            "description": "The operation result.",
+            "description": "The persisted post and public ownership data",
             "content": {
               "application/json": {
                 "schema": {
@@ -783,36 +666,33 @@
           }
         },
         "x-samchon-accessor": [
-          "reddit",
-          "community",
-          "post",
+          "posts",
           "createPost"
         ],
         "x-samchon-controller": "RedditController"
       }
     },
-    "/reddit/post/{id}": {
+    "/post/{id}": {
       "get": {
-        "summary": "Publicly read one available post with its complete payload, score, count, author, and community",
-        "description": "Publicly read one available post with its complete payload, score, count, author, and community.",
+        "summary": "Read one available post publicly",
+        "description": "Read one available post publicly.\nThe anonymous caller may read a post whose community and post are active;\nmissing or deleted posts are refused. The response includes its public\npayload, author, community, score, and comment count.",
         "tags": [
-          "reddit"
+          "Post"
         ],
         "parameters": [
           {
             "name": "id",
             "in": "path",
             "schema": {
-              "format": "uuid",
               "type": "string"
             },
             "required": true,
-            "description": "Request value used by this operation."
+            "description": "Target post identifier"
           }
         ],
         "responses": {
           "200": {
-            "description": "The operation result.",
+            "description": "The public post detail",
             "content": {
               "application/json": {
                 "schema": {
@@ -823,32 +703,30 @@
           }
         },
         "x-samchon-accessor": [
-          "reddit",
           "post",
-          "getPost"
+          "post"
         ],
         "x-samchon-controller": "RedditController"
       },
       "put": {
-        "summary": "Let only the post author edit title and same-type payload in an active community; identity, type, and invalid edits are refused",
-        "description": "Let only the post author edit title and same-type payload in an active community; identity, type, and invalid edits are refused.",
+        "summary": "Edit an authored post without changing its type or identity",
+        "description": "Edit an authored post without changing its type or identity.\nThe authenticated caller must own the post and may update only its editable\nfields while its community remains active and available. Invalid payloads,\nownership, or moderation state are refused.",
         "tags": [
-          "reddit"
+          "Post"
         ],
         "parameters": [
           {
             "name": "id",
             "in": "path",
             "schema": {
-              "format": "uuid",
               "type": "string"
             },
             "required": true,
-            "description": "Request value used by this operation."
+            "description": "Target post identifier"
           }
         ],
         "requestBody": {
-          "description": "Post fields to replace.",
+          "description": "Editable post fields",
           "content": {
             "application/json": {
               "schema": {
@@ -860,7 +738,7 @@
         },
         "responses": {
           "200": {
-            "description": "The operation result.",
+            "description": "The updated post",
             "content": {
               "application/json": {
                 "schema": {
@@ -871,110 +749,57 @@
           }
         },
         "x-samchon-accessor": [
-          "reddit",
           "post",
           "updatePost"
         ],
         "x-samchon-controller": "RedditController"
       },
       "delete": {
-        "summary": "Permanently delete the caller's own available post and all dependent comments, votes, reports, and karma contributions",
-        "description": "Permanently delete the caller's own available post and all dependent comments, votes, reports, and karma contributions.",
+        "summary": "Permanently delete an authored post",
+        "description": "Permanently delete an authored post.\nThe authenticated caller may delete only its own available post; the public\npost and its dependent content become unavailable while required history is retained.",
         "tags": [
-          "reddit"
+          "Post"
         ],
         "parameters": [
           {
             "name": "id",
             "in": "path",
             "schema": {
-              "format": "uuid",
               "type": "string"
             },
             "required": true,
-            "description": "Request value used by this operation."
+            "description": "Target post identifier"
           }
         ],
         "responses": {
           "200": {
-            "description": "The operation result.",
+            "description": "Whether the authored post was deleted",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/IResult"
+                  "type": "boolean"
                 }
               }
             }
           }
         },
         "x-samchon-accessor": [
-          "reddit",
           "post",
-          "deletePost"
+          "deleteOwnPost"
         ],
         "x-samchon-controller": "RedditController"
       }
     },
-    "/reddit/community/{communityId}/post/{id}": {
-      "delete": {
-        "summary": "Let a current owner or moderator delete any available post in the exact active community scope",
-        "description": "Let a current owner or moderator delete any available post in the exact active community scope.",
-        "tags": [
-          "reddit"
-        ],
-        "parameters": [
-          {
-            "name": "communityId",
-            "in": "path",
-            "schema": {
-              "format": "uuid",
-              "type": "string"
-            },
-            "required": true,
-            "description": "Request value used by this operation."
-          },
-          {
-            "name": "id",
-            "in": "path",
-            "schema": {
-              "format": "uuid",
-              "type": "string"
-            },
-            "required": true,
-            "description": "Request value used by this operation."
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "The operation result.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/IResult"
-                }
-              }
-            }
-          }
-        },
-        "x-samchon-accessor": [
-          "reddit",
-          "community",
-          "post",
-          "moderateDeletePost"
-        ],
-        "x-samchon-controller": "RedditController"
-      }
-    },
-    "/reddit/feed/home": {
+    "/feed/home": {
       "patch": {
-        "summary": "Authenticated home feed restricted to the caller's current subscriptions, including residual archived subscriptions",
-        "description": "Authenticated home feed restricted to the caller's current subscriptions, including residual archived subscriptions.",
+        "summary": "Browse the authenticated home feed scoped to the caller's active subscriptions",
+        "description": "Browse the authenticated home feed scoped to the caller's active subscriptions.\nThe caller sees only public posts from those communities, in the requested\nstable order and page; invalid sort, range, or continuation is refused or reset.",
         "tags": [
-          "reddit"
+          "Feed"
         ],
         "parameters": [],
         "requestBody": {
-          "description": "Feed sorting and pagination inputs.",
+          "description": "Feed sort, range, pagination, and continuation request",
           "content": {
             "application/json": {
               "schema": {
@@ -986,7 +811,7 @@
         },
         "responses": {
           "200": {
-            "description": "The operation result.",
+            "description": "One page of subscribed-community post summaries",
             "content": {
               "application/json": {
                 "schema": {
@@ -997,7 +822,6 @@
           }
         },
         "x-samchon-accessor": [
-          "reddit",
           "feed",
           "home",
           "homeFeed"
@@ -1005,16 +829,16 @@
         "x-samchon-controller": "RedditController"
       }
     },
-    "/reddit/feed/popular": {
+    "/feed/popular": {
       "patch": {
-        "summary": "Public platform-wide feed across active and archived communities with validated sorting and pagination",
-        "description": "Public platform-wide feed across active and archived communities with validated sorting and pagination.",
+        "summary": "Browse the public all-community popular feed",
+        "description": "Browse the public all-community popular feed.\nThe anonymous caller sees public posts across active and archived communities\naccording to the requested sort, range, and stable page; invalid requests are refused.",
         "tags": [
-          "reddit"
+          "Feed"
         ],
         "parameters": [],
         "requestBody": {
-          "description": "Feed sorting and pagination inputs.",
+          "description": "Feed sort, range, pagination, and continuation request",
           "content": {
             "application/json": {
               "schema": {
@@ -1026,7 +850,7 @@
         },
         "responses": {
           "200": {
-            "description": "The operation result.",
+            "description": "One page of public post summaries",
             "content": {
               "application/json": {
                 "schema": {
@@ -1037,7 +861,6 @@
           }
         },
         "x-samchon-accessor": [
-          "reddit",
           "feed",
           "popular",
           "popularFeed"
@@ -1045,27 +868,26 @@
         "x-samchon-controller": "RedditController"
       }
     },
-    "/reddit/community/{communityId}/feed": {
+    "/community/{communityId}/feed": {
       "patch": {
-        "summary": "Public feed for one active or archived community; unknown communities are not found",
-        "description": "Public feed for one active or archived community; unknown communities are not found.",
+        "summary": "Browse one public community feed",
+        "description": "Browse one public community feed.\nThe anonymous caller may read public posts in the identified community,\nincluding an archived community, using the requested stable sort and page.\nUnknown communities or invalid feed requests are refused.",
         "tags": [
-          "reddit"
+          "Feed"
         ],
         "parameters": [
           {
             "name": "communityId",
             "in": "path",
             "schema": {
-              "format": "uuid",
               "type": "string"
             },
             "required": true,
-            "description": "Request value used by this operation."
+            "description": "Target community"
           }
         ],
         "requestBody": {
-          "description": "Feed sorting and pagination inputs.",
+          "description": "Feed sort, range, pagination, and continuation request",
           "content": {
             "application/json": {
               "schema": {
@@ -1077,7 +899,7 @@
         },
         "responses": {
           "200": {
-            "description": "The operation result.",
+            "description": "One page of that community's public post summaries",
             "content": {
               "application/json": {
                 "schema": {
@@ -1088,7 +910,6 @@
           }
         },
         "x-samchon-accessor": [
-          "reddit",
           "community",
           "feed",
           "communityFeed"
@@ -1096,27 +917,53 @@
         "x-samchon-controller": "RedditController"
       }
     },
-    "/reddit/post/{postId}/comment": {
-      "post": {
-        "summary": "Create a nonblank top-level comment or same-post reply for an authenticated, unbanned caller in an active community",
-        "description": "Create a nonblank top-level comment or same-post reply for an authenticated, unbanned caller in an active community.",
+    "/moderation/post/{id}": {
+      "delete": {
+        "description": "Delete any available post in a community where the authenticated caller is\nan owner or moderator. Other communities, missing authority, and unavailable\nposts are refused; the target is removed and moderation history is retained.",
         "tags": [
-          "reddit"
+          "Moderation"
         ],
         "parameters": [
           {
-            "name": "postId",
+            "name": "id",
             "in": "path",
             "schema": {
-              "format": "uuid",
               "type": "string"
             },
             "required": true,
-            "description": "Request value used by this operation."
+            "description": "Target post identifier"
           }
         ],
+        "responses": {
+          "200": {
+            "description": "Whether the moderated post was deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "moderation",
+          "post",
+          "deleteModeratedPost"
+        ],
+        "x-samchon-controller": "RedditController"
+      }
+    },
+    "/comments": {
+      "post": {
+        "summary": "Add a top-level comment or same-post reply to an available post",
+        "description": "Add a top-level comment or same-post reply to an available post.\nThe authenticated caller may participate without subscribing, but banned or\nunavailable targets are refused; a reply must belong to the same post.",
+        "tags": [
+          "Comment"
+        ],
+        "parameters": [],
         "requestBody": {
-          "description": "Comment creation fields.",
+          "description": "Post, optional parent, and comment text",
           "content": {
             "application/json": {
               "schema": {
@@ -1128,7 +975,7 @@
         },
         "responses": {
           "201": {
-            "description": "The operation result.",
+            "description": "The persisted comment and its public author",
             "content": {
               "application/json": {
                 "schema": {
@@ -1139,33 +986,32 @@
           }
         },
         "x-samchon-accessor": [
-          "reddit",
-          "post",
-          "comment",
+          "comments",
           "createComment"
         ],
         "x-samchon-controller": "RedditController"
-      },
+      }
+    },
+    "/post/{postId}/comments": {
       "patch": {
-        "summary": "Publicly read recursively nested comments with independent sibling sorting and root pagination",
-        "description": "Publicly read recursively nested comments with independent sibling sorting and root pagination.",
+        "summary": "View a recursively nested public comment thread for an available post",
+        "description": "View a recursively nested public comment thread for an available post.\nThe anonymous caller receives stable root pagination and descendant replies;\ndeleted parents remain neutral markers when required to preserve replies.",
         "tags": [
-          "reddit"
+          "Comment"
         ],
         "parameters": [
           {
             "name": "postId",
             "in": "path",
             "schema": {
-              "format": "uuid",
               "type": "string"
             },
             "required": true,
-            "description": "Request value used by this operation."
+            "description": "Target post identifier"
           }
         ],
         "requestBody": {
-          "description": "Comment sorting and pagination inputs.",
+          "description": "Comment sort, pagination, and continuation request",
           "content": {
             "application/json": {
               "schema": {
@@ -1177,7 +1023,7 @@
         },
         "responses": {
           "200": {
-            "description": "The operation result.",
+            "description": "One page of recursively nested public comments",
             "content": {
               "application/json": {
                 "schema": {
@@ -1188,35 +1034,32 @@
           }
         },
         "x-samchon-accessor": [
-          "reddit",
           "post",
-          "comment",
-          "listComments"
+          "comments"
         ],
         "x-samchon-controller": "RedditController"
       }
     },
-    "/reddit/comment/{id}": {
+    "/comment/{id}": {
       "put": {
-        "summary": "Let only the author replace nonblank text on an available comment in an active community",
-        "description": "Let only the author replace nonblank text on an available comment in an active community.",
+        "summary": "Edit an authored comment's text",
+        "description": "Edit an authored comment's text.\nThe authenticated caller must own the available comment and its post; blank,\ninvalid, or unauthorized edits are refused and the persisted comment is returned.",
         "tags": [
-          "reddit"
+          "Comment"
         ],
         "parameters": [
           {
             "name": "id",
             "in": "path",
             "schema": {
-              "format": "uuid",
               "type": "string"
             },
             "required": true,
-            "description": "Request value used by this operation."
+            "description": "Target comment identifier"
           }
         ],
         "requestBody": {
-          "description": "Comment fields to replace.",
+          "description": "Replacement comment text",
           "content": {
             "application/json": {
               "schema": {
@@ -1228,7 +1071,7 @@
         },
         "responses": {
           "200": {
-            "description": "The operation result.",
+            "description": "The updated comment",
             "content": {
               "application/json": {
                 "schema": {
@@ -1239,518 +1082,212 @@
           }
         },
         "x-samchon-accessor": [
-          "reddit",
           "comment",
           "updateComment"
         ],
         "x-samchon-controller": "RedditController"
       },
       "delete": {
-        "summary": "Permanently remove the caller's own comment content while preserving required neutral reply markers",
-        "description": "Permanently remove the caller's own comment content while preserving required neutral reply markers.",
+        "summary": "Delete an authored comment while preserving required reply markers",
+        "description": "Delete an authored comment while preserving required reply markers.\nThe authenticated caller may delete only its own available comment; reply-free\ncomments disappear and parents with replies become neutral markers.",
         "tags": [
-          "reddit"
+          "Comment"
         ],
         "parameters": [
           {
             "name": "id",
             "in": "path",
             "schema": {
-              "format": "uuid",
               "type": "string"
             },
             "required": true,
-            "description": "Request value used by this operation."
+            "description": "Target comment identifier"
           }
         ],
         "responses": {
           "200": {
-            "description": "The operation result.",
+            "description": "Whether the authored comment was deleted",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/IResult"
+                  "type": "boolean"
                 }
               }
             }
           }
         },
         "x-samchon-accessor": [
-          "reddit",
           "comment",
-          "deleteComment"
+          "deleteOwnComment"
         ],
         "x-samchon-controller": "RedditController"
       }
     },
-    "/reddit/community/{communityId}/comment/{id}": {
+    "/moderation/comment/{id}": {
       "delete": {
-        "summary": "Let a current owner or moderator remove any available comment in the exact active community scope",
-        "description": "Let a current owner or moderator remove any available comment in the exact active community scope.",
+        "description": "Delete any available comment in a community where the authenticated caller is\nan owner or moderator. Cross-community, unauthorized, and unavailable targets\nare refused; required reply markers and moderation history are retained.",
         "tags": [
-          "reddit"
+          "Moderation"
         ],
         "parameters": [
-          {
-            "name": "communityId",
-            "in": "path",
-            "schema": {
-              "format": "uuid",
-              "type": "string"
-            },
-            "required": true,
-            "description": "Request value used by this operation."
-          },
           {
             "name": "id",
             "in": "path",
             "schema": {
-              "format": "uuid",
               "type": "string"
             },
             "required": true,
-            "description": "Request value used by this operation."
+            "description": "Target comment identifier"
           }
         ],
         "responses": {
           "200": {
-            "description": "The operation result.",
+            "description": "Whether the moderated comment was deleted",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/IResult"
+                  "type": "boolean"
                 }
               }
             }
           }
         },
         "x-samchon-accessor": [
-          "reddit",
-          "community",
+          "moderation",
           "comment",
-          "moderateDeleteComment"
+          "deleteModeratedComment"
         ],
         "x-samchon-controller": "RedditController"
       }
     },
-    "/reddit/post/{postId}/vote": {
-      "put": {
-        "summary": "Apply an upvote, downvote, or removal to an available post and update score and author karma together",
-        "description": "Apply an upvote, downvote, or removal to an available post and update score and author karma together.",
+    "/votes": {
+      "post": {
+        "summary": "Enter or replace one signed vote on an available post or comment",
+        "description": "Enter or replace one signed vote on an available post or comment.\nThe authenticated caller owns at most one signed value per target; changing\ndirection replaces its prior contribution and updates score and karma.\nInvalid or unavailable targets are refused.",
         "tags": [
-          "reddit"
+          "Vote"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "description": "Target identifier and vote value",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IVoteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "The persisted vote",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IVote"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "votes",
+          "vote"
+        ],
+        "x-samchon-controller": "RedditController"
+      }
+    },
+    "/votes/post/{postId}": {
+      "delete": {
+        "summary": "Remove the authenticated caller's current post vote",
+        "description": "Remove the authenticated caller's current post vote.\nOnly that caller's contribution is removed; an absent vote is a successful\nno-op and the target's score and author karma are adjusted when present.",
+        "tags": [
+          "Vote"
         ],
         "parameters": [
           {
             "name": "postId",
             "in": "path",
             "schema": {
-              "format": "uuid",
               "type": "string"
             },
             "required": true,
-            "description": "Request value used by this operation."
+            "description": "Target post identifier"
           }
         ],
-        "requestBody": {
-          "description": "Vote value.",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/IVoteRequest"
-              }
-            }
-          },
-          "required": true
-        },
         "responses": {
           "200": {
-            "description": "The operation result.",
+            "description": "Whether the removal operation succeeded, including an absent-vote no-op",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/IVote"
+                  "type": "boolean"
                 }
               }
             }
           }
         },
         "x-samchon-accessor": [
-          "reddit",
+          "votes",
           "post",
-          "vote",
-          "votePost"
+          "removePostVote"
         ],
         "x-samchon-controller": "RedditController"
       }
     },
-    "/reddit/comment/{commentId}/vote": {
-      "put": {
-        "summary": "Apply an upvote, downvote, or removal to an available comment and update score and author karma together",
-        "description": "Apply an upvote, downvote, or removal to an available comment and update score and author karma together.",
+    "/votes/comment/{commentId}": {
+      "delete": {
+        "summary": "Remove the authenticated caller's current comment vote",
+        "description": "Remove the authenticated caller's current comment vote.\nOnly that caller's contribution is removed; an absent vote is a successful\nno-op and the target's score and author karma are adjusted when present.",
         "tags": [
-          "reddit"
+          "Vote"
         ],
         "parameters": [
           {
             "name": "commentId",
             "in": "path",
             "schema": {
-              "format": "uuid",
               "type": "string"
             },
             "required": true,
-            "description": "Request value used by this operation."
+            "description": "Target comment identifier"
           }
         ],
-        "requestBody": {
-          "description": "Vote value.",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/IVoteRequest"
-              }
-            }
-          },
-          "required": true
-        },
         "responses": {
           "200": {
-            "description": "The operation result.",
+            "description": "Whether the removal operation succeeded, including an absent-vote no-op",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/IVote"
+                  "type": "boolean"
                 }
               }
             }
           }
         },
         "x-samchon-accessor": [
-          "reddit",
+          "votes",
           "comment",
-          "vote",
-          "voteComment"
+          "removeCommentVote"
         ],
         "x-samchon-controller": "RedditController"
       }
     },
-    "/reddit/community/{communityId}/moderator": {
+    "/reports": {
       "post": {
-        "summary": "Let a current owner or moderator appoint an active user in this exact active community; duplicate assignment is a no-op",
-        "description": "Let a current owner or moderator appoint an active user in this exact active community; duplicate assignment is a no-op.",
+        "summary": "Submit one unresolved private report for an available post or comment",
+        "description": "Submit one unresolved private report for an available post or comment.\nThe authenticated caller may report an available target; duplicate unresolved\nreports, invalid reasons, and unavailable targets are refused. The report is\nvisible only to scoped moderators.",
         "tags": [
-          "reddit"
-        ],
-        "parameters": [
-          {
-            "name": "communityId",
-            "in": "path",
-            "schema": {
-              "format": "uuid",
-              "type": "string"
-            },
-            "required": true,
-            "description": "Request value used by this operation."
-          }
-        ],
-        "requestBody": {
-          "description": "Moderation target identifier.",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/IModerationTarget"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "201": {
-            "description": "The operation result.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ICommunity"
-                }
-              }
-            }
-          }
-        },
-        "x-samchon-accessor": [
-          "reddit",
-          "community",
-          "moderator",
-          "appointModerator"
-        ],
-        "x-samchon-controller": "RedditController"
-      }
-    },
-    "/reddit/community/{communityId}/moderator/{userId}": {
-      "delete": {
-        "summary": "Let only the current owner revoke another moderator in this exact active community; owner and peer targets are protected",
-        "description": "Let only the current owner revoke another moderator in this exact active community; owner and peer targets are protected.",
-        "tags": [
-          "reddit"
-        ],
-        "parameters": [
-          {
-            "name": "communityId",
-            "in": "path",
-            "schema": {
-              "format": "uuid",
-              "type": "string"
-            },
-            "required": true,
-            "description": "Request value used by this operation."
-          },
-          {
-            "name": "userId",
-            "in": "path",
-            "schema": {
-              "format": "uuid",
-              "type": "string"
-            },
-            "required": true,
-            "description": "Request value used by this operation."
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "The operation result.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ICommunity"
-                }
-              }
-            }
-          }
-        },
-        "x-samchon-accessor": [
-          "reddit",
-          "community",
-          "moderator",
-          "removeModerator"
-        ],
-        "x-samchon-controller": "RedditController"
-      }
-    },
-    "/reddit/community/{communityId}/ban/{userId}": {
-      "post": {
-        "summary": "Let a current owner or moderator activate a participation ban in this exact active community; the owner is protected",
-        "description": "Let a current owner or moderator activate a participation ban in this exact active community; the owner is protected.",
-        "tags": [
-          "reddit"
-        ],
-        "parameters": [
-          {
-            "name": "communityId",
-            "in": "path",
-            "schema": {
-              "format": "uuid",
-              "type": "string"
-            },
-            "required": true,
-            "description": "Request value used by this operation."
-          },
-          {
-            "name": "userId",
-            "in": "path",
-            "schema": {
-              "format": "uuid",
-              "type": "string"
-            },
-            "required": true,
-            "description": "Request value used by this operation."
-          }
-        ],
-        "responses": {
-          "201": {
-            "description": "The operation result.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ICommunity"
-                }
-              }
-            }
-          }
-        },
-        "x-samchon-accessor": [
-          "reddit",
-          "community",
-          "ban",
-          "ban"
-        ],
-        "x-samchon-controller": "RedditController"
-      },
-      "delete": {
-        "summary": "Let a current owner or moderator end a participation ban in this exact active community; absent bans are no-ops",
-        "description": "Let a current owner or moderator end a participation ban in this exact active community; absent bans are no-ops.",
-        "tags": [
-          "reddit"
-        ],
-        "parameters": [
-          {
-            "name": "communityId",
-            "in": "path",
-            "schema": {
-              "format": "uuid",
-              "type": "string"
-            },
-            "required": true,
-            "description": "Request value used by this operation."
-          },
-          {
-            "name": "userId",
-            "in": "path",
-            "schema": {
-              "format": "uuid",
-              "type": "string"
-            },
-            "required": true,
-            "description": "Request value used by this operation."
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "The operation result.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ICommunity"
-                }
-              }
-            }
-          }
-        },
-        "x-samchon-accessor": [
-          "reddit",
-          "community",
-          "ban",
-          "unban"
-        ],
-        "x-samchon-controller": "RedditController"
-      }
-    },
-    "/reddit/community/{communityId}/ban": {
-      "patch": {
-        "summary": "Privately list active bans for current owners and moderators of this exact active community",
-        "description": "Privately list active bans for current owners and moderators of this exact active community.",
-        "tags": [
-          "reddit"
-        ],
-        "parameters": [
-          {
-            "name": "communityId",
-            "in": "path",
-            "schema": {
-              "format": "uuid",
-              "type": "string"
-            },
-            "required": true,
-            "description": "Request value used by this operation."
-          }
-        ],
-        "requestBody": {
-          "description": "Pagination inputs.",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/IPage.IRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "The operation result.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/IPageIBan"
-                }
-              }
-            }
-          }
-        },
-        "x-samchon-accessor": [
-          "reddit",
-          "community",
-          "ban",
-          "listBans"
-        ],
-        "x-samchon-controller": "RedditController"
-      }
-    },
-    "/reddit/community/{communityId}/ban/history": {
-      "patch": {
-        "summary": "Privately list resolved and active ban history for current owners and moderators of this exact active community",
-        "description": "Privately list resolved and active ban history for current owners and moderators of this exact active community.",
-        "tags": [
-          "reddit"
-        ],
-        "parameters": [
-          {
-            "name": "communityId",
-            "in": "path",
-            "schema": {
-              "format": "uuid",
-              "type": "string"
-            },
-            "required": true,
-            "description": "Request value used by this operation."
-          }
-        ],
-        "requestBody": {
-          "description": "Pagination inputs.",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/IPage.IRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "The operation result.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/IPageIBanHistory"
-                }
-              }
-            }
-          }
-        },
-        "x-samchon-accessor": [
-          "reddit",
-          "community",
-          "ban",
-          "history",
-          "listBanHistory"
-        ],
-        "x-samchon-controller": "RedditController"
-      }
-    },
-    "/reddit/report": {
-      "post": {
-        "summary": "Let any authenticated caller report available active-community content with a nonblank reason; duplicate unresolved work is refused",
-        "description": "Let any authenticated caller report available active-community content with a nonblank reason; duplicate unresolved work is refused.",
-        "tags": [
-          "reddit"
+          "Report"
         ],
         "parameters": [],
         "requestBody": {
-          "description": "Report target and reason.",
+          "description": "Target identifier and report reason",
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/IReport.ICreate"
+                "$ref": "#/components/schemas/IReportCreate"
               }
             }
           },
@@ -1758,7 +1295,7 @@
         },
         "responses": {
           "201": {
-            "description": "The operation result.",
+            "description": "The persisted unresolved report",
             "content": {
               "application/json": {
                 "schema": {
@@ -1769,34 +1306,32 @@
           }
         },
         "x-samchon-accessor": [
-          "reddit",
-          "report",
+          "reports",
           "report"
         ],
         "x-samchon-controller": "RedditController"
       }
     },
-    "/reddit/community/{communityId}/report": {
+    "/community/{communityId}/reports": {
       "patch": {
-        "summary": "Privately list unresolved reports for current owners and moderators of this exact active community",
-        "description": "Privately list unresolved reports for current owners and moderators of this exact active community.",
+        "summary": "Read unresolved reports in a community owned or moderated by the caller",
+        "description": "Read unresolved reports in a community owned or moderated by the caller.\nThe authenticated owner or moderator sees only that community's private\nqueue in a stable page; other actors and communities are refused.",
         "tags": [
-          "reddit"
+          "Report"
         ],
         "parameters": [
           {
             "name": "communityId",
             "in": "path",
             "schema": {
-              "format": "uuid",
               "type": "string"
             },
             "required": true,
-            "description": "Request value used by this operation."
+            "description": "Target community"
           }
         ],
         "requestBody": {
-          "description": "Pagination inputs.",
+          "description": "Pagination and continuation request",
           "content": {
             "application/json": {
               "schema": {
@@ -1808,7 +1343,7 @@
         },
         "responses": {
           "200": {
-            "description": "The operation result.",
+            "description": "One page of unresolved private reports",
             "content": {
               "application/json": {
                 "schema": {
@@ -1819,35 +1354,292 @@
           }
         },
         "x-samchon-accessor": [
-          "reddit",
           "community",
-          "report",
-          "listReports"
+          "reports"
         ],
         "x-samchon-controller": "RedditController"
       }
     },
-    "/reddit/community/{communityId}/report/history": {
-      "patch": {
-        "summary": "Privately list resolved report outcomes for current owners and moderators of this exact active community",
-        "description": "Privately list resolved report outcomes for current owners and moderators of this exact active community.",
+    "/report/{id}/approve": {
+      "put": {
+        "summary": "Approve a scoped unresolved report and delete its target",
+        "description": "Approve a scoped unresolved report and delete its target.\nOnly the community owner or moderator may decide the report; the target is\nremoved atomically with the decision and a retained moderation-history entry.\nRepeated or cross-community decisions are refused.",
         "tags": [
-          "reddit"
+          "Report"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "Target report identifier"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Whether the report was approved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "report",
+          "approve",
+          "approveReport"
+        ],
+        "x-samchon-controller": "RedditController"
+      }
+    },
+    "/report/{id}/dismiss": {
+      "put": {
+        "summary": "Dismiss a scoped unresolved report and retain its target",
+        "description": "Dismiss a scoped unresolved report and retain its target.\nOnly the community owner or moderator may decide the report; the target stays\npublicly available and a retained history entry records the dismissal.\nRepeated or cross-community decisions are refused.",
+        "tags": [
+          "Report"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "Target report identifier"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Whether the report was dismissed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "report",
+          "dismiss",
+          "dismissReport"
+        ],
+        "x-samchon-controller": "RedditController"
+      }
+    },
+    "/community/{communityId}/moderators/{userId}": {
+      "post": {
+        "summary": "Appoint a moderator in a community owned by the caller or moderated by it",
+        "description": "Appoint a moderator in a community owned by the caller or moderated by it.\nThe target user must be active; owners and current moderators may appoint,\nexisting assignments are successful no-ops, and the new role is scoped to this community.",
+        "tags": [
+          "Moderation"
         ],
         "parameters": [
           {
             "name": "communityId",
             "in": "path",
             "schema": {
-              "format": "uuid",
               "type": "string"
             },
             "required": true,
-            "description": "Request value used by this operation."
+            "description": "Target community"
+          },
+          {
+            "name": "userId",
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "Active user receiving the role"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Whether the role was assigned",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "community",
+          "moderators",
+          "assignModerator"
+        ],
+        "x-samchon-controller": "RedditController"
+      },
+      "delete": {
+        "summary": "Revoke a moderator assignment as the current community owner",
+        "description": "Revoke a moderator assignment as the current community owner.\nOnly the owner may remove a role; owners cannot be removed and absent roles\nare successful no-ops. The response reports whether a role changed.",
+        "tags": [
+          "Moderation"
+        ],
+        "parameters": [
+          {
+            "name": "communityId",
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "Target community"
+          },
+          {
+            "name": "userId",
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "Moderator whose role is removed"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Whether the role was removed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "community",
+          "moderators",
+          "removeModerator"
+        ],
+        "x-samchon-controller": "RedditController"
+      }
+    },
+    "/community/{communityId}/bans/{userId}": {
+      "post": {
+        "summary": "Start an active community ban",
+        "description": "Start an active community ban.\nAn owner or moderator may ban an active non-owner user in its community;\nowner targets and unauthorized scopes are refused. The ban blocks posting\nand commenting while public reads, voting, and reporting remain available.",
+        "tags": [
+          "Moderation"
+        ],
+        "parameters": [
+          {
+            "name": "communityId",
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "Target community"
+          },
+          {
+            "name": "userId",
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "User receiving the ban"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Whether the target is now actively banned",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "community",
+          "bans",
+          "ban"
+        ],
+        "x-samchon-controller": "RedditController"
+      },
+      "delete": {
+        "summary": "End an active community ban",
+        "description": "End an active community ban.\nAn owner or moderator may end a ban in its community; an absent ban is a\nsuccessful no-op and active moderation scope is required.",
+        "tags": [
+          "Moderation"
+        ],
+        "parameters": [
+          {
+            "name": "communityId",
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "Target community"
+          },
+          {
+            "name": "userId",
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "Banned user"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Whether an active ban was ended",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "community",
+          "bans",
+          "unban"
+        ],
+        "x-samchon-controller": "RedditController"
+      }
+    },
+    "/community/{communityId}/bans": {
+      "patch": {
+        "summary": "List active bans in a community for its current owner or moderators",
+        "description": "List active bans in a community for its current owner or moderators.\nThe authenticated caller sees only the scoped private list in stable bounded\npages; ended bans are excluded and other actors are refused.",
+        "tags": [
+          "Moderation"
+        ],
+        "parameters": [
+          {
+            "name": "communityId",
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "Target community"
           }
         ],
         "requestBody": {
-          "description": "Pagination inputs.",
+          "description": "Pagination and continuation request",
           "content": {
             "application/json": {
               "schema": {
@@ -1859,100 +1651,69 @@
         },
         "responses": {
           "200": {
-            "description": "The operation result.",
+            "description": "One page of active community bans",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/IPageIReportHistory"
+                  "$ref": "#/components/schemas/IPageIBan"
                 }
               }
             }
           }
         },
         "x-samchon-accessor": [
-          "reddit",
           "community",
-          "report",
-          "history",
-          "listReportHistory"
+          "bans",
+          "banned"
         ],
         "x-samchon-controller": "RedditController"
       }
     },
-    "/reddit/report/{id}/approve": {
-      "post": {
-        "summary": "Let a current scoped owner or moderator approve unresolved work, deleting its available target and dependent state",
-        "description": "Let a current scoped owner or moderator approve unresolved work, deleting its available target and dependent state.",
+    "/community/{communityId}/moderation-history": {
+      "patch": {
+        "summary": "List private resolved-report and moderation history for current moderators",
+        "description": "List private resolved-report and moderation history for current moderators.\nThe authenticated owner or moderator sees only the selected community's\nretained decisions and role events in stable bounded pages; other actors are refused.",
         "tags": [
-          "reddit"
+          "Moderation"
         ],
         "parameters": [
           {
-            "name": "id",
+            "name": "communityId",
             "in": "path",
             "schema": {
-              "format": "uuid",
               "type": "string"
             },
             "required": true,
-            "description": "Request value used by this operation."
+            "description": "Target community"
           }
         ],
+        "requestBody": {
+          "description": "Pagination and continuation request",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IPage.IRequest"
+              }
+            }
+          },
+          "required": true
+        },
         "responses": {
-          "201": {
-            "description": "The operation result.",
+          "200": {
+            "description": "One page of private moderation history",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/IReport"
+                  "$ref": "#/components/schemas/IPageIModerationHistory"
                 }
               }
             }
           }
         },
         "x-samchon-accessor": [
-          "reddit",
-          "report",
-          "approve"
-        ],
-        "x-samchon-controller": "RedditController"
-      }
-    },
-    "/reddit/report/{id}/dismiss": {
-      "post": {
-        "summary": "Let a current scoped owner or moderator dismiss unresolved work while retaining its available target",
-        "description": "Let a current scoped owner or moderator dismiss unresolved work while retaining its available target.",
-        "tags": [
-          "reddit"
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "schema": {
-              "format": "uuid",
-              "type": "string"
-            },
-            "required": true,
-            "description": "Request value used by this operation."
-          }
-        ],
-        "responses": {
-          "201": {
-            "description": "The operation result.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/IReport"
-                }
-              }
-            }
-          }
-        },
-        "x-samchon-accessor": [
-          "reddit",
-          "report",
-          "dismiss"
+          "community",
+          "moderation_history",
+          "history"
         ],
         "x-samchon-controller": "RedditController"
       }
@@ -1960,58 +1721,51 @@
   },
   "components": {
     "schemas": {
-      "IAuthorized": {
+      "IAuth.IAuthorized": {
         "additionalProperties": false,
-        "description": "Tokens and public identity issued by an authentication command.",
+        "description": "Authenticated response shared by registration, login, refresh, and recovery journeys.",
         "properties": {
-          "token": {
-            "description": "Short-lived bearer token for the current session.",
+          "accessToken": {
+            "description": "Issued session material.",
             "type": "string"
           },
           "refreshToken": {
-            "description": "One-time-use refresh token for session continuation.",
+            "description": "Issued continuation material.",
             "type": "string"
           },
           "user": {
-            "$ref": "#/components/schemas/IUser.ISummary",
-            "description": "Public identity associated with both tokens."
+            "$ref": "#/components/schemas/IEntity__type",
+            "description": "Public identity of the authenticated account."
           }
         },
         "required": [
-          "token",
+          "accessToken",
           "refreshToken",
           "user"
         ],
         "type": "object"
       },
-      "IUser.ISummary": {
+      "IEntity__type": {
         "additionalProperties": false,
-        "description": "Public identity projection used by authored and moderation relations.",
         "properties": {
           "id": {
-            "description": "Referenced account identifier.",
+            "description": "Primary identifier of the referenced entity.",
             "format": "uuid",
             "type": "string"
           },
           "username": {
-            "description": "Referenced public username.",
-            "type": "string"
-          },
-          "displayName": {
-            "description": "Referenced public display name.",
             "type": "string"
           }
         },
         "required": [
           "id",
-          "username",
-          "displayName"
+          "username"
         ],
         "type": "object"
       },
       "IAuth.IJoin": {
         "additionalProperties": false,
-        "description": "Registration credentials.",
+        "description": "Registration request.",
         "properties": {
           "email": {
             "description": "Private sign-in email.",
@@ -2019,14 +1773,13 @@
             "type": "string"
           },
           "username": {
-            "description": "Public username of three through thirty allowed characters.",
+            "description": "Public username.",
             "maxLength": 30,
             "minLength": 3,
-            "pattern": "^[A-Za-z0-9_]+$",
             "type": "string"
           },
           "password": {
-            "description": "Password of eight through one hundred twenty-eight characters.",
+            "description": "Plaintext password used only at the boundary.",
             "maxLength": 128,
             "minLength": 8,
             "type": "string"
@@ -2041,15 +1794,17 @@
       },
       "IAuth.ILogin": {
         "additionalProperties": false,
-        "description": "Existing email and password credentials.",
+        "description": "Login request.",
         "properties": {
           "email": {
-            "description": "Case-insensitive private sign-in email.",
+            "description": "Sign-in email.",
             "format": "email",
             "type": "string"
           },
           "password": {
-            "description": "Candidate password; never returned.",
+            "description": "Plaintext password.",
+            "maxLength": 128,
+            "minLength": 8,
             "type": "string"
           }
         },
@@ -2061,82 +1816,30 @@
       },
       "IAuth.IRefresh": {
         "additionalProperties": false,
-        "description": "Optional refresh-token body; the bearer header is the fallback.",
+        "description": "Refresh request.",
         "properties": {
           "refreshToken": {
-            "description": "Presented refresh token.",
-            "type": "string"
-          }
-        },
-        "required": [],
-        "type": "object"
-      },
-      "IResult": {
-        "additionalProperties": false,
-        "description": "Generic success result returned by state-changing commands.",
-        "properties": {
-          "success": {
-            "description": "True when the requested command completed.",
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "success"
-        ],
-        "type": "object"
-      },
-      "IAuth.IRecoveryRequest": {
-        "additionalProperties": false,
-        "description": "Neutral password-recovery request.",
-        "properties": {
-          "email": {
-            "description": "Registered email to which an out-of-band proof is issued.",
-            "format": "email",
+            "description": "Refresh token issued by authentication.",
             "type": "string"
           }
         },
         "required": [
-          "email"
+          "refreshToken"
         ],
         "type": "object"
       },
-      "IAuth.IRecoveryComplete": {
+      "IAuth.IPassword": {
         "additionalProperties": false,
-        "description": "One-time recovery proof and replacement password.",
+        "description": "Change-password request.",
         "properties": {
-          "email": {
-            "description": "Registered email for the proof.",
-            "format": "email",
-            "type": "string"
-          },
-          "proof": {
-            "description": "One-time proof from the recovery journey.",
-            "type": "string"
-          },
-          "newPassword": {
-            "description": "Replacement password.",
+          "currentPassword": {
+            "description": "Current password.",
             "maxLength": 128,
             "minLength": 8,
             "type": "string"
-          }
-        },
-        "required": [
-          "email",
-          "proof",
-          "newPassword"
-        ],
-        "type": "object"
-      },
-      "IAuth.IChangePassword": {
-        "additionalProperties": false,
-        "description": "Current and replacement password credentials.",
-        "properties": {
-          "currentPassword": {
-            "description": "Current password proof.",
-            "type": "string"
           },
           "newPassword": {
-            "description": "Replacement password.",
+            "description": "Different replacement password.",
             "maxLength": 128,
             "minLength": 8,
             "type": "string"
@@ -2148,12 +1851,50 @@
         ],
         "type": "object"
       },
-      "IAuth.IDeleteAccount": {
+      "IAuth.IRecoveryRequest": {
         "additionalProperties": false,
-        "description": "Current password confirmation for permanent deletion.",
+        "description": "Recovery request.",
+        "properties": {
+          "email": {
+            "description": "Registered email, with neutral response semantics.",
+            "format": "email",
+            "type": "string"
+          }
+        },
+        "required": [
+          "email"
+        ],
+        "type": "object"
+      },
+      "IAuth.IRecoveryComplete": {
+        "additionalProperties": false,
+        "description": "Recovery completion request.",
+        "properties": {
+          "proof": {
+            "description": "Proof supplied through the delivery boundary.",
+            "type": "string"
+          },
+          "newPassword": {
+            "description": "Replacement password.",
+            "maxLength": 128,
+            "minLength": 8,
+            "type": "string"
+          }
+        },
+        "required": [
+          "proof",
+          "newPassword"
+        ],
+        "type": "object"
+      },
+      "IAccountDelete": {
+        "additionalProperties": false,
+        "description": "Password confirmation for permanent account deletion.",
         "properties": {
           "password": {
-            "description": "Current password proof; never returned.",
+            "description": "Current password.",
+            "maxLength": 128,
+            "minLength": 8,
             "type": "string"
           }
         },
@@ -2164,15 +1905,15 @@
       },
       "IComment.ISummary": {
         "additionalProperties": false,
-        "description": "Non-recursive authored-comment projection used by profiles.",
+        "description": "Compact profile comment.",
         "properties": {
           "id": {
-            "description": "Stable comment identifier.",
+            "description": "Comment identifier.",
             "format": "uuid",
             "type": "string"
           },
           "text": {
-            "description": "Available text, or null for a deleted marker (normally omitted in profiles).",
+            "description": "Current text or neutral marker.",
             "oneOf": [
               {
                 "type": "null"
@@ -2182,58 +1923,92 @@
               }
             ]
           },
-          "author": {
-            "description": "Public author, or null for a deleted marker.",
-            "oneOf": [
-              {
-                "type": "null"
-              },
-              {
-                "$ref": "#/components/schemas/IUser.ISummary"
-              }
-            ]
+          "postId": {
+            "description": "Parent post identifier.",
+            "format": "uuid",
+            "type": "string"
           },
           "score": {
-            "description": "Active vote score.",
+            "description": "Current score.",
             "type": "number"
           },
           "createdAt": {
             "description": "Immutable creation instant.",
             "format": "date-time",
             "type": "string"
-          },
-          "deleted": {
-            "description": "Whether this projection is a deleted marker.",
-            "type": "boolean"
           }
         },
         "required": [
           "id",
           "text",
-          "author",
+          "postId",
           "score",
-          "createdAt",
-          "deleted"
+          "createdAt"
         ],
         "type": "object"
       },
-      "ICommunity.ISummary": {
+      "IMedia": {
         "additionalProperties": false,
-        "description": "Minimal community relation used by post and subscription cards.",
+        "description": "A public uploaded image reference.",
         "properties": {
           "id": {
-            "description": "Referenced community identifier.",
+            "description": "Media identifier.",
             "format": "uuid",
             "type": "string"
           },
-          "name": {
-            "description": "Referenced public community name.",
+          "mimeType": {
+            "description": "Accepted image MIME type.",
+            "oneOf": [
+              {
+                "const": "image/jpeg",
+                "description": null,
+                "title": null
+              },
+              {
+                "const": "image/png",
+                "description": null,
+                "title": null
+              },
+              {
+                "const": "image/webp",
+                "description": null,
+                "title": null
+              }
+            ]
+          },
+          "data": {
+            "description": "Original image data as a data URL.",
             "type": "string"
+          },
+          "thumbnail": {
+            "description": "Bounded thumbnail data, when the image is a post payload.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "width": {
+            "description": "Original width in pixels.",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "height": {
+            "description": "Original height in pixels.",
+            "minimum": 0,
+            "type": "integer"
           }
         },
         "required": [
           "id",
-          "name"
+          "mimeType",
+          "data",
+          "thumbnail",
+          "width",
+          "height"
         ],
         "type": "object"
       },
@@ -2248,7 +2023,8 @@
           },
           "limit": {
             "description": "Maximum records requested for this page.",
-            "minimum": 0,
+            "maximum": 100,
+            "minimum": 1,
             "type": "integer"
           },
           "records": {
@@ -2261,8 +2037,8 @@
             "minimum": 0,
             "type": "integer"
           },
-          "next": {
-            "description": "Opaque token for the next page, or null on the final page.",
+          "continuation": {
+            "description": "Opaque continuation for the next page, or null at the end.",
             "oneOf": [
               {
                 "type": "null"
@@ -2331,10 +2107,10 @@
       },
       "IPost.ISummary": {
         "additionalProperties": false,
-        "description": "Feed-card projection with a type-specific preview.",
+        "description": "Compact feed and profile post presentation.",
         "properties": {
           "id": {
-            "description": "Stable post identifier.",
+            "description": "Post identifier.",
             "format": "uuid",
             "type": "string"
           },
@@ -2343,7 +2119,7 @@
             "type": "string"
           },
           "type": {
-            "description": "Immutable payload kind.",
+            "description": "Post kind.",
             "oneOf": [
               {
                 "const": "image",
@@ -2363,42 +2139,25 @@
             ]
           },
           "preview": {
-            "description": "First 200 text characters, URL host, or image thumbnail.",
-            "oneOf": [
-              {
-                "type": "null"
-              },
-              {
-                "type": "string"
-              }
-            ]
-          },
-          "thumbnail": {
-            "description": "Image thumbnail, or null for text and link posts.",
-            "oneOf": [
-              {
-                "type": "null"
-              },
-              {
-                "type": "string"
-              }
-            ]
+            "description": "Type-specific preview.",
+            "type": "string"
           },
           "author": {
-            "$ref": "#/components/schemas/IUser.ISummary",
-            "description": "Public author projection."
+            "description": "Public author username, or deleted marker.",
+            "type": "string"
           },
           "community": {
-            "$ref": "#/components/schemas/ICommunity.ISummary",
-            "description": "Public community projection."
+            "description": "Public community name.",
+            "type": "string"
           },
           "score": {
-            "description": "Active vote score.",
+            "description": "Current score.",
             "type": "number"
           },
           "commentCount": {
-            "description": "Available comment count.",
-            "type": "number"
+            "description": "Current available comment count.",
+            "minimum": 0,
+            "type": "integer"
           },
           "createdAt": {
             "description": "Immutable creation instant.",
@@ -2411,7 +2170,6 @@
           "title",
           "type",
           "preview",
-          "thumbnail",
           "author",
           "community",
           "score",
@@ -2422,15 +2180,10 @@
       },
       "IProfile": {
         "additionalProperties": false,
-        "description": "Public profile plus independently paginated authored content.",
+        "description": "A public user profile and currently available authorship.",
         "properties": {
-          "id": {
-            "description": "Stable account identifier.",
-            "format": "uuid",
-            "type": "string"
-          },
           "username": {
-            "description": "Globally unique public username, retaining selected casing.",
+            "description": "Stable public username.",
             "type": "string"
           },
           "displayName": {
@@ -2438,46 +2191,39 @@
             "type": "string"
           },
           "bio": {
-            "description": "Editable public biography; empty text means no biography.",
+            "description": "Editable public biography.",
             "type": "string"
           },
           "avatar": {
-            "description": "Optional image data URI; null means no avatar is assigned.",
+            "description": "Optional public avatar.",
             "oneOf": [
               {
                 "type": "null"
               },
               {
-                "type": "string"
+                "$ref": "#/components/schemas/IMedia"
               }
             ]
           },
           "karma": {
-            "description": "Signed total of active votes received by this account's available content.",
+            "description": "Signed karma from current received votes.",
             "type": "number"
-          },
-          "createdAt": {
-            "description": "Immutable account creation instant in UTC.",
-            "format": "date-time",
-            "type": "string"
           },
           "posts": {
             "$ref": "#/components/schemas/IPageIPost.ISummary",
-            "description": "All currently available posts authored by this user, in a page."
+            "description": "Available posts authored by this user."
           },
           "comments": {
             "$ref": "#/components/schemas/IPageIComment.ISummary",
-            "description": "All currently available comments authored by this user, in a page."
+            "description": "Available comments authored by this user."
           }
         },
         "required": [
-          "id",
           "username",
           "displayName",
           "bio",
           "avatar",
           "karma",
-          "createdAt",
           "posts",
           "comments"
         ],
@@ -2500,7 +2246,7 @@
             ]
           },
           "limit": {
-            "description": "Maximum number of records returned per page. The default is 25.",
+            "description": "Maximum number of records returned per page. Omitted values select 25.",
             "oneOf": [
               {
                 "type": "null"
@@ -2513,7 +2259,7 @@
             ]
           },
           "continuation": {
-            "description": "Opaque continuation token for the unchanged traversal.",
+            "description": "Opaque continuation returned by the preceding page.",
             "oneOf": [
               {
                 "type": "null"
@@ -2527,49 +2273,106 @@
         "required": [],
         "type": "object"
       },
-      "IProfile.IRequest": {
+      "IProfileRequest": {
         "additionalProperties": false,
-        "description": "Independent page inputs for the profile's post and comment lists.",
+        "description": "Separate pagination controls for a public profile's authored content.",
         "properties": {
           "posts": {
             "$ref": "#/components/schemas/IPage.IRequest",
-            "description": "Traversal input for authored posts."
+            "description": "Post pagination."
           },
           "comments": {
             "$ref": "#/components/schemas/IPage.IRequest",
-            "description": "Traversal input for authored comments."
+            "description": "Comment pagination."
           }
         },
         "required": [],
         "type": "object"
       },
-      "IProfile.IUpdate": {
+      "IMedia.ICreate": {
         "additionalProperties": false,
-        "description": "Caller-editable public profile fields; omitted fields retain their values.",
+        "description": "Uploaded image input.",
         "properties": {
-          "displayName": {
-            "description": "Replacement display name; whitespace-only values are refused.",
+          "mimeType": {
+            "description": "Image MIME type.",
+            "oneOf": [
+              {
+                "const": "image/jpeg",
+                "description": null,
+                "title": null
+              },
+              {
+                "const": "image/png",
+                "description": null,
+                "title": null
+              },
+              {
+                "const": "image/webp",
+                "description": null,
+                "title": null
+              }
+            ]
+          },
+          "data": {
+            "description": "Encoded image data.",
             "type": "string"
           },
-          "bio": {
-            "description": "Replacement biography; null explicitly clears it.",
+          "width": {
+            "description": "Decoded width.",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "height": {
+            "description": "Decoded height.",
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "mimeType",
+          "data",
+          "width",
+          "height"
+        ],
+        "type": "object"
+      },
+      "IProfileUpdate": {
+        "additionalProperties": false,
+        "description": "Profile edit request.",
+        "properties": {
+          "displayName": {
+            "description": "Optional replacement display name.",
             "oneOf": [
               {
                 "type": "null"
               },
               {
+                "maxLength": 255,
+                "minLength": 1,
+                "type": "string"
+              }
+            ]
+          },
+          "bio": {
+            "description": "Optional replacement biography.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "maxLength": 10000,
                 "type": "string"
               }
             ]
           },
           "avatar": {
-            "description": "Replacement avatar data URI; null explicitly removes it.",
+            "description": "Optional replacement or explicit null avatar.",
             "oneOf": [
               {
                 "type": "null"
               },
               {
-                "type": "string"
+                "$ref": "#/components/schemas/IMedia.ICreate"
               }
             ]
           }
@@ -2579,34 +2382,27 @@
       },
       "ICommunity": {
         "additionalProperties": false,
-        "description": "Public community descriptor and current subscription aggregate.",
+        "description": "A public community.",
         "properties": {
           "id": {
-            "description": "Stable community identifier.",
+            "description": "Community identifier.",
             "format": "uuid",
             "type": "string"
           },
           "name": {
-            "description": "Unique public name, retaining selected casing.",
+            "description": "Public name in selected casing.",
             "type": "string"
           },
           "description": {
-            "description": "Public description text.",
+            "description": "Public description.",
             "type": "string"
           },
           "icon": {
-            "description": "Optional community icon data URI.",
-            "oneOf": [
-              {
-                "type": "null"
-              },
-              {
-                "type": "string"
-              }
-            ]
+            "$ref": "#/components/schemas/IMedia",
+            "description": "Public icon."
           },
           "status": {
-            "description": "Participation lifecycle; archived communities are read-only.",
+            "description": "Participation state.",
             "oneOf": [
               {
                 "const": "active",
@@ -2621,17 +2417,18 @@
             ]
           },
           "subscriberCount": {
-            "description": "Number of active user subscriptions.",
-            "type": "number"
+            "description": "Count of active subscriptions.",
+            "minimum": 0,
+            "type": "integer"
           },
           "owner": {
-            "description": "Current scoped owner, or null for an ownerless archive.",
+            "description": "Current owner, absent in an archive.",
             "oneOf": [
               {
                 "type": "null"
               },
               {
-                "$ref": "#/components/schemas/IUser.ISummary"
+                "$ref": "#/components/schemas/IEntity"
               }
             ]
           }
@@ -2647,26 +2444,40 @@
         ],
         "type": "object"
       },
-      "ICommunity.ICreate": {
+      "IEntity": {
         "additionalProperties": false,
-        "description": "Required fields for creating an active community.",
+        "description": "Minimal reference to one persisted entity.",
+        "properties": {
+          "id": {
+            "description": "Primary identifier of the referenced entity.",
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "type": "object"
+      },
+      "ICommunityCreate": {
+        "additionalProperties": false,
+        "description": "Community creation request.",
         "properties": {
           "name": {
-            "description": "Unique name of three through fifty allowed characters.",
+            "description": "Public community name.",
             "maxLength": 50,
             "minLength": 3,
-            "pattern": "^[A-Za-z0-9_-]+$",
             "type": "string"
           },
           "description": {
-            "description": "Visible description, at most one thousand characters.",
+            "description": "Public description.",
             "maxLength": 1000,
             "minLength": 1,
             "type": "string"
           },
           "icon": {
-            "description": "Required JPEG, PNG, or WebP icon data URI.",
-            "type": "string"
+            "$ref": "#/components/schemas/IMedia.ICreate",
+            "description": "Required icon."
           }
         },
         "required": [
@@ -2698,9 +2509,9 @@
         ],
         "type": "object"
       },
-      "ICommunity.IRequest": {
+      "ICommunityRequest": {
         "additionalProperties": false,
-        "description": "Public community discovery and pagination input.",
+        "description": "Public community search request.",
         "properties": {
           "page": {
             "description": "One-indexed page to read.",
@@ -2715,7 +2526,7 @@
             ]
           },
           "limit": {
-            "description": "Maximum number of records returned per page. The default is 25.",
+            "description": "Maximum number of records returned per page. Omitted values select 25.",
             "oneOf": [
               {
                 "type": "null"
@@ -2728,7 +2539,7 @@
             ]
           },
           "continuation": {
-            "description": "Opaque continuation token for the unchanged traversal.",
+            "description": "Opaque continuation returned by the preceding page.",
             "oneOf": [
               {
                 "type": "null"
@@ -2739,7 +2550,7 @@
             ]
           },
           "search": {
-            "description": "Case-insensitive substring filter on the normalized name.",
+            "description": "Case-insensitive substring of the name.",
             "oneOf": [
               {
                 "type": "null"
@@ -2777,39 +2588,63 @@
       },
       "ISubscription": {
         "additionalProperties": false,
-        "description": "One active subscription and its activation instant.",
+        "description": "A private subscription list item.",
         "properties": {
+          "id": {
+            "description": "Subscription identifier.",
+            "format": "uuid",
+            "type": "string"
+          },
           "community": {
             "$ref": "#/components/schemas/ICommunity",
-            "description": "Subscribed community, including its current public status and count."
+            "description": "Public community."
           },
-          "createdAt": {
-            "description": "Instant at which this subscription became active.",
+          "activatedAt": {
+            "description": "Activation instant.",
             "format": "date-time",
             "type": "string"
           }
         },
         "required": [
+          "id",
           "community",
-          "createdAt"
+          "activatedAt"
+        ],
+        "type": "object"
+      },
+      "IEntity__type.o1": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "description": "Primary identifier of the referenced entity.",
+            "format": "uuid",
+            "type": "string"
+          },
+          "username": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "username"
         ],
         "type": "object"
       },
       "IPost": {
         "additionalProperties": false,
-        "description": "Complete available post representation.",
+        "description": "A post detail.",
         "properties": {
           "id": {
-            "description": "Stable post identifier.",
+            "description": "Post identifier.",
             "format": "uuid",
             "type": "string"
           },
           "title": {
-            "description": "Required visible title.",
+            "description": "Required title.",
             "type": "string"
           },
           "type": {
-            "description": "Immutable payload kind.",
+            "description": "Immutable type.",
             "oneOf": [
               {
                 "const": "image",
@@ -2829,7 +2664,7 @@
             ]
           },
           "text": {
-            "description": "Full text for a text post; null for other kinds.",
+            "description": "Text payload for text posts.",
             "oneOf": [
               {
                 "type": "null"
@@ -2840,7 +2675,7 @@
             ]
           },
           "url": {
-            "description": "Full absolute URL for a link post; null otherwise.",
+            "description": "URL payload for link posts.",
             "oneOf": [
               {
                 "type": "null"
@@ -2851,51 +2686,44 @@
             ]
           },
           "image": {
-            "description": "Full uploaded image data URI for an image post; null otherwise.",
+            "description": "Image payload for image posts.",
             "oneOf": [
               {
                 "type": "null"
               },
               {
-                "type": "string"
-              }
-            ]
-          },
-          "thumbnail": {
-            "description": "Aspect-preserving thumbnail for an image post; null otherwise.",
-            "oneOf": [
-              {
-                "type": "null"
-              },
-              {
-                "type": "string"
+                "$ref": "#/components/schemas/IMedia"
               }
             ]
           },
           "author": {
-            "$ref": "#/components/schemas/IUser.ISummary",
-            "description": "Public post author."
+            "description": "Public author, absent only after account deletion.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/IEntity__type.o1"
+              }
+            ]
           },
           "community": {
-            "$ref": "#/components/schemas/ICommunity.ISummary",
-            "description": "Owning public community."
+            "$ref": "#/components/schemas/ICommunity",
+            "description": "Public community."
           },
           "score": {
-            "description": "Active upvotes minus active downvotes.",
+            "description": "Current signed vote score.",
             "type": "number"
           },
           "commentCount": {
-            "description": "Count of currently available comments and replies.",
-            "type": "number"
+            "description": "Number of currently available comments.",
+            "minimum": 0,
+            "type": "integer"
           },
           "createdAt": {
-            "description": "Immutable post creation instant in UTC.",
+            "description": "Immutable creation instant.",
             "format": "date-time",
             "type": "string"
-          },
-          "deleted": {
-            "description": "True only for internal/deleted projections; available reads omit deleted posts.",
-            "type": "boolean"
           }
         },
         "required": [
@@ -2905,7 +2733,6 @@
           "text",
           "url",
           "image",
-          "thumbnail",
           "author",
           "community",
           "score",
@@ -2916,16 +2743,21 @@
       },
       "IPost.ICreate": {
         "additionalProperties": false,
-        "description": "Caller-supplied fields for creating one post.",
+        "description": "Creation request.",
         "properties": {
+          "communityId": {
+            "description": "Community identifier.",
+            "format": "uuid",
+            "type": "string"
+          },
           "title": {
-            "description": "Required trimmed title, one through three hundred characters.",
+            "description": "Post title.",
             "maxLength": 300,
             "minLength": 1,
             "type": "string"
           },
           "type": {
-            "description": "Payload kind selecting exactly one payload property.",
+            "description": "Payload type.",
             "oneOf": [
               {
                 "const": "image",
@@ -2945,93 +2777,52 @@
             ]
           },
           "text": {
-            "description": "Text payload when type is text.",
+            "description": "Text payload, only for text posts.",
             "oneOf": [
               {
                 "type": "null"
               },
               {
+                "maxLength": 40000,
+                "minLength": 1,
                 "type": "string"
               }
             ]
           },
           "url": {
-            "description": "Absolute HTTP(S) URL when type is link.",
+            "description": "URL payload, only for link posts.",
             "oneOf": [
               {
                 "type": "null"
               },
               {
+                "maxLength": 2048,
                 "type": "string"
               }
             ]
           },
           "image": {
-            "description": "JPEG, PNG, or WebP data URI when type is image.",
+            "description": "Image payload, only for image posts.",
             "oneOf": [
               {
                 "type": "null"
               },
               {
-                "type": "string"
+                "$ref": "#/components/schemas/IMedia.ICreate"
               }
             ]
           }
         },
         "required": [
+          "communityId",
           "title",
           "type"
         ],
         "type": "object"
       },
-      "IPost.IUpdate": {
-        "additionalProperties": false,
-        "description": "Editable post fields; payload kind and ownership are immutable.",
-        "properties": {
-          "title": {
-            "description": "Optional replacement title.",
-            "type": "string"
-          },
-          "text": {
-            "description": "Optional replacement text for a text post.",
-            "oneOf": [
-              {
-                "type": "null"
-              },
-              {
-                "type": "string"
-              }
-            ]
-          },
-          "url": {
-            "description": "Optional replacement URL for a link post.",
-            "oneOf": [
-              {
-                "type": "null"
-              },
-              {
-                "type": "string"
-              }
-            ]
-          },
-          "image": {
-            "description": "Optional replacement image for an image post.",
-            "oneOf": [
-              {
-                "type": "null"
-              },
-              {
-                "type": "string"
-              }
-            ]
-          }
-        },
-        "required": [],
-        "type": "object"
-      },
       "IPost.IRequest": {
         "additionalProperties": false,
-        "description": "Feed scope, sort, time range, and pagination input.",
+        "description": "Feed sorting and traversal controls.",
         "properties": {
           "page": {
             "description": "One-indexed page to read.",
@@ -3046,7 +2837,7 @@
             ]
           },
           "limit": {
-            "description": "Maximum number of records returned per page. The default is 25.",
+            "description": "Maximum number of records returned per page. Omitted values select 25.",
             "oneOf": [
               {
                 "type": "null"
@@ -3059,7 +2850,7 @@
             ]
           },
           "continuation": {
-            "description": "Opaque continuation token for the unchanged traversal.",
+            "description": "Opaque continuation returned by the preceding page.",
             "oneOf": [
               {
                 "type": "null"
@@ -3070,8 +2861,11 @@
             ]
           },
           "sort": {
-            "description": "Feed order; hot is the default.",
+            "description": "Feed order.",
             "oneOf": [
+              {
+                "type": "null"
+              },
               {
                 "const": "controversial",
                 "description": null,
@@ -3095,8 +2889,11 @@
             ]
           },
           "range": {
-            "description": "Rolling age window accepted only for Top.",
+            "description": "Required only for top sorting.",
             "oneOf": [
+              {
+                "type": "null"
+              },
               {
                 "const": "all",
                 "description": null,
@@ -3128,17 +2925,74 @@
         "required": [],
         "type": "object"
       },
+      "IPost.IUpdate": {
+        "additionalProperties": false,
+        "description": "Partial same-type post edit.",
+        "properties": {
+          "title": {
+            "description": "Replacement title, or omit to retain it.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "maxLength": 300,
+                "minLength": 1,
+                "type": "string"
+              }
+            ]
+          },
+          "text": {
+            "description": "Replacement text for a text post.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "maxLength": 40000,
+                "minLength": 1,
+                "type": "string"
+              }
+            ]
+          },
+          "url": {
+            "description": "Replacement URL for a link post.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "maxLength": 2048,
+                "type": "string"
+              }
+            ]
+          },
+          "image": {
+            "description": "Replacement image for an image post.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/IMedia.ICreate"
+              }
+            ]
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
       "IComment": {
         "additionalProperties": false,
-        "description": "Recursive public comment node; deleted nodes may be neutral markers.",
+        "description": "A recursively nested comment.",
         "properties": {
           "id": {
-            "description": "Stable comment identifier.",
+            "description": "Comment identifier.",
             "format": "uuid",
             "type": "string"
           },
-          "text": {
-            "description": "Comment text, or null on a deleted marker.",
+          "author": {
+            "description": "Author username, or a neutral deleted marker.",
             "oneOf": [
               {
                 "type": "null"
@@ -3148,19 +3002,19 @@
               }
             ]
           },
-          "author": {
-            "description": "Public author, or null when the node is deleted.",
+          "text": {
+            "description": "Text, or null for a deleted marker.",
             "oneOf": [
               {
                 "type": "null"
               },
               {
-                "$ref": "#/components/schemas/IUser.ISummary"
+                "type": "string"
               }
             ]
           },
           "score": {
-            "description": "Active vote score.",
+            "description": "Current score.",
             "type": "number"
           },
           "createdAt": {
@@ -3168,12 +3022,8 @@
             "format": "date-time",
             "type": "string"
           },
-          "deleted": {
-            "description": "Whether this node is a neutral deleted marker.",
-            "type": "boolean"
-          },
-          "children": {
-            "description": "Recursively nested direct replies in the selected sibling order.",
+          "replies": {
+            "description": "Nested replies.",
             "items": {
               "$ref": "#/components/schemas/IComment"
             },
@@ -3182,25 +3032,25 @@
         },
         "required": [
           "id",
-          "text",
           "author",
+          "text",
           "score",
           "createdAt",
-          "deleted",
-          "children"
+          "replies"
         ],
         "type": "object"
       },
       "IComment.ICreate": {
         "additionalProperties": false,
-        "description": "New top-level comment or reply input.",
+        "description": "New top-level comment input.",
         "properties": {
-          "text": {
-            "description": "Required nonblank comment text.",
+          "postId": {
+            "description": "Post identifier.",
+            "format": "uuid",
             "type": "string"
           },
           "parentId": {
-            "description": "Available same-post parent; null or omission creates a top-level node.",
+            "description": "Optional immediate parent.",
             "oneOf": [
               {
                 "type": "null"
@@ -3210,9 +3060,16 @@
                 "type": "string"
               }
             ]
+          },
+          "text": {
+            "description": "Nonblank comment text.",
+            "maxLength": 10000,
+            "minLength": 1,
+            "type": "string"
           }
         },
         "required": [
+          "postId",
           "text"
         ],
         "type": "object"
@@ -3241,7 +3098,7 @@
       },
       "IComment.IRequest": {
         "additionalProperties": false,
-        "description": "Comment sibling sort and top-level pagination input.",
+        "description": "Thread sorting and root pagination.",
         "properties": {
           "page": {
             "description": "One-indexed page to read.",
@@ -3256,7 +3113,7 @@
             ]
           },
           "limit": {
-            "description": "Maximum number of records returned per page. The default is 25.",
+            "description": "Maximum number of records returned per page. Omitted values select 25.",
             "oneOf": [
               {
                 "type": "null"
@@ -3269,7 +3126,7 @@
             ]
           },
           "continuation": {
-            "description": "Opaque continuation token for the unchanged traversal.",
+            "description": "Opaque continuation returned by the preceding page.",
             "oneOf": [
               {
                 "type": "null"
@@ -3280,8 +3137,11 @@
             ]
           },
           "sort": {
-            "description": "Best, newest, or controversial sibling ordering.",
+            "description": "Sibling order.",
             "oneOf": [
+              {
+                "type": "null"
+              },
               {
                 "const": "best",
                 "description": null,
@@ -3305,10 +3165,12 @@
       },
       "IComment.IUpdate": {
         "additionalProperties": false,
-        "description": "Replacement text for an authored available comment.",
+        "description": "Replacement comment text.",
         "properties": {
           "text": {
-            "description": "Required nonblank replacement text.",
+            "description": "Nonblank replacement.",
+            "maxLength": 10000,
+            "minLength": 1,
             "type": "string"
           }
         },
@@ -3319,56 +3181,99 @@
       },
       "IVote": {
         "additionalProperties": false,
-        "description": "Result of one accepted vote transition.",
+        "description": "A signed vote command.",
         "properties": {
-          "value": {
-            "description": "Current value held by the caller after the transition.",
+          "id": {
+            "description": "Vote identifier.",
+            "format": "uuid",
+            "type": "string"
+          },
+          "postId": {
+            "description": "Target post, or null for a comment target.",
             "oneOf": [
               {
                 "type": "null"
               },
               {
-                "const": "down",
+                "format": "uuid",
+                "type": "string"
+              }
+            ]
+          },
+          "commentId": {
+            "description": "Target comment, or null for a post target.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "format": "uuid",
+                "type": "string"
+              }
+            ]
+          },
+          "value": {
+            "description": "Current signed value.",
+            "oneOf": [
+              {
+                "const": -1,
                 "description": null,
                 "title": null
               },
               {
-                "const": "up",
+                "const": 1,
                 "description": null,
                 "title": null
               }
             ]
-          },
-          "score": {
-            "description": "Target score after the transition.",
-            "type": "number"
           }
         },
         "required": [
-          "value",
-          "score"
+          "id",
+          "postId",
+          "commentId",
+          "value"
         ],
         "type": "object"
       },
       "IVoteRequest": {
         "additionalProperties": false,
-        "description": "Requested upvote, downvote, or removal transition.",
+        "description": "Vote command request.",
         "properties": {
-          "value": {
-            "description": "Desired signed vote state.",
+          "postId": {
+            "description": "Post target, exclusive with commentId.",
             "oneOf": [
               {
-                "const": "down",
+                "type": "null"
+              },
+              {
+                "format": "uuid",
+                "type": "string"
+              }
+            ]
+          },
+          "commentId": {
+            "description": "Comment target, exclusive with postId.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "format": "uuid",
+                "type": "string"
+              }
+            ]
+          },
+          "value": {
+            "description": "Desired signed direction.",
+            "oneOf": [
+              {
+                "const": -1,
                 "description": null,
                 "title": null
               },
               {
-                "const": "remove",
-                "description": null,
-                "title": null
-              },
-              {
-                "const": "up",
+                "const": 1,
                 "description": null,
                 "title": null
               }
@@ -3380,168 +3285,17 @@
         ],
         "type": "object"
       },
-      "IModerationTarget": {
-        "additionalProperties": false,
-        "description": "User selected for a community-scoped moderator assignment.",
-        "properties": {
-          "userId": {
-            "description": "Active target account identifier.",
-            "format": "uuid",
-            "type": "string"
-          }
-        },
-        "required": [
-          "userId"
-        ],
-        "type": "object"
-      },
-      "IBan": {
-        "additionalProperties": false,
-        "description": "Active community ban record.",
-        "properties": {
-          "id": {
-            "description": "Stable ban identifier.",
-            "format": "uuid",
-            "type": "string"
-          },
-          "user": {
-            "$ref": "#/components/schemas/IUser.ISummary",
-            "description": "Banned account projection."
-          },
-          "moderator": {
-            "$ref": "#/components/schemas/IUser.ISummary",
-            "description": "Acting moderator projection."
-          },
-          "createdAt": {
-            "description": "Activation instant.",
-            "format": "date-time",
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "user",
-          "moderator",
-          "createdAt"
-        ],
-        "type": "object"
-      },
-      "IPageIBan": {
-        "additionalProperties": false,
-        "description": "One page of a larger result set.",
-        "properties": {
-          "pagination": {
-            "$ref": "#/components/schemas/IPage.IPagination",
-            "description": "Position and size of this page within the complete result set."
-          },
-          "data": {
-            "description": "Records returned for the current page.",
-            "items": {
-              "$ref": "#/components/schemas/IBan"
-            },
-            "type": "array"
-          }
-        },
-        "required": [
-          "pagination",
-          "data"
-        ],
-        "type": "object"
-      },
-      "IBanHistory": {
-        "additionalProperties": false,
-        "description": "Historical ban record including optional ending information.",
-        "properties": {
-          "id": {
-            "description": "Stable ban identifier.",
-            "format": "uuid",
-            "type": "string"
-          },
-          "user": {
-            "$ref": "#/components/schemas/IUser.ISummary",
-            "description": "Banned account projection."
-          },
-          "moderator": {
-            "$ref": "#/components/schemas/IUser.ISummary",
-            "description": "Acting moderator projection."
-          },
-          "createdAt": {
-            "description": "Activation instant.",
-            "format": "date-time",
-            "type": "string"
-          },
-          "unbannedBy": {
-            "description": "Moderator who ended the ban, or null while it remains active.",
-            "oneOf": [
-              {
-                "type": "null"
-              },
-              {
-                "$ref": "#/components/schemas/IUser.ISummary"
-              }
-            ]
-          },
-          "endedAt": {
-            "description": "Ending instant, or null while active.",
-            "oneOf": [
-              {
-                "type": "null"
-              },
-              {
-                "format": "date-time",
-                "type": "string"
-              }
-            ]
-          }
-        },
-        "required": [
-          "id",
-          "user",
-          "moderator",
-          "createdAt",
-          "unbannedBy",
-          "endedAt"
-        ],
-        "type": "object"
-      },
-      "IPageIBanHistory": {
-        "additionalProperties": false,
-        "description": "One page of a larger result set.",
-        "properties": {
-          "pagination": {
-            "$ref": "#/components/schemas/IPage.IPagination",
-            "description": "Position and size of this page within the complete result set."
-          },
-          "data": {
-            "description": "Records returned for the current page.",
-            "items": {
-              "$ref": "#/components/schemas/IBanHistory"
-            },
-            "type": "array"
-          }
-        },
-        "required": [
-          "pagination",
-          "data"
-        ],
-        "type": "object"
-      },
       "IReport": {
         "additionalProperties": false,
-        "description": "Pending or resolved private content report.",
+        "description": "A private moderation report.",
         "properties": {
           "id": {
-            "description": "Stable report identifier.",
+            "description": "Report identifier.",
             "format": "uuid",
             "type": "string"
           },
-          "targetId": {
-            "description": "Identifier of the reported post or comment.",
-            "format": "uuid",
-            "type": "string"
-          },
-          "targetType": {
-            "description": "Kind of reported target.",
+          "targetKind": {
+            "description": "Target kind.",
             "oneOf": [
               {
                 "const": "comment",
@@ -3555,26 +3309,28 @@
               }
             ]
           },
+          "targetId": {
+            "description": "Target identifier.",
+            "format": "uuid",
+            "type": "string"
+          },
           "target": {
-            "description": "Target payload while it remains available; null after removal.",
+            "description": "Reported content when still available.",
             "oneOf": [
               {
                 "type": "null"
               },
               {
-                "$ref": "#/components/schemas/IComment"
-              },
-              {
-                "$ref": "#/components/schemas/IPost"
+                "type": "string"
               }
             ]
           },
           "reporter": {
-            "$ref": "#/components/schemas/IUser.ISummary",
-            "description": "Public reporter projection, de-identified after account deletion."
+            "description": "Reporter username, or de-identified marker.",
+            "type": "string"
           },
           "reason": {
-            "description": "Trimmed report reason, private to responsible moderators.",
+            "description": "Nonblank report reason.",
             "type": "string"
           },
           "createdAt": {
@@ -3583,7 +3339,7 @@
             "type": "string"
           },
           "status": {
-            "description": "Pending queue or terminal moderation outcome.",
+            "description": "unresolved or terminal outcome.",
             "oneOf": [
               {
                 "const": "approved",
@@ -3596,7 +3352,7 @@
                 "title": null
               },
               {
-                "const": "pending",
+                "const": "unresolved",
                 "description": null,
                 "title": null
               }
@@ -3605,8 +3361,8 @@
         },
         "required": [
           "id",
+          "targetKind",
           "targetId",
-          "targetType",
           "target",
           "reporter",
           "reason",
@@ -3615,38 +3371,42 @@
         ],
         "type": "object"
       },
-      "IReport.ICreate": {
+      "IReportCreate": {
         "additionalProperties": false,
-        "description": "Caller input for one post or comment report.",
+        "description": "Report creation request.",
         "properties": {
-          "targetId": {
-            "description": "Available target identifier.",
-            "format": "uuid",
-            "type": "string"
-          },
-          "targetType": {
-            "description": "Target kind selecting post or comment.",
+          "postId": {
+            "description": "Post target, exclusive with commentId.",
             "oneOf": [
               {
-                "const": "comment",
-                "description": null,
-                "title": null
+                "type": "null"
               },
               {
-                "const": "post",
-                "description": null,
-                "title": null
+                "format": "uuid",
+                "type": "string"
+              }
+            ]
+          },
+          "commentId": {
+            "description": "Comment target, exclusive with postId.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "format": "uuid",
+                "type": "string"
               }
             ]
           },
           "reason": {
-            "description": "Nonblank reason of at most two thousand characters.",
+            "description": "Nonblank reason.",
+            "maxLength": 2000,
+            "minLength": 1,
             "type": "string"
           }
         },
         "required": [
-          "targetId",
-          "targetType",
           "reason"
         ],
         "type": "object"
@@ -3673,7 +3433,44 @@
         ],
         "type": "object"
       },
-      "IPageIReportHistory": {
+      "IBan": {
+        "additionalProperties": false,
+        "description": "A private active-ban item.",
+        "properties": {
+          "id": {
+            "description": "Ban identifier.",
+            "format": "uuid",
+            "type": "string"
+          },
+          "userId": {
+            "description": "Banned user identifier used by scoped unban actions.",
+            "format": "uuid",
+            "type": "string"
+          },
+          "username": {
+            "description": "Banned username.",
+            "type": "string"
+          },
+          "createdAt": {
+            "description": "Activation instant.",
+            "format": "date-time",
+            "type": "string"
+          },
+          "actor": {
+            "description": "Acting moderator username.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "userId",
+          "username",
+          "createdAt",
+          "actor"
+        ],
+        "type": "object"
+      },
+      "IPageIBan": {
         "additionalProperties": false,
         "description": "One page of a larger result set.",
         "properties": {
@@ -3684,7 +3481,7 @@
           "data": {
             "description": "Records returned for the current page.",
             "items": {
-              "$ref": "#/components/schemas/IReportHistory"
+              "$ref": "#/components/schemas/IBan"
             },
             "type": "array"
           }
@@ -3695,75 +3492,17 @@
         ],
         "type": "object"
       },
-      "IReportHistory": {
+      "IModerationHistory": {
         "additionalProperties": false,
-        "description": "Private resolved report history; removed targets are null.",
+        "description": "A private resolved moderation history item.",
         "properties": {
           "id": {
-            "description": "Stable report identifier.",
+            "description": "History identifier.",
             "format": "uuid",
             "type": "string"
           },
-          "targetId": {
-            "description": "Identifier of the reported post or comment.",
-            "format": "uuid",
-            "type": "string"
-          },
-          "targetType": {
-            "description": "Kind of reported target.",
-            "oneOf": [
-              {
-                "const": "comment",
-                "description": null,
-                "title": null
-              },
-              {
-                "const": "post",
-                "description": null,
-                "title": null
-              }
-            ]
-          },
-          "reporter": {
-            "$ref": "#/components/schemas/IUser.ISummary",
-            "description": "Public reporter projection, de-identified after account deletion."
-          },
-          "reason": {
-            "description": "Trimmed report reason, private to responsible moderators.",
-            "type": "string"
-          },
-          "createdAt": {
-            "description": "Submission instant.",
-            "format": "date-time",
-            "type": "string"
-          },
-          "target": {
-            "description": "Available target description, or null after deletion.",
-            "oneOf": [
-              {
-                "type": "null"
-              },
-              {
-                "$ref": "#/components/schemas/IComment"
-              },
-              {
-                "$ref": "#/components/schemas/IPost"
-              }
-            ]
-          },
-          "moderator": {
-            "description": "Acting moderator, de-identified after account deletion.",
-            "oneOf": [
-              {
-                "type": "null"
-              },
-              {
-                "$ref": "#/components/schemas/IUser.ISummary"
-              }
-            ]
-          },
-          "status": {
-            "description": "Terminal outcome retained for private history.",
+          "kind": {
+            "description": "Event kind.",
             "oneOf": [
               {
                 "const": "approved",
@@ -3771,29 +3510,107 @@
                 "title": null
               },
               {
+                "const": "banned",
+                "description": null,
+                "title": null
+              },
+              {
+                "const": "deleted",
+                "description": null,
+                "title": null
+              },
+              {
                 "const": "dismissed",
+                "description": null,
+                "title": null
+              },
+              {
+                "const": "unbanned",
                 "description": null,
                 "title": null
               }
             ]
           },
-          "resolvedAt": {
-            "description": "Resolution instant.",
+          "subject": {
+            "description": "De-identified or current subject username.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "actor": {
+            "description": "De-identified or current actor username.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "reason": {
+            "description": "Optional report reason.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "target": {
+            "description": "Target description when still available.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "createdAt": {
+            "description": "Event instant.",
             "format": "date-time",
             "type": "string"
           }
         },
         "required": [
           "id",
-          "targetId",
-          "targetType",
-          "reporter",
+          "kind",
+          "subject",
+          "actor",
           "reason",
-          "createdAt",
           "target",
-          "moderator",
-          "status",
-          "resolvedAt"
+          "createdAt"
+        ],
+        "type": "object"
+      },
+      "IPageIModerationHistory": {
+        "additionalProperties": false,
+        "description": "One page of a larger result set.",
+        "properties": {
+          "pagination": {
+            "$ref": "#/components/schemas/IPage.IPagination",
+            "description": "Position and size of this page within the complete result set."
+          },
+          "data": {
+            "description": "Records returned for the current page.",
+            "items": {
+              "$ref": "#/components/schemas/IModerationHistory"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "pagination",
+          "data"
         ],
         "type": "object"
       }
@@ -3807,7 +3624,34 @@
   },
   "tags": [
     {
-      "name": "reddit"
+      "name": "Auth"
+    },
+    {
+      "name": "Profile"
+    },
+    {
+      "name": "Community"
+    },
+    {
+      "name": "Subscription"
+    },
+    {
+      "name": "Post"
+    },
+    {
+      "name": "Feed"
+    },
+    {
+      "name": "Moderation"
+    },
+    {
+      "name": "Comment"
+    },
+    {
+      "name": "Vote"
+    },
+    {
+      "name": "Report"
     }
   ],
   "x-typia-emended-v12": true

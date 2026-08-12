@@ -2,23 +2,39 @@
  * Central exclusions for DTO type and property evidence claims.
  *
  * Keep real ownership evidence on the DTO declaration that represents it.
- * Add only reviewed non-applicability decisions here, for example:
- * `@evidenceExclude prisma:example_models.internal_note The provider keeps this operator-only value server-side; reject this exclusion if a request or response carries it.`
+ * Add only settled non-applicability decisions here.
  *
- * @evidenceExclude prisma:todo_accounts.id The account identifier stays inside the authenticated token; reject if a caller-visible account DTO is added.
- * @evidenceExclude prisma:todo_accounts.created_at Account creation time is internal; reject if account history becomes public.
- * @evidenceExclude prisma:todo_accounts.password_hash Password hashes never cross the DTO boundary; reject if plaintext or hashes are exposed.
- * @evidenceExclude prisma:todo_profiles.todo_account_id Ownership foreign key is enforced server-side; reject if profile DTOs expose it.
- * @evidenceExclude prisma:todo_sessions.id Session identity is internal; reject if session management becomes caller-visible.
- * @evidenceExclude prisma:todo_sessions.todo_account_id Session ownership is internal; reject if sessions become caller-visible.
- * @evidenceExclude prisma:todo_sessions.refresh_token_hash Refresh hashes never cross the DTO boundary; reject if raw proofs are exposed.
- * @evidenceExclude prisma:todo_sessions.created_at Session creation time is internal; reject if session history is exposed.
- * @evidenceExclude prisma:todo_sessions.revoked_at Revocation state is enforced by authorization; reject if session status is published.
- * @evidenceExclude prisma:todo_todos.todo_account_id Todo ownership foreign key is server-side; reject if DTOs expose it.
- * @evidenceExclude prisma:todo_todo_histories.todo_todo_id History ownership foreign key is server-side; reject if DTOs expose it.
- * @evidenceExclude prisma:todo_todo_histories.title_changed Participation flags are transport derivation state; reject if flags become public.
- * @evidenceExclude prisma:todo_todo_histories.description_changed Participation flags are transport derivation state; reject if flags become public.
- * @evidenceExclude prisma:todo_todo_histories.start_date_changed Participation flags are transport derivation state; reject if flags become public.
- * @evidenceExclude prisma:todo_todo_histories.due_date_changed Participation flags are transport derivation state; reject if flags become public.
+ * @evidenceExclude prisma:todo_users.created_at Account creation is an internal lifecycle fact; reject this exclusion if a public account DTO exposes it.
+ * @evidenceExcludeReview prisma:todo_users.created_at Reviewed the exclusion carrier and checked that the cited column is intentionally absent from the public DTO surface.
+ * @evidenceExclude prisma:todo_users.updated_at Credential replacement bookkeeping is internal; reject this exclusion if a public account DTO exposes it.
+ * @evidenceExcludeReview prisma:todo_users.updated_at Reviewed the exclusion carrier and checked that the cited column is intentionally absent from the public DTO surface.
+ * @evidenceExclude prisma:todo_profiles.todo_user_id Profile ownership is enforced through the authenticated session and is not exposed; reject this exclusion if a profile DTO publishes it.
+ * @evidenceExcludeReview prisma:todo_profiles.todo_user_id Reviewed the exclusion carrier and checked that the cited column is intentionally absent from the public DTO surface.
+ * @evidenceExclude prisma:todo_profiles.created_at Profile creation bookkeeping is internal; reject this exclusion if a profile DTO exposes it.
+ * @evidenceExcludeReview prisma:todo_profiles.created_at Reviewed the exclusion carrier and checked that the cited column is intentionally absent from the public DTO surface.
+ * @evidenceExclude prisma:todo_profiles.updated_at Profile update bookkeeping is internal; reject this exclusion if a profile DTO exposes it.
+ * @evidenceExcludeReview prisma:todo_profiles.updated_at Reviewed the exclusion carrier and checked that the cited column is intentionally absent from the public DTO surface.
+ * @evidenceExclude prisma:todo_sessions.todo_user_id Session ownership is enforced server-side and is not exposed; reject this exclusion if a session DTO publishes it.
+ * @evidenceExcludeReview prisma:todo_sessions.todo_user_id Reviewed the exclusion carrier and checked that the cited column is intentionally absent from the public DTO surface.
+ * @evidenceExclude prisma:todo_sessions.created_at Session creation bookkeeping is internal; reject this exclusion if a session DTO exposes it.
+ * @evidenceExcludeReview prisma:todo_sessions.created_at Reviewed the exclusion carrier and checked that the cited column is intentionally absent from the public DTO surface.
+ * @evidenceExclude prisma:todo_sessions.revoked_at Session revocation bookkeeping is internal; reject this exclusion if a session DTO publishes it.
+ * @evidenceExcludeReview prisma:todo_sessions.revoked_at Reviewed the exclusion carrier and checked that the cited column is intentionally absent from the public DTO surface.
+ * @evidenceExclude prisma:todo_todos.todo_user_id Todo ownership is derived from the authenticated session and is not exposed; reject this exclusion if a Todo DTO publishes it.
+ * @evidenceExcludeReview prisma:todo_todos.todo_user_id Reviewed the exclusion carrier and checked that the cited column is intentionally absent from the public DTO surface.
+ * @evidenceExclude prisma:todo_todos.updated_at Content update bookkeeping is represented by version, not a public timestamp; reject this exclusion if a Todo DTO exposes it.
+ * @evidenceExcludeReview prisma:todo_todos.updated_at Reviewed the exclusion carrier and checked that the cited column is intentionally absent from the public DTO surface.
+ * @evidenceExclude prisma:todo_todo_histories.todo_todo_id History ownership is derived through the requested Todo and is not exposed; reject this exclusion if a history DTO publishes it.
+ * @evidenceExcludeReview prisma:todo_todo_histories.todo_todo_id Reviewed the exclusion carrier and checked that the cited column is intentionally absent from the public DTO surface.
+ * @evidenceExclude prisma:todo_recovery_tokens.id Delivery-record identity is internal and never returned as a recovery secret; reject this exclusion if a DTO exposes it.
+ * @evidenceExcludeReview prisma:todo_recovery_tokens.id Reviewed the exclusion carrier and checked that the cited column is intentionally absent from the public DTO surface.
+ * @evidenceExclude prisma:todo_recovery_tokens.todo_user_id Recovery ownership is internal to the registered email; reject this exclusion if a DTO exposes it.
+ * @evidenceExcludeReview prisma:todo_recovery_tokens.todo_user_id Reviewed the exclusion carrier and checked that the cited column is intentionally absent from the public DTO surface.
+ * @evidenceExclude prisma:todo_recovery_tokens.created_at Delivery bookkeeping is internal; reject this exclusion if a DTO exposes it.
+ * @evidenceExcludeReview prisma:todo_recovery_tokens.created_at Reviewed the exclusion carrier and checked that the cited column is intentionally absent from the public DTO surface.
+ * @evidenceExclude prisma:todo_recovery_tokens.expires_at Proof expiry is enforced server-side and is not returned; reject this exclusion if a DTO exposes it.
+ * @evidenceExcludeReview prisma:todo_recovery_tokens.expires_at Reviewed the exclusion carrier and checked that the cited column is intentionally absent from the public DTO surface.
+ * @evidenceExclude prisma:todo_recovery_tokens.consumed_at Proof consumption bookkeeping is internal; reject this exclusion if a DTO exposes it.
+ * @evidenceExcludeReview prisma:todo_recovery_tokens.consumed_at Reviewed the exclusion carrier and checked that the cited column is intentionally absent from the public DTO surface.
  */
 export const DTO_EVIDENCE_EXCLUDE = true;

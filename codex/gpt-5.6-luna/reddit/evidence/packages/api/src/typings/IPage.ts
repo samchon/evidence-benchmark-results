@@ -15,6 +15,12 @@ export interface IPage<T extends object> {
    * Records returned for the current page.
    */
   data: T[];
+
+  /** Opaque continuation for the next page, or null on the final page. */
+  next: null | string;
+
+  /** True when an invalid continuation caused a fresh traversal reset. */
+  reset: boolean;
 }
 
 export namespace IPage {
@@ -30,17 +36,14 @@ export namespace IPage {
     page?: null | (number & tags.Type<"uint32"> & tags.Minimum<1>);
 
     /**
-     * Opaque continuation returned by the previous page. It binds the
-     * traversal scope, ordering, page size, and snapshot.
-     */
-    continuation?: null | string;
-
-    /**
-     * Maximum number of records returned per page.
+     * Maximum number of records returned per page, from 1 through 100.
      *
-     * @default 100
+     * @default 25
      */
     limit?: null | (number & tags.Type<"uint32"> & tags.Minimum<1> & tags.Maximum<100>);
+
+    /** Opaque continuation from the preceding page. */
+    cursor?: null | string;
   }
 
   /**
@@ -66,14 +69,6 @@ export namespace IPage {
      * Total pages matching the request.
      */
     pages: number & tags.Type<"uint32">;
-
-    /**
-     * Continuation for the next page, or null when this is the final page.
-     */
-    continuation: null | string;
-
-    /** Whether an invalid or stale continuation caused a fresh first page. */
-    reset?: boolean;
   }
 
   /**

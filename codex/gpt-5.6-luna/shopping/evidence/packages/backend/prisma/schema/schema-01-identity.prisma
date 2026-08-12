@@ -1,0 +1,453 @@
+/// Active customer credentials and lifecycle state.
+///
+/// @evidence docs/analysis/01-actors-and-auth.md#req-customer-identity-customer-identity-and-credential-lifecycle Stores
+/// the customer identity, credentials, sessions' owner, and closure state.
+/// @evidence docs/analysis/01-actors-and-auth.md#req-access-boundaries-identity-and-permission-boundaries Stores the persisted access-boundary state used by the platform.
+/// @evidence docs/analysis/02-domain-model.md#req-cancellation-domain-cancellation-request-lifecycle Retains the identity side of cancellation ownership.
+/// @evidence docs/analysis/02-domain-model.md#req-cart-domain-shopping-cart-model Owns the customer's cart relationship.
+/// @evidence docs/analysis/02-domain-model.md#req-inventory-domain-inventory-history-model Retains the customer-facing inventory effects.
+/// @evidence docs/analysis/02-domain-model.md#req-order-item-lifecycle-order-item-states Retains customer-visible order-item history.
+/// @evidence docs/analysis/02-domain-model.md#req-order-lifecycle-derived-order-states Retains customer-visible order history.
+/// @evidence docs/analysis/02-domain-model.md#req-product-lifecycle-product-availability-and-retirement-states Retains the customer ownership boundary for product activity.
+/// @evidence docs/analysis/02-domain-model.md#req-product-variant-domain-product-variant-model Retains the customer-facing variant ownership boundary.
+/// @evidence docs/analysis/02-domain-model.md#req-refund-domain-refund-request-lifecycle Retains the customer side of refund ownership.
+/// @evidence docs/analysis/02-domain-model.md#req-review-lifecycle-review-publication-and-retirement Retains the customer side of review authorship.
+/// @evidence docs/analysis/02-domain-model.md#req-seller-profile-domain-seller-profile-model Retains the cross-identity customer boundary.
+/// @evidence docs/analysis/02-domain-model.md#req-shipping-address-domain-shipping-address-model Owns customer shipping destinations.
+/// @evidence docs/analysis/02-domain-model.md#req-snapshot-domain-immutable-change-snapshots Retains the identity relationships needed by immutable snapshots.
+/// @evidence docs/analysis/02-domain-model.md#req-variant-lifecycle-variant-availability-and-retirement Retains the customer-facing variant boundary.
+/// @evidence docs/analysis/02-domain-model.md#req-wishlist-domain-wishlist-model Owns the customer's wishlist relationship.
+/// @evidence docs/analysis/03-functional-requirements.md#req-cancellation-functions-order-item-cancellation-journey Owns the requesting customer identity.
+/// @evidence docs/analysis/03-functional-requirements.md#req-cart-functions-shopping-cart-operations Owns the acting customer identity.
+/// @evidence docs/analysis/03-functional-requirements.md#req-inventory-functions-inventory-operations Retains the identity boundary for inventory effects.
+/// @evidence docs/analysis/03-functional-requirements.md#req-order-oversight-administrator-order-oversight Retains the customer identity attached to orders.
+/// @evidence docs/analysis/03-functional-requirements.md#req-product-image-functions-product-image-operations Retains the customer-facing product relationship.
+/// @evidence docs/analysis/03-functional-requirements.md#req-refund-functions-delivered-item-refund-journey Owns the requesting customer identity.
+/// @evidence docs/analysis/03-functional-requirements.md#req-seller-dashboard-seller-dashboard-and-order-item-reports Retains the customer relationship on commercial records.
+/// @evidence docs/analysis/03-functional-requirements.md#req-seller-profile-functions-seller-profile-operations Retains the customer/seller identity boundary.
+/// @evidence docs/analysis/03-functional-requirements.md#req-shipping-address-functions-shipping-address-operations Owns the acting customer identity.
+/// @evidence docs/analysis/03-functional-requirements.md#req-user-oversight-customer-and-seller-account-oversight Retains the identity record used for oversight.
+/// @evidence docs/analysis/03-functional-requirements.md#req-variant-functions-product-variant-operations Retains the customer-facing identity boundary.
+/// @evidence docs/analysis/03-functional-requirements.md#req-wishlist-functions-wishlist-operations Owns the acting customer identity.
+/// @evidence docs/analysis/04-business-rules.md#req-address-policies-shipping-address-policies Retains address ownership.
+/// @evidence docs/analysis/04-business-rules.md#req-admin-oversight-policies-administrator-moderation-and-force-resolution-policies Retains the identity record subject to oversight.
+/// @evidence docs/analysis/04-business-rules.md#req-cancellation-policies-cancellation-eligibility-and-resolution-policies Retains cancellation ownership.
+/// @evidence docs/analysis/04-business-rules.md#req-cart-policies-cart-quantity-and-availability-policies Retains cart ownership.
+/// @evidence docs/analysis/04-business-rules.md#req-credential-policies-registration-and-credential-policies Owns credential policy state.
+/// @evidence docs/analysis/04-business-rules.md#req-inventory-policies-inventory-movement-and-stock-policies Retains inventory-related identity boundaries.
+/// @evidence docs/analysis/04-business-rules.md#req-refund-policies-refund-eligibility-and-resolution-policies Retains refund ownership.
+/// @evidence docs/analysis/04-business-rules.md#req-seller-dashboard-policies-seller-dashboard-calculation-policies Retains seller/customer identity boundaries.
+/// @evidence docs/analysis/04-business-rules.md#req-snapshot-policies-snapshot-integrity-and-visibility-policies Retains snapshot ownership relationships.
+/// @evidence docs/analysis/04-business-rules.md#req-variant-policies-variant-identity-price-availability-and-retirement-policies Retains identity boundaries for variant activity.
+/// @evidence docs/analysis/04-business-rules.md#req-wishlist-policies-wishlist-membership-policies Owns wishlist membership.
+/// @evidence docs/analysis/05-non-functional.md#req-nfr-audit-integrity-commercial-change-evidence-integrity Retains identity links used by audit evidence.
+/// @evidence docs/analysis/05-non-functional.md#req-nfr-history-continuity-commercial-history-and-privacy-continuity Retains continuity and privacy state.
+/// @evidence docs/analysis/05-non-functional.md#req-nfr-purchase-consistency-purchase-and-resolution-consistency Retains identity links required for consistent purchase resolution.
+/// @evidence docs/analysis/02-domain-model.md#req-customer-profile-domain-customer-profile-model Owns
+/// the customer-side profile and retained customer relationships.
+/// @evidence docs/analysis/03-functional-requirements.md#req-customer-profile-functions-customer-profile-operations Stores the profile state exposed by those operations.
+/// @evidence docs/analysis/04-business-rules.md#req-customer-account-policies-customer-closure-and-retention-policies Stores account-retention state.
+/// @evidence docs/analysis/01-actors-and-auth.md#req-customer-identity-1-register-a-customer-account Stores the persisted state required by this unit.
+/// @evidence docs/analysis/01-actors-and-auth.md#req-customer-identity-2-log-in-as-a-customer Stores the persisted state required by this unit.
+/// @evidence docs/analysis/01-actors-and-auth.md#req-customer-identity-3-continue-a-customer-session Stores the persisted state required by this unit.
+/// @evidence docs/analysis/01-actors-and-auth.md#req-customer-identity-4-log-out-the-current-customer-session Stores the persisted state required by this unit.
+/// @evidence docs/analysis/01-actors-and-auth.md#req-customer-identity-5-log-out-every-customer-session Stores the persisted state required by this unit.
+/// @evidence docs/analysis/01-actors-and-auth.md#req-customer-identity-6-change-the-customer-password Stores the persisted state required by this unit.
+/// @evidence docs/analysis/01-actors-and-auth.md#req-customer-identity-7-recover-customer-access Stores the persisted state required by this unit.
+/// @evidence docs/analysis/01-actors-and-auth.md#req-customer-identity-8-delete-a-customer-account Stores the persisted state required by this unit.
+/// @evidence docs/analysis/01-actors-and-auth.md#req-access-boundaries-1-require-registration-for-every-feature Stores the persisted state required by this unit.
+/// @evidence docs/analysis/01-actors-and-auth.md#req-access-boundaries-2-limit-customer-owned-activity Stores the persisted state required by this unit.
+/// @evidence docs/analysis/01-actors-and-auth.md#req-access-boundaries-3-limit-seller-owned-activity Stores the persisted state required by this unit.
+/// @evidence docs/analysis/01-actors-and-auth.md#req-access-boundaries-4-preserve-duties-during-seller-suspension Stores the persisted state required by this unit.
+/// @evidence docs/analysis/01-actors-and-auth.md#req-access-boundaries-5-block-login-for-banned-accounts Stores the persisted state required by this unit.
+/// @evidence docs/analysis/01-actors-and-auth.md#req-access-boundaries-6-apply-platform-wide-administrator-oversight Stores the persisted state required by this unit.
+/// @evidence docs/analysis/02-domain-model.md#req-customer-profile-domain-1-define-customer-profile-information Stores the persisted state required by this unit.
+/// @evidence docs/analysis/02-domain-model.md#req-customer-profile-domain-2-relate-a-profile-to-its-customer Stores the persisted state required by this unit.
+/// @evidence docs/analysis/02-domain-model.md#req-customer-profile-domain-3-remove-profile-data-at-customer-closure Stores the persisted state required by this unit.
+/// @evidence docs/analysis/02-domain-model.md#req-shipping-address-domain-1-define-shipping-address-information Stores the persisted state required by this unit.
+/// @evidence docs/analysis/02-domain-model.md#req-shipping-address-domain-2-relate-addresses-to-a-customer Stores the persisted state required by this unit.
+/// @evidence docs/analysis/02-domain-model.md#req-shipping-address-domain-3-designate-one-default-address Stores the persisted state required by this unit.
+/// @evidence docs/analysis/02-domain-model.md#req-shipping-address-domain-4-preserve-the-purchased-shipping-destination Stores the persisted state required by this unit.
+/// @evidence docs/analysis/03-functional-requirements.md#req-customer-profile-functions-1-view-the-customer-profile Stores the persisted state required by this unit.
+/// @evidence docs/analysis/03-functional-requirements.md#req-customer-profile-functions-2-edit-the-customer-profile Stores the persisted state required by this unit.
+/// @evidence docs/analysis/03-functional-requirements.md#req-shipping-address-functions-1-list-saved-addresses Stores the persisted state required by this unit.
+/// @evidence docs/analysis/03-functional-requirements.md#req-shipping-address-functions-2-add-a-shipping-address Stores the persisted state required by this unit.
+/// @evidence docs/analysis/03-functional-requirements.md#req-shipping-address-functions-3-edit-a-saved-address Stores the persisted state required by this unit.
+/// @evidence docs/analysis/03-functional-requirements.md#req-shipping-address-functions-4-delete-a-saved-address Stores the persisted state required by this unit.
+/// @evidence docs/analysis/03-functional-requirements.md#req-shipping-address-functions-5-set-the-default-address Stores the persisted state required by this unit.
+/// @evidence docs/analysis/03-functional-requirements.md#req-user-oversight-1-list-customer-accounts Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-credential-policies-1-keep-one-identity-per-canonical-email-and-account-type Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-credential-policies-2-refuse-duplicate-registration Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-credential-policies-3-require-current-password-proof-for-password-change Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-credential-policies-4-block-unavailable-identities Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-address-policies-1-require-a-complete-shipping-address Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-checkout-policies-3-fix-the-purchase-shipping-address Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-customer-account-policies-1-authenticate-irreversible-customer-closure Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-customer-account-policies-2-remove-working-personal-customer-state Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-customer-account-policies-3-retain-the-commercial-order-graph Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-customer-account-policies-4-anonymize-retained-customer-reviews Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-customer-account-policies-5-keep-customer-closure-permanent Stores the persisted state required by this unit.
+/// @evidence docs/analysis/05-non-functional.md#req-nfr-history-continuity-3-remove-former-customer-identity-from-live-presentation Stores the persisted state required by this unit.
+model shopping_customers {
+  /// Application UUID.
+  id String @id
+  /// Unique login email while the identity is retained.
+  email String @unique
+  /// Password hash; plaintext is never persisted.
+  password_hash String
+  /// Login state, either active or banned.
+  login_status String
+  /// Registration instant.
+  created_at DateTime
+  /// Last mutable identity change.
+  updated_at DateTime
+  /// Closure instant; null means the account is active or banned.
+  deleted_at DateTime?
+  /// Customer display name retained for account inspection while active.
+  display_name String?
+  /// Customer phone retained for account inspection while active.
+  phone_number String?
+  /// Customer profile rows.
+  profile shopping_customer_profiles?
+  /// Saved destinations.
+  addresses shopping_customer_addresses[]
+  /// Authenticated sessions.
+  sessions shopping_customer_sessions[]
+  /// Owned carts.
+  carts shopping_carts[]
+  /// Wishlist entries.
+  wishlist_entries shopping_wishlist_entries[]
+  /// Orders purchased by the customer.
+  orders shopping_orders[]
+  /// Authored reviews.
+  reviews shopping_reviews[]
+  @@index([login_status, deleted_at])
+}
+
+/// One reusable authentication session for a customer.
+model shopping_customer_sessions {
+  /// Application UUID.
+  id String @id
+  /// Owning customer identifier.
+  customer_id String
+  /// Stored refresh-token digest.
+  refresh_token_hash String @unique
+  /// Session creation instant.
+  created_at DateTime
+  /// Session expiry instant.
+  expired_at DateTime
+  /// Revocation instant; null means usable if the account is eligible.
+  revoked_at DateTime?
+  /// Owning customer.
+  customer shopping_customers @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  @@index([customer_id, revoked_at])
+}
+
+/// The one editable profile attached to a customer identity.
+model shopping_customer_profiles {
+  /// Application UUID.
+  id String @id
+  /// Owning customer identifier.
+  customer_id String @unique
+  /// Customer-facing display name.
+  display_name String
+  /// Customer contact phone number.
+  phone_number String
+  /// Profile creation instant.
+  created_at DateTime
+  /// Last profile edit instant.
+  updated_at DateTime
+  /// Owning customer.
+  customer shopping_customers @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+}
+
+/// A reusable customer-owned delivery destination.
+model shopping_customer_addresses {
+  /// Application UUID.
+  id String @id
+  /// Owning customer identifier.
+  customer_id String
+  /// Recipient name.
+  recipient_name String
+  /// Recipient phone number.
+  recipient_phone String
+  /// Street address.
+  street_address String
+  /// City.
+  city String
+  /// State or province.
+  state_or_province String
+  /// Postal code.
+  postal_code String
+  /// Country code or name.
+  country String
+  /// Whether this is the customer's default address.
+  is_default Boolean
+  /// Creation instant.
+  created_at DateTime
+  /// Last edit instant.
+  updated_at DateTime
+  /// Owning customer.
+  customer shopping_customers @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  @@index([customer_id, created_at])
+}
+
+/// Seller credentials, approval, restriction, and closure state.
+///
+/// @evidence docs/analysis/01-actors-and-auth.md#req-seller-identity-seller-identity-and-credential-lifecycle Stores
+/// seller identity and credential lifecycle facts.
+/// @evidence docs/analysis/02-domain-model.md#req-seller-account-lifecycle-seller-account-states Stores
+/// approval, suspension, ban, and deletion state separately.
+/// @evidence docs/analysis/03-functional-requirements.md#req-seller-account-functions-seller-approval-and-restriction-operations Stores approval and restriction state.
+/// @evidence docs/analysis/04-business-rules.md#req-seller-account-policies-seller-approval-restriction-and-deletion-policies Stores the seller lifecycle state.
+/// @evidence docs/analysis/01-actors-and-auth.md#req-seller-identity-1-register-a-seller-account Stores the persisted state required by this unit.
+/// @evidence docs/analysis/01-actors-and-auth.md#req-seller-identity-2-log-in-as-a-seller Stores the persisted state required by this unit.
+/// @evidence docs/analysis/01-actors-and-auth.md#req-seller-identity-3-continue-a-seller-session Stores the persisted state required by this unit.
+/// @evidence docs/analysis/01-actors-and-auth.md#req-seller-identity-4-log-out-the-current-seller-session Stores the persisted state required by this unit.
+/// @evidence docs/analysis/01-actors-and-auth.md#req-seller-identity-5-log-out-every-seller-session Stores the persisted state required by this unit.
+/// @evidence docs/analysis/01-actors-and-auth.md#req-seller-identity-6-change-the-seller-password Stores the persisted state required by this unit.
+/// @evidence docs/analysis/01-actors-and-auth.md#req-seller-identity-7-recover-seller-access Stores the persisted state required by this unit.
+/// @evidence docs/analysis/01-actors-and-auth.md#req-seller-identity-8-delete-a-seller-account Stores the persisted state required by this unit.
+/// @evidence docs/analysis/02-domain-model.md#req-seller-profile-domain-1-define-seller-profile-information Stores the persisted state required by this unit.
+/// @evidence docs/analysis/02-domain-model.md#req-seller-profile-domain-2-relate-a-profile-to-its-seller Stores the persisted state required by this unit.
+/// @evidence docs/analysis/02-domain-model.md#req-seller-profile-domain-3-preserve-seller-profile-revisions Stores the persisted state required by this unit.
+/// @evidence docs/analysis/02-domain-model.md#req-seller-profile-domain-4-preserve-the-purchase-time-shop-identity Stores the persisted state required by this unit.
+/// @evidence docs/analysis/02-domain-model.md#req-seller-account-lifecycle-1-begin-seller-approval-as-pending Stores the persisted state required by this unit.
+/// @evidence docs/analysis/02-domain-model.md#req-seller-account-lifecycle-2-operate-as-an-approved-seller Stores the persisted state required by this unit.
+/// @evidence docs/analysis/02-domain-model.md#req-seller-account-lifecycle-3-recover-from-seller-rejection Stores the persisted state required by this unit.
+/// @evidence docs/analysis/02-domain-model.md#req-seller-account-lifecycle-4-restrict-a-suspended-seller Stores the persisted state required by this unit.
+/// @evidence docs/analysis/02-domain-model.md#req-seller-account-lifecycle-5-restore-an-unsuspended-seller Stores the persisted state required by this unit.
+/// @evidence docs/analysis/02-domain-model.md#req-seller-account-lifecycle-6-preserve-records-for-a-banned-seller Stores the persisted state required by this unit.
+/// @evidence docs/analysis/02-domain-model.md#req-seller-account-lifecycle-7-retire-a-deleted-seller Stores the persisted state required by this unit.
+/// @evidence docs/analysis/03-functional-requirements.md#req-seller-profile-functions-1-view-the-own-seller-profile Stores the persisted state required by this unit.
+/// @evidence docs/analysis/03-functional-requirements.md#req-seller-profile-functions-2-edit-the-seller-profile Stores the persisted state required by this unit.
+/// @evidence docs/analysis/03-functional-requirements.md#req-seller-profile-functions-3-view-a-public-seller-profile Stores the persisted state required by this unit.
+/// @evidence docs/analysis/03-functional-requirements.md#req-seller-account-functions-1-view-seller-approval-status Stores the persisted state required by this unit.
+/// @evidence docs/analysis/03-functional-requirements.md#req-seller-account-functions-2-resubmit-seller-approval Stores the persisted state required by this unit.
+/// @evidence docs/analysis/03-functional-requirements.md#req-seller-account-functions-3-list-pending-seller-approvals Stores the persisted state required by this unit.
+/// @evidence docs/analysis/03-functional-requirements.md#req-seller-account-functions-4-approve-a-seller-registration Stores the persisted state required by this unit.
+/// @evidence docs/analysis/03-functional-requirements.md#req-seller-account-functions-5-reject-a-seller-registration Stores the persisted state required by this unit.
+/// @evidence docs/analysis/03-functional-requirements.md#req-seller-account-functions-6-suspend-a-seller Stores the persisted state required by this unit.
+/// @evidence docs/analysis/03-functional-requirements.md#req-seller-account-functions-7-unsuspend-a-seller Stores the persisted state required by this unit.
+/// @evidence docs/analysis/03-functional-requirements.md#req-seller-dashboard-1-view-the-shop-summary Stores the persisted state required by this unit.
+/// @evidence docs/analysis/03-functional-requirements.md#req-seller-dashboard-2-list-shop-order-items Stores the persisted state required by this unit.
+/// @evidence docs/analysis/03-functional-requirements.md#req-user-oversight-4-list-seller-accounts Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-seller-account-policies-1-require-approval-before-selling Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-seller-account-policies-2-require-and-retain-a-seller-rejection-reason Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-seller-account-policies-3-separate-suspension-from-fulfillment-duties Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-seller-account-policies-4-block-seller-deletion-during-active-fulfillment Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-seller-account-policies-5-block-seller-deletion-during-unresolved-requests Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-seller-dashboard-policies-1-count-the-sellers-current-products Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-seller-dashboard-policies-2-count-all-retained-seller-order-items Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-seller-dashboard-policies-3-count-unresolved-seller-requests Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-seller-dashboard-policies-4-filter-seller-order-items-by-one-exact-status Stores the persisted state required by this unit.
+model shopping_sellers {
+  /// Application UUID.
+  id String @id
+  /// Unique login email while the identity is retained.
+  email String @unique
+  /// Password hash; plaintext is never persisted.
+  password_hash String
+  /// Approval lifecycle state.
+  approval_status String
+  /// Login state, either active or banned.
+  login_status String
+  /// Seller catalog suspension instant; null means not suspended.
+  suspended_at DateTime?
+  /// Registration instant.
+  created_at DateTime
+  /// Last mutable identity change.
+  updated_at DateTime
+  /// Closure instant; null means retained active identity.
+  deleted_at DateTime?
+  /// Current shop name used for account summaries.
+  shop_name String?
+  /// Current shop description.
+  shop_description String?
+  /// Current shop logo.
+  logo_image String?
+  /// Sessions owned by the seller.
+  sessions shopping_seller_sessions[]
+  /// Seller profile rows.
+  profile shopping_seller_profiles?
+  /// Products owned by the seller.
+  products shopping_products[]
+  /// Approval decisions.
+  approval_requests shopping_seller_approval_requests[]
+  /// Shipments created by the seller.
+  shipments shopping_shipments[]
+  @@index([approval_status, suspended_at, login_status, deleted_at])
+}
+
+/// One reusable authentication session for a seller.
+model shopping_seller_sessions {
+  /// Application UUID.
+  id String @id
+  /// Owning seller identifier.
+  seller_id String
+  /// Stored refresh-token digest.
+  refresh_token_hash String @unique
+  /// Session creation instant.
+  created_at DateTime
+  /// Session expiry instant.
+  expired_at DateTime
+  /// Revocation instant; null means usable if the account is eligible.
+  revoked_at DateTime?
+  /// Owning seller.
+  seller shopping_sellers @relation(fields: [seller_id], references: [id], onDelete: Cascade)
+  @@index([seller_id, revoked_at])
+}
+
+/// The one editable public shop profile.
+model shopping_seller_profiles {
+  /// Application UUID.
+  id String @id
+  /// Owning seller identifier.
+  seller_id String @unique
+  /// Public shop name.
+  shop_name String
+  /// Public shop description.
+  shop_description String
+  /// Public logo image reference.
+  logo_image String
+  /// Creation instant.
+  created_at DateTime
+  /// Last edit instant.
+  updated_at DateTime
+  /// Owning seller.
+  seller shopping_sellers @relation(fields: [seller_id], references: [id], onDelete: Cascade)
+}
+
+/// Seller approval submission and its final decision.
+model shopping_seller_approval_requests {
+  /// Application UUID.
+  id String @id
+  /// Seller applicant identifier.
+  seller_id String
+  /// Applicant explanation.
+  reason String
+  /// Pending, approved, or rejected.
+  status String
+  /// Administrator decision reason, when rejected.
+  decision_reason String?
+  /// Submission instant.
+  created_at DateTime
+  /// Decision instant, absent while pending.
+  decided_at DateTime?
+  /// Deciding administrator identifier.
+  decided_by String?
+  /// Seller applicant.
+  seller shopping_sellers @relation(fields: [seller_id], references: [id], onDelete: Cascade)
+  @@index([status, created_at])
+}
+
+/// Immutable seller-profile edit evidence.
+model shopping_seller_profile_snapshots {
+  /// Application UUID.
+  id String @id
+  /// Seller whose profile changed.
+  seller_id String
+  /// Changed-field description.
+  changed_fields String
+  /// Complete prior shop name.
+  before_shop_name String
+  /// Complete resulting shop name.
+  after_shop_name String
+  /// Complete prior description.
+  before_shop_description String
+  /// Complete resulting description.
+  after_shop_description String
+  /// Complete prior logo reference.
+  before_logo_image String
+  /// Complete resulting logo reference.
+  after_logo_image String
+  /// Change instant.
+  created_at DateTime
+  @@index([seller_id, created_at])
+}
+
+/// An out-of-band credential or payment effect recorded at its delivery boundary.
+model shopping_delivery_challenges {
+  /// Application UUID.
+  id String @id
+  /// Customer or seller actor kind.
+  actor_type String
+  /// Actor identifier.
+  actor_id String
+  /// Destination address for the effect.
+  recipient String
+  /// Effect kind.
+  kind String
+  /// Secret digest or protected payload.
+  payload String
+  /// Creation instant.
+  created_at DateTime
+  /// Expiration instant.
+  expired_at DateTime
+  /// Consumption instant; null means unused.
+  consumed_at DateTime?
+  @@index([actor_type, actor_id, kind, created_at])
+}
+
+/// Administrator grade carried by an existing customer or seller identity.
+///
+/// @evidence docs/analysis/01-actors-and-auth.md#req-admin-authority-administrator-grade-authority Carries
+/// regular and super administrator grades without creating another identity.
+/// @evidence docs/analysis/03-functional-requirements.md#req-admin-grade-functions-administrator-grade-change-operations Stores grade changes.
+/// @evidence docs/analysis/04-business-rules.md#req-admin-governance-policies-administrator-application-and-grade-policies Stores governance authority.
+/// @evidence docs/analysis/01-actors-and-auth.md#req-admin-authority-1-regular-administrator-authority Stores the persisted state required by this unit.
+/// @evidence docs/analysis/01-actors-and-auth.md#req-admin-authority-2-super-administrator-authority Stores the persisted state required by this unit.
+/// @evidence docs/analysis/01-actors-and-auth.md#req-admin-authority-3-grant-regular-administrator-authority Stores the persisted state required by this unit.
+/// @evidence docs/analysis/01-actors-and-auth.md#req-admin-authority-4-promote-an-administrator Stores the persisted state required by this unit.
+/// @evidence docs/analysis/01-actors-and-auth.md#req-admin-authority-5-demote-another-super-administrator Stores the persisted state required by this unit.
+/// @evidence docs/analysis/01-actors-and-auth.md#req-admin-authority-6-prevent-self-demotion Stores the persisted state required by this unit.
+/// @evidence docs/analysis/02-domain-model.md#req-admin-request-domain-1-open-an-administrator-request Stores the persisted state required by this unit.
+/// @evidence docs/analysis/02-domain-model.md#req-admin-request-domain-2-approve-an-administrator-request Stores the persisted state required by this unit.
+/// @evidence docs/analysis/02-domain-model.md#req-admin-request-domain-3-reject-an-administrator-request Stores the persisted state required by this unit.
+/// @evidence docs/analysis/02-domain-model.md#req-admin-request-domain-4-retain-administrator-request-history Stores the persisted state required by this unit.
+/// @evidence docs/analysis/03-functional-requirements.md#req-admin-request-functions-1-submit-an-administrator-application Stores the persisted state required by this unit.
+/// @evidence docs/analysis/03-functional-requirements.md#req-admin-request-functions-2-view-personal-application-history Stores the persisted state required by this unit.
+/// @evidence docs/analysis/03-functional-requirements.md#req-admin-request-functions-3-list-pending-administrator-applications Stores the persisted state required by this unit.
+/// @evidence docs/analysis/03-functional-requirements.md#req-admin-request-functions-4-approve-an-administrator-application Stores the persisted state required by this unit.
+/// @evidence docs/analysis/03-functional-requirements.md#req-admin-request-functions-5-reject-an-administrator-application Stores the persisted state required by this unit.
+/// @evidence docs/analysis/03-functional-requirements.md#req-admin-grade-functions-1-promote-a-regular-administrator Stores the persisted state required by this unit.
+/// @evidence docs/analysis/03-functional-requirements.md#req-admin-grade-functions-2-demote-another-super-administrator Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-admin-governance-policies-1-admit-an-administrator-application Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-admin-governance-policies-2-keep-one-pending-application-per-identity Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-admin-governance-policies-3-reserve-application-decisions-for-super-administrators Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-admin-governance-policies-4-grant-the-regular-administrator-grade-on-approval Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-admin-governance-policies-5-provision-the-initial-super-administrator Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-admin-governance-policies-6-reserve-super-grade-changes-for-super-administrators Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-admin-governance-policies-7-refuse-super-administrator-self-demotion Stores the persisted state required by this unit.
+/// @evidence docs/analysis/04-business-rules.md#req-admin-governance-policies-8-preserve-one-active-super-administrator-through-closure Stores the persisted state required by this unit.
+model shopping_administrator_grades {
+  /// Application UUID.
+  id String @id
+  /// Customer or seller discriminator.
+  actor_type String
+  /// Underlying customer or seller identifier.
+  actor_id String
+  /// regularAdministrator or superAdministrator.
+  grade String
+  /// Grant instant.
+  created_at DateTime
+  @@unique([actor_type, actor_id, grade])
+  @@index([actor_type, actor_id])
+}
+
+/// Immutable administrator grade action evidence.
+model shopping_administrator_grade_events {
+  /// Application UUID.
+  id String @id
+  /// Acting administrator identifier.
+  actor_id String
+  /// Target identity kind.
+  target_type String
+  /// Target identity identifier.
+  target_id String
+  /// Promotion or demotion.
+  action String
+  /// Action instant.
+  created_at DateTime
+  @@index([target_type, target_id, created_at])
+}

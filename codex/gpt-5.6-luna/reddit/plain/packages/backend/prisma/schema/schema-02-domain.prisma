@@ -1,0 +1,268 @@
+/// A public community and its scoped authority.
+model communities {
+  /// Primary identifier.
+  id String @id
+  /// Public name in selected casing.
+  name String
+  /// Case-normalized name used for uniqueness and search.
+  name_normalized String @unique
+  /// Public description.
+  description String
+  /// Required public icon media.
+  icon_media_id String @unique
+  /// Active or permanently archived status.
+  status String
+  /// Current owner identifier, or null for an archived community.
+  owner_id String?
+  /// Creation instant.
+  created_at DateTime
+  /// Last public mutation instant.
+  updated_at DateTime
+  /// Current owner.
+  owner users? @relation("community_owner", fields: [owner_id], references: [id], onDelete: SetNull)
+  /// Public icon.
+  icon media @relation(fields: [icon_media_id], references: [id], onDelete: Restrict)
+  /// Subscriptions.
+  subscriptions subscriptions[]
+  /// Moderator assignments.
+  moderators moderators[]
+  /// Community bans.
+  bans bans[]
+  /// Posts.
+  posts posts[]
+  /// Reports.
+  reports reports[]
+  /// Moderation history.
+  histories moderation_histories[]
+  @@index([name_normalized, id])
+}
+
+/// One user's current or historical relationship with a community.
+model subscriptions {
+  /// Primary identifier.
+  id String @id
+  /// User identifier.
+  user_id String
+  /// Community identifier.
+  community_id String
+  /// First activation instant.
+  created_at DateTime
+  /// Most recent activation instant.
+  activated_at DateTime
+  /// End instant, or null while active.
+  ended_at DateTime?
+  /// User.
+  user users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  /// Community.
+  community communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  @@unique([user_id, community_id])
+  @@index([community_id, ended_at])
+}
+
+/// A community-scoped moderator assignment.
+model moderators {
+  /// Primary identifier.
+  id String @id
+  /// Assigned user.
+  user_id String
+  /// Community.
+  community_id String
+  /// Assignment instant used for succession tenure.
+  created_at DateTime
+  /// User.
+  user users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  /// Community.
+  community communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  @@unique([user_id, community_id])
+  @@index([community_id, created_at])
+}
+
+/// A current or historical community participation ban.
+model bans {
+  /// Primary identifier.
+  id String @id
+  /// Banned user identifier.
+  user_id String
+  /// Community identifier.
+  community_id String
+  /// Acting moderator identifier, nullable after account deletion.
+  actor_id String?
+  /// Activation instant.
+  created_at DateTime
+  /// End instant, or null while active.
+  ended_at DateTime?
+  /// Banned user.
+  user users @relation("banned_user", fields: [user_id], references: [id], onDelete: Cascade)
+  /// Community.
+  community communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  /// Acting moderator.
+  actor users? @relation("ban_actor", fields: [actor_id], references: [id], onDelete: SetNull)
+  @@unique([user_id, community_id])
+  @@index([community_id, ended_at, created_at])
+}
+
+/// A post with exactly one type-specific payload.
+model posts {
+  /// Primary identifier.
+  id String @id
+  /// Required title.
+  title String
+  /// Text, link, or image discriminator.
+  type String
+  /// Text payload for text posts.
+  text String?
+  /// URL payload for link posts.
+  url String?
+  /// Image payload identifier for image posts.
+  image_media_id String? @unique
+  /// Author identifier, nullable only after account deletion.
+  author_id String?
+  /// Community identifier.
+  community_id String
+  /// Immutable creation instant.
+  created_at DateTime
+  /// Permanent deletion instant, or null while available.
+  deleted_at DateTime?
+  /// Author.
+  author users? @relation(fields: [author_id], references: [id], onDelete: SetNull)
+  /// Community.
+  community communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  /// Image payload.
+  image_media media? @relation(fields: [image_media_id], references: [id], onDelete: SetNull)
+  /// Comments.
+  comments comments[]
+  /// Votes.
+  votes votes[]
+  /// Reports.
+  reports reports[] @relation("post_reports")
+  @@index([community_id, deleted_at, created_at])
+  @@index([author_id, deleted_at, created_at])
+}
+
+/// A recursive comment tree node.
+model comments {
+  /// Primary identifier.
+  id String @id
+  /// Comment text, null after content deletion.
+  text String?
+  /// Author, null when a deleted marker de-identifies the account.
+  author_id String?
+  /// Post identifier.
+  post_id String
+  /// Immediate parent, or null for a top-level comment.
+  parent_id String?
+  /// Immutable creation instant.
+  created_at DateTime
+  /// Content deletion instant, or null while available.
+  deleted_at DateTime?
+  /// Author.
+  author users? @relation(fields: [author_id], references: [id], onDelete: SetNull)
+  /// Post.
+  post posts @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  /// Immediate parent.
+  parent comments? @relation("comment_tree", fields: [parent_id], references: [id], onDelete: Cascade)
+  /// Direct replies.
+  replies comments[] @relation("comment_tree")
+  /// Votes.
+  votes votes[]
+  /// Reports.
+  reports reports[] @relation("comment_reports")
+  @@index([post_id, parent_id, created_at])
+  @@index([author_id, deleted_at, created_at])
+}
+
+/// One active signed vote on one post or comment.
+model votes {
+  /// Primary identifier.
+  id String @id
+  /// Voter identifier.
+  user_id String
+  /// Post target, mutually exclusive with comment_id.
+  post_id String?
+  /// Comment target, mutually exclusive with post_id.
+  comment_id String?
+  /// Signed value, +1 or -1.
+  value Int
+  /// Creation or last direction-change instant.
+  created_at DateTime
+  /// Voter.
+  user users @relation("vote_user", fields: [user_id], references: [id], onDelete: Cascade)
+  /// Post target.
+  post posts? @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  /// Comment target.
+  comment comments? @relation(fields: [comment_id], references: [id], onDelete: Cascade)
+  @@unique([user_id, post_id])
+  @@unique([user_id, comment_id])
+  @@index([post_id, value])
+  @@index([comment_id, value])
+}
+
+/// A pending or resolved private content report.
+model reports {
+  /// Primary identifier.
+  id String @id
+  /// Reporter, nullable after account deletion.
+  reporter_id String?
+  /// Community owning the target.
+  community_id String
+  /// Post target, mutually exclusive with comment_id.
+  post_id String?
+  /// Comment target, mutually exclusive with post_id.
+  comment_id String?
+  /// Nonblank reason supplied by the reporter.
+  reason String
+  /// unresolved, approved, or dismissed.
+  status String
+  /// Submission instant.
+  created_at DateTime
+  /// Decision instant, or null while unresolved.
+  decided_at DateTime?
+  /// Acting moderator, nullable after deletion.
+  decided_by_id String?
+  /// Reporter.
+  reporter users? @relation("reporter", fields: [reporter_id], references: [id], onDelete: SetNull)
+  /// Community.
+  community communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  /// Post target.
+  post posts? @relation("post_reports", fields: [post_id], references: [id], onDelete: Cascade)
+  /// Comment target.
+  comment comments? @relation("comment_reports", fields: [comment_id], references: [id], onDelete: Cascade)
+  /// Deciding moderator.
+  decided_by users? @relation("report_decision_actor", fields: [decided_by_id], references: [id], onDelete: SetNull)
+  @@index([community_id, status, created_at])
+  @@unique([reporter_id, post_id, status])
+  @@unique([reporter_id, comment_id, status])
+}
+
+/// Private immutable record of a moderation decision.
+model moderation_histories {
+  /// Primary identifier.
+  id String @id
+  /// Community identifier.
+  community_id String
+  /// approved, dismissed, deleted, banned, or unbanned.
+  kind String
+  /// Target description retained only while target exists.
+  target_description String?
+  /// Target post identifier while the target remains available.
+  target_post_id String?
+  /// Target comment identifier while the target remains available.
+  target_comment_id String?
+  /// Reason when this record came from a report.
+  reason String?
+  /// Subject account, nullable after de-identification.
+  subject_id String?
+  /// Acting account, nullable after de-identification.
+  actor_id String?
+  /// Event instant.
+  created_at DateTime
+  /// Community.
+  community communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  /// Subject account.
+  subject users? @relation("deidentified_subject", fields: [subject_id], references: [id], onDelete: SetNull)
+  /// Acting account.
+  actor users? @relation("decision_actor", fields: [actor_id], references: [id], onDelete: SetNull)
+  @@index([community_id, created_at])
+  @@index([target_post_id])
+  @@index([target_comment_id])
+}

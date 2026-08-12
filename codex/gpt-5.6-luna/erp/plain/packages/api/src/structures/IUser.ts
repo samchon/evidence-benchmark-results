@@ -1,1 +1,0 @@
-import type { tags } from "typia"; export interface IUser { id:string & tags.Format<"uuid">; email:string & tags.Format<"email">; displayName:string; avatar:string|null; phone:string|null; locale:string; timezone:string; status:"active"|"inactive"; createdAt:string & tags.Format<"date-time">; updatedAt:string & tags.Format<"date-time">; }

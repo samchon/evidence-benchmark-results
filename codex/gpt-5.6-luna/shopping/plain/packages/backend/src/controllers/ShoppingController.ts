@@ -1,544 +1,256 @@
-﻿import * as core from "@nestia/core";
-import type {
-  IEntity,
-  IPage,
-  IShoppingAddress,
-  IShoppingAdmin,
-  IShoppingAdminApplication,
-  IShoppingAuth,
-  IShoppingCart,
-  IShoppingCheckout,
-  IShoppingCategory,
-  IShoppingCustomerProfile,
-  IShoppingInventory,
-  IShoppingOrder,
-  IShoppingProduct,
-  IShoppingRequest,
-  IShoppingReview,
-  IShoppingSellerApproval,
-  IShoppingSellerProfile,
-  IShoppingShipment,
-  IShoppingWishlist,
+import { Controller, Headers } from "@nestjs/common";
+import * as core from "@nestia/core";
+import type * as api from "@benchmark/shopping-api";
 
-} from "@benchmark/shopping-api";
-import { Controller } from "@nestjs/common";
-import type { tags } from "typia";
-import { ShoppingProvider } from "../providers/ShoppingProvider";
+import { ShoppingProvider, type ShoppingActor } from "../providers/ShoppingProvider";
+import { ErrorUtil } from "../utils/ErrorUtil";
 
-
-/** Publishes the requirement-derived shopping API. */
+/** Publishes the complete shopping HTTP contract. */
 @Controller("shopping")
 export class ShoppingController {
-  @core.TypedRoute.Post("auth/customer/join") public customerJoin(@core.TypedBody() body: IShoppingAuth.IJoin): Promise<IShoppingAuth.IAuthorized> {
-    return ShoppingProvider.join("customer", body);
-  }
-  @core.TypedRoute.Post("auth/customer/login") public customerLogin(@core.TypedBody() body: IShoppingAuth.ILogin): Promise<IShoppingAuth.IAuthorized> {
-    return ShoppingProvider.login("customer", body);
-  }
-  @core.TypedRoute.Post("auth/customer/refresh") public customerRefresh(@core.TypedBody() body: IShoppingAuth.IRefresh): Promise<IShoppingAuth.IAuthorized> {
-    return ShoppingProvider.refresh("customer", body);
-  }
-  @core.TypedRoute.Post("auth/customer/recovery") public customerRecoveryRequest(@core.TypedBody() body: IShoppingAuth.IRecoveryRequest): Promise<IShoppingAuth.IRecoveryChallenge> {
-    return ShoppingProvider.recoveryRequest("customer", body);
-  }
-  @core.TypedRoute.Put("auth/customer/recovery") public customerRecoveryComplete(@core.TypedBody() body: IShoppingAuth.IRecoveryComplete): Promise<IEntity> {
-    return ShoppingProvider.recoveryComplete("customer", body);
-  }
-  @core.TypedRoute.Post("auth/seller/join") public sellerJoin(@core.TypedBody() body: IShoppingAuth.IJoin): Promise<IShoppingAuth.IAuthorized> {
-    return ShoppingProvider.join("seller", body);
-  }
-  @core.TypedRoute.Post("auth/seller/login") public sellerLogin(@core.TypedBody() body: IShoppingAuth.ILogin): Promise<IShoppingAuth.IAuthorized> {
-    return ShoppingProvider.login("seller", body);
-  }
-  @core.TypedRoute.Post("auth/seller/refresh") public sellerRefresh(@core.TypedBody() body: IShoppingAuth.IRefresh): Promise<IShoppingAuth.IAuthorized> {
-    return ShoppingProvider.refresh("seller", body);
-  }
-  @core.TypedRoute.Post("auth/seller/recovery") public sellerRecoveryRequest(@core.TypedBody() body: IShoppingAuth.IRecoveryRequest): Promise<IShoppingAuth.IRecoveryChallenge> {
-    return ShoppingProvider.recoveryRequest("seller", body);
-  }
-  @core.TypedRoute.Put("auth/seller/recovery") public sellerRecoveryComplete(@core.TypedBody() body: IShoppingAuth.IRecoveryComplete): Promise<IEntity> {
-    return ShoppingProvider.recoveryComplete("seller", body);
-  }
+  /** @setHeader token.access Authorization @tag Authentication */
+  @core.TypedRoute.Post("auth/customer/join") public customerJoin(@core.TypedBody() body: api.IShoppingCustomer.IJoin): Promise<api.IShoppingAuthorized> { return ShoppingProvider.customerJoin(body); }
+  /** @setHeader token.access Authorization @tag Authentication */
+  @core.TypedRoute.Post("auth/customer/login") public customerLogin(@core.TypedBody() body: api.IShoppingCustomer.ILogin): Promise<api.IShoppingAuthorized> { return ShoppingProvider.customerLogin(body); }
+  /** @setHeader token.access Authorization @tag Authentication */
+  @core.TypedRoute.Post("auth/customer/refresh") public customerRefresh(@core.TypedBody() body: api.IShoppingCustomer.IRefresh): Promise<api.IShoppingAuthorized> { return ShoppingProvider.refresh("customer", body); }
+  /** @setHeader token.access Authorization @tag Authentication */
+  @core.TypedRoute.Post("auth/seller/join") public sellerJoin(@core.TypedBody() body: api.IShoppingSeller.IJoin): Promise<api.IShoppingAuthorized> { return ShoppingProvider.sellerJoin(body); }
+  /** @setHeader token.access Authorization @tag Authentication */
+  @core.TypedRoute.Post("auth/seller/login") public sellerLogin(@core.TypedBody() body: api.IShoppingSeller.ILogin): Promise<api.IShoppingAuthorized> { return ShoppingProvider.sellerLogin(body); }
+  /** @setHeader token.access Authorization @tag Authentication */
+  @core.TypedRoute.Post("auth/seller/refresh") public sellerRefresh(@core.TypedBody() body: api.IShoppingSeller.IRefresh): Promise<api.IShoppingAuthorized> { return ShoppingProvider.refresh("seller", body); }
+  /** Changes the current customer password and revokes other sessions. */
+  @core.TypedRoute.Put("customer/auth/password") public async customerPasswordUpdate(@Headers("authorization") authorization: string | undefined, @core.TypedBody() body: api.IShoppingCustomer.IPasswordUpdate): Promise<api.IShoppingSuccess> { return this.done(ShoppingProvider.updatePassword(await this.auth(authorization, "customer"), body)); }
+  /** Starts customer password recovery. */
+  @core.TypedRoute.Post("auth/customer/password/recovery") public customerRecoveryRequest(@core.TypedBody() body: api.IShoppingCustomer.IRecoveryRequest): Promise<api.IShoppingRecovery> { return ShoppingProvider.requestRecovery("customer", body); }
+  /** Completes customer password recovery. */
+  @core.TypedRoute.Put("auth/customer/password/recovery") public async customerRecoveryComplete(@core.TypedBody() body: api.IShoppingCustomer.IRecoveryComplete): Promise<api.IShoppingSuccess> { return this.done(ShoppingProvider.completeRecovery("customer", body)); }
+  /** Changes the current seller password and revokes other sessions. */
+  @core.TypedRoute.Put("seller/auth/password") public async sellerPasswordUpdate(@Headers("authorization") authorization: string | undefined, @core.TypedBody() body: api.IShoppingSeller.IPasswordUpdate): Promise<api.IShoppingSuccess> { return this.done(ShoppingProvider.updatePassword(await this.auth(authorization, "seller"), body)); }
+  /** Starts seller password recovery. */
+  @core.TypedRoute.Post("auth/seller/password/recovery") public sellerRecoveryRequest(@core.TypedBody() body: api.IShoppingSeller.IRecoveryRequest): Promise<api.IShoppingRecovery> { return ShoppingProvider.requestRecovery("seller", body); }
+  /** Completes seller password recovery. */
+  @core.TypedRoute.Put("auth/seller/password/recovery") public async sellerRecoveryComplete(@core.TypedBody() body: api.IShoppingSeller.IRecoveryComplete): Promise<api.IShoppingSuccess> { return this.done(ShoppingProvider.completeRecovery("seller", body)); }
 
-  @core.TypedRoute.Post("customer/logout") public customerLogout(@core.TypedHeaders() headers: { authorization?: string }): Promise<IEntity> {
-    return ShoppingProvider.authenticate(headers, "customer").then(
-      ShoppingProvider.logout,
-    );
-  }
-  @core.TypedRoute.Post("customer/logout-all") public customerLogoutAll(@core.TypedHeaders() headers: { authorization?: string }): Promise<IEntity> {
-    return ShoppingProvider.authenticate(headers, "customer").then(
-      ShoppingProvider.logoutAll,
-    );
-  }
-  @core.TypedRoute.Post("seller/logout") public sellerLogout(@core.TypedHeaders() headers: { authorization?: string }): Promise<IEntity> {
-    return ShoppingProvider.authenticate(headers, "seller").then(
-      ShoppingProvider.logout,
-    );
-  }
-  @core.TypedRoute.Post("seller/logout-all") public sellerLogoutAll(@core.TypedHeaders() headers: { authorization?: string }): Promise<IEntity> {
-    return ShoppingProvider.authenticate(headers, "seller").then(
-      ShoppingProvider.logoutAll,
-    );
-  }
-  @core.TypedRoute.Put("customer/password") public customerPassword(@core.TypedHeaders() headers: { authorization?: string }, @core.TypedBody() body: IShoppingAuth.IPasswordChange): Promise<IEntity> {
-    return ShoppingProvider.authenticate(headers, "customer").then((p) => ShoppingProvider.changePassword(p, body));
-  }
-  @core.TypedRoute.Delete("customer/account") public customerAccountDelete(@core.TypedHeaders() headers: { authorization?: string }, @core.TypedBody() body: IShoppingAuth.IAccountDelete): Promise<IEntity> {
-    return ShoppingProvider.authenticate(headers, "customer").then((p) => ShoppingProvider.deleteAccount(p, body));
-  }
-  @core.TypedRoute.Get("customer/profile") public customerProfile(@core.TypedHeaders() headers: { authorization?: string }): Promise<IShoppingCustomerProfile.IDetail> {
-    return ShoppingProvider.authenticate(headers, "customer").then(
-      ShoppingProvider.customerProfile,
-    );
-  }
-  @core.TypedRoute.Patch("customer/profile") public customerProfileUpdate(@core.TypedHeaders() headers: { authorization?: string }, @core.TypedBody() body: IShoppingCustomerProfile.IUpdate): Promise<IShoppingCustomerProfile.IDetail> {
-    return ShoppingProvider.authenticate(headers, "customer").then((p) =>
-      ShoppingProvider.updateCustomerProfile(p, body),
-    );
-  }
-  @core.TypedRoute.Patch("customer/address") public customerAddresses(@core.TypedHeaders() headers: { authorization?: string }, @core.TypedBody() input: IPage.IRequest): Promise<IPage<IShoppingAddress.IDetail>> {
-    return ShoppingProvider.authenticate(headers, "customer").then((p) =>
-      ShoppingProvider.addresses(p, input),
-    );
-  }
-  @core.TypedRoute.Post("customer/address") public customerAddressCreate(@core.TypedHeaders() headers: { authorization?: string }, @core.TypedBody() body: IShoppingAddress.ICreate): Promise<IShoppingAddress.IDetail> {
-    return ShoppingProvider.authenticate(headers, "customer").then((p) =>
-      ShoppingProvider.addressCreate(p, body),
-    );
-  }
-  @core.TypedRoute.Put("customer/address/:id") public customerAddressUpdate(@core.TypedHeaders() headers: { authorization?: string }, @core.TypedParam(
-    "id",
-  ) id: string & tags.Format<"uuid">, @core.TypedBody() body: IShoppingAddress.IUpdate): Promise<IShoppingAddress.IDetail> {
-    return ShoppingProvider.authenticate(headers, "customer").then((p) =>
-      ShoppingProvider.addressUpdate(p, id, body),
-    );
-  }
-  @core.TypedRoute.Delete("customer/address/:id") public customerAddressDelete(@core.TypedHeaders() headers: { authorization?: string }, @core.TypedParam(
-    "id",
-  ) id: string & tags.Format<"uuid">): Promise<IEntity> {
-    return ShoppingProvider.authenticate(headers, "customer").then((p) =>
-      ShoppingProvider.addressDelete(p, id),
-    );
-  }
-  @core.TypedRoute.Put("customer/address/:id/default") public customerAddressDefault(@core.TypedHeaders() headers: { authorization?: string }, @core.TypedParam(
-    "id",
-  ) id: string & tags.Format<"uuid">): Promise<IShoppingAddress.IDetail> {
-    return ShoppingProvider.authenticate(headers, "customer").then((p) =>
-      ShoppingProvider.addressDefault(p, id),
-    );
-  }
+  /** Ends the current customer session. */
+  @core.TypedRoute.Delete("customer/auth/session") public async customerLogout(@Headers("authorization") authorization?: string): Promise<api.IShoppingSuccess> { return this.done(this.logoutTask(authorization, "customer")); }
+  /** Ends every customer session. */
+  @core.TypedRoute.Delete("customer/auth/sessions") public async customerLogoutAll(@Headers("authorization") authorization?: string): Promise<api.IShoppingSuccess> { return this.done(this.logoutAllTask(authorization, "customer")); }
+  /** Ends the current seller session. */
+  @core.TypedRoute.Delete("seller/auth/session") public async sellerLogout(@Headers("authorization") authorization?: string): Promise<api.IShoppingSuccess> { return this.done(this.logoutTask(authorization, "seller")); }
+  /** Ends every seller session. */
+  @core.TypedRoute.Delete("seller/auth/sessions") public async sellerLogoutAll(@Headers("authorization") authorization?: string): Promise<api.IShoppingSuccess> { return this.done(this.logoutAllTask(authorization, "seller")); }
 
-  @core.TypedRoute.Get("seller/profile") public sellerProfile(@core.TypedHeaders() headers: { authorization?: string }): Promise<IShoppingSellerProfile.IDetail> {
-    return ShoppingProvider.authenticate(headers, "seller").then(
-      ShoppingProvider.sellerProfile,
-    );
-  }
-  @core.TypedRoute.Put("seller/password") public sellerPassword(@core.TypedHeaders() headers: { authorization?: string }, @core.TypedBody() body: IShoppingAuth.IPasswordChange): Promise<IEntity> {
-    return ShoppingProvider.authenticate(headers, "seller").then((p) => ShoppingProvider.changePassword(p, body));
-  }
-  @core.TypedRoute.Delete("seller/account") public sellerAccountDelete(@core.TypedHeaders() headers: { authorization?: string }, @core.TypedBody() body: IShoppingAuth.IAccountDelete): Promise<IEntity> {
-    return ShoppingProvider.authenticate(headers, "seller").then((p) => ShoppingProvider.deleteAccount(p, body));
-  }
-  @core.TypedRoute.Patch("seller/profile") public sellerProfileUpdate(@core.TypedHeaders() headers: { authorization?: string }, @core.TypedBody() body: IShoppingSellerProfile.IUpdate): Promise<IShoppingSellerProfile.IDetail> {
-    return ShoppingProvider.authenticate(headers, "seller").then((p) =>
-      ShoppingProvider.updateSellerProfile(p, body),
-    );
-  }
-  @core.TypedRoute.Patch("seller/profile/snapshot") public sellerProfileSnapshots(@core.TypedHeaders() headers: { authorization?: string }, @core.TypedBody() input: IPage.IRequest): Promise<IPage<IShoppingSellerProfile.ISnapshot>> {
-    return ShoppingProvider.authenticate(headers, "seller").then((p) => ShoppingProvider.sellerProfileSnapshots(p, input));
-  }
-  @core.TypedRoute.Patch("admin/seller/:id/snapshot") public adminSellerProfileSnapshots(@core.TypedHeaders() headers: { authorization?: string }, @core.TypedParam("id") id: string & tags.Format<"uuid">, @core.TypedBody() input: IPage.IRequest): Promise<IPage<IShoppingSellerProfile.ISnapshot>> {
-    return ShoppingProvider.authenticateAny(headers).then((p) => ShoppingProvider.sellerProfileSnapshots(p, input, id));
-  }
-  @core.TypedRoute.Get("seller/profile/:id") public sellerProfilePublic(@core.TypedHeaders() headers: { authorization?: string }, @core.TypedParam(
-    "id",
-  ) id: string & tags.Format<"uuid">): Promise<IShoppingSellerProfile.IDetail> {
-    return ShoppingProvider.authenticate(headers, "customer").then((p) =>
-      ShoppingProvider.publicSeller(p, id),
-    );
-  }
-  @core.TypedRoute.Get("seller/approval") public sellerApproval(@core.TypedHeaders() headers: { authorization?: string }): Promise<IShoppingSellerApproval.IDetail> {
-    return ShoppingProvider.authenticate(headers, "seller").then(
-      ShoppingProvider.sellerApproval,
-    );
-  }
-  @core.TypedRoute.Post("seller/approval/resubmit") public sellerApprovalResubmit(@core.TypedHeaders() headers: { authorization?: string }): Promise<IShoppingSellerApproval.IDetail> {
-    return ShoppingProvider.authenticate(headers, "seller").then(
-      ShoppingProvider.sellerResubmit,
-    );
-  }
-  @core.TypedRoute.Patch("admin/seller/approval") public sellerApprovals(@core.TypedHeaders() headers: { authorization?: string }, @core.TypedBody() input: IPage.IRequest): Promise<IPage<IShoppingSellerApproval.IDetail>> {
-    return ShoppingProvider.authenticateAny(headers).then((p) => ShoppingProvider.sellerApprovals(p, input));
-  }
-  @core.TypedRoute.Put("admin/seller/approval/approve/:id") public sellerApprove(@core.TypedHeaders() headers: { authorization?: string }, @core.TypedParam("id") id: string & tags.Format<"uuid">): Promise<IShoppingSellerApproval.IDetail> {
-    return ShoppingProvider.authenticateAny(headers).then((p) => ShoppingProvider.sellerDecision(p, id, true));
-  }
-  @core.TypedRoute.Put("admin/seller/approval/reject/:id") public sellerReject(@core.TypedHeaders() headers: { authorization?: string }, @core.TypedParam("id") id: string & tags.Format<"uuid">, @core.TypedBody() body: IShoppingSellerApproval.IDecision): Promise<IShoppingSellerApproval.IDetail> {
-    return ShoppingProvider.authenticateAny(headers).then((p) => ShoppingProvider.sellerDecision(p, id, false, body.reason ?? undefined));
-  }
-  @core.TypedRoute.Put("admin/seller/suspend/:id") public sellerSuspend(@core.TypedHeaders() headers: { authorization?: string }, @core.TypedParam("id") id: string & tags.Format<"uuid">): Promise<IShoppingSellerProfile.IDetail> {
-    return ShoppingProvider.authenticateAny(headers).then((p) => ShoppingProvider.sellerSuspend(p, id, true));
-  }
-  @core.TypedRoute.Put("admin/seller/unsuspend/:id") public sellerUnsuspend(@core.TypedHeaders() headers: { authorization?: string }, @core.TypedParam("id") id: string & tags.Format<"uuid">): Promise<IShoppingSellerProfile.IDetail> {
-    return ShoppingProvider.authenticateAny(headers).then((p) => ShoppingProvider.sellerSuspend(p, id, false));
-  }
+  /** Reads the current customer profile. */
+  @core.TypedRoute.Get("customer/profile") public async customerProfile(@Headers("authorization") authorization?: string): Promise<api.IShoppingCustomerProfile> { return ShoppingProvider.customerProfile(await this.auth(authorization, "customer")); }
+  /** Replaces the current customer profile. */
+  @core.TypedRoute.Put("customer/profile") public async customerProfileUpdate(@Headers("authorization") authorization: string | undefined, @core.TypedBody() body: api.IShoppingCustomerProfile.IUpdate): Promise<api.IShoppingCustomerProfile> { return ShoppingProvider.updateCustomerProfile(await this.auth(authorization, "customer"), body); }
+  /** Lists the current customer's saved addresses. */
+  @core.TypedRoute.Patch("customer/address") public async addressIndex(@Headers("authorization") authorization: string | undefined, @core.TypedBody() body: api.IPage.IRequest): Promise<api.IPage<api.IShoppingShippingAddress>> { return page(await ShoppingProvider.addresses(await this.auth(authorization, "customer")), body); }
+  /** Adds a saved address. */
+  @core.TypedRoute.Post("customer/address") public async addressCreate(@Headers("authorization") authorization: string | undefined, @core.TypedBody() body: api.IShoppingShippingAddress.ICreate): Promise<api.IShoppingShippingAddress> { return ShoppingProvider.createAddress(await this.auth(authorization, "customer"), body); }
+  /** Replaces one saved address. */
+  @core.TypedRoute.Put("customer/address/:id") public async addressUpdate(@Headers("authorization") authorization: string | undefined, @core.TypedParam("id") id: string, @core.TypedBody() body: api.IShoppingShippingAddress.IUpdate): Promise<api.IShoppingShippingAddress> { return ShoppingProvider.updateAddress(await this.auth(authorization, "customer"), id, body); }
+  /** Deletes one saved address. */
+  @core.TypedRoute.Delete("customer/address/:id") public async addressDelete(@Headers("authorization") authorization: string | undefined, @core.TypedParam("id") id: string): Promise<api.IShoppingSuccess> { return this.done(ShoppingProvider.deleteAddress(await this.auth(authorization, "customer"), id)); }
+  /** Makes one saved address default. */
+  @core.TypedRoute.Put("customer/address/:id/default") public async addressDefault(@Headers("authorization") authorization: string | undefined, @core.TypedParam("id") id: string): Promise<api.IShoppingShippingAddress> { return ShoppingProvider.defaultAddress(await this.auth(authorization, "customer"), id); }
 
-  @core.TypedRoute.Post("admin/category") public categoryCreate(@core.TypedHeaders() headers: { authorization?: string }, @core.TypedBody() body: IShoppingCategory.ICreate): Promise<IShoppingCategory.IDetail> {
-    return ShoppingProvider.authenticateAny(headers).then((p) =>
-      ShoppingProvider.categoryCreate(p, body),
-    );
-  }
-  @core.TypedRoute.Put("admin/category/:id") public categoryUpdate(@core.TypedHeaders() headers: { authorization?: string }, @core.TypedParam(
-    "id",
-  ) id: string & tags.Format<"uuid">, @core.TypedBody() body: IShoppingCategory.IUpdate): Promise<IShoppingCategory.IDetail> {
-    return ShoppingProvider.authenticateAny(headers).then((p) =>
-      ShoppingProvider.categoryUpdate(p, id, body),
-    );
-  }
-  @core.TypedRoute.Delete("admin/category/:id") public categoryDelete(@core.TypedHeaders() headers: { authorization?: string }, @core.TypedParam(
-    "id",
-  ) id: string & tags.Format<"uuid">): Promise<IEntity> {
-    return ShoppingProvider.authenticateAny(headers).then((p) =>
-      ShoppingProvider.categoryDelete(p, id),
-    );
-  }
-  @core.TypedRoute.Get("customer/category") public categories(@core.TypedHeaders() headers: { authorization?: string }): Promise<IShoppingCategory.IDetail[]> {
-    return ShoppingProvider.authenticate(headers, "customer").then(
-      ShoppingProvider.categories,
-    );
-  }
-  @core.TypedRoute.Patch("customer/category/:id/product") public categoryProducts(@core.TypedHeaders() headers: { authorization?: string }, @core.TypedParam("id") id: string & tags.Format<"uuid">, @core.TypedBody() input: IShoppingProduct.IRequest): Promise<IPage<IShoppingProduct.ISummary>> {
-    return ShoppingProvider.authenticate(headers, "customer").then((p) => ShoppingProvider.categoryProducts(p, id, input));
-  }
+  /** Creates a category. */
+  @core.TypedRoute.Post("admin/category") public async categoryCreate(@Headers("authorization") authorization: string | undefined, @core.TypedBody() body: api.IShoppingCategory.ICreate): Promise<api.IShoppingCategory> { return ShoppingProvider.createCategory(await this.adminAuth(authorization), body); }
+  /** Lists categories. */
+  @core.TypedRoute.Get("customer/category") public async categoryIndex(@Headers("authorization") authorization?: string): Promise<api.IShoppingCategory[]> { return ShoppingProvider.categories(await ShoppingProvider.authenticateBrowse(authorization)); }
+  /** Edits a category. */
+  @core.TypedRoute.Put("admin/category/:id") public async categoryUpdate(@Headers("authorization") authorization: string | undefined, @core.TypedParam("id") id: string, @core.TypedBody() body: api.IShoppingCategory.IUpdate): Promise<api.IShoppingCategory> { return ShoppingProvider.updateCategory(await this.adminAuth(authorization), id, body); }
+  /** Deletes a category. */
+  @core.TypedRoute.Delete("admin/category/:id") public async categoryDelete(@Headers("authorization") authorization: string | undefined, @core.TypedParam("id") id: string): Promise<api.IShoppingSuccess> { return this.done(ShoppingProvider.deleteCategory(await this.adminAuth(authorization), id)); }
+  /** Lists products directly assigned to a category. */
+  @core.TypedRoute.Patch("customer/category/:id/product") public async categoryProducts(@Headers("authorization") authorization: string | undefined, @core.TypedParam("id") id: string, @core.TypedBody() body: api.IShoppingProduct.IRequest): Promise<api.IPage<api.IShoppingProduct.ISummary>> { return ShoppingProvider.categoryProducts(await ShoppingProvider.authenticateBrowse(authorization), id, body); }
 
-  @core.TypedRoute.Post("seller/product") public productCreate(@core.TypedHeaders() headers: { authorization?: string }, @core.TypedBody() body: IShoppingProduct.ICreate): Promise<IShoppingProduct.IDetail> {
-    return ShoppingProvider.authenticate(headers, "seller").then((p) =>
-      ShoppingProvider.productCreate(p, body),
-    );
-  }
-  @core.TypedRoute.Put("seller/product/:id") public productUpdate(@core.TypedHeaders() headers: { authorization?: string }, @core.TypedParam(
-    "id",
-  ) id: string & tags.Format<"uuid">, @core.TypedBody() body: IShoppingProduct.IUpdate): Promise<IShoppingProduct.IDetail> {
-    return ShoppingProvider.authenticate(headers, "seller").then((p) =>
-      ShoppingProvider.productUpdate(p, id, body),
-    );
-  }
-  @core.TypedRoute.Delete("seller/product/:id") public productDelete(@core.TypedHeaders() headers: { authorization?: string }, @core.TypedParam(
-    "id",
-  ) id: string & tags.Format<"uuid">): Promise<IEntity> {
-    return ShoppingProvider.authenticate(headers, "seller").then((p) =>
-      ShoppingProvider.productDelete(p, id),
-    );
-  }
-  @core.TypedRoute.Post("seller/product/:id/image") public imageUpload(@core.TypedHeaders() headers: { authorization?: string }, @core.TypedParam("id") id: string & tags.Format<"uuid">, @core.TypedBody() body: IShoppingProduct.IImageCreate): Promise<IShoppingProduct.IDetail> {
-    return ShoppingProvider.authenticate(headers, "seller").then((p) => ShoppingProvider.imageUpload(p, id, body));
-  }
-  @core.TypedRoute.Put("seller/product/:id/image") public imageReorder(@core.TypedHeaders() headers: { authorization?: string }, @core.TypedParam("id") id: string & tags.Format<"uuid">, @core.TypedBody() body: IShoppingProduct.IImageReorder): Promise<IShoppingProduct.IDetail> {
-    return ShoppingProvider.authenticate(headers, "seller").then((p) => ShoppingProvider.imageReorder(p, id, body));
-  }
-  @core.TypedRoute.Delete("seller/product/image/:id") public imageDelete(@core.TypedHeaders() headers: { authorization?: string }, @core.TypedParam("id") id: string & tags.Format<"uuid">): Promise<IShoppingProduct.IDetail> {
-    return ShoppingProvider.authenticate(headers, "seller").then((p) => ShoppingProvider.imageDelete(p, "", id));
-  }
-  @core.TypedRoute.Patch("customer/product") public products(@core.TypedHeaders() headers: { authorization?: string }, @core.TypedBody() input: IShoppingProduct.IRequest): Promise<IPage<IShoppingProduct.ISummary>> {
-    return ShoppingProvider.authenticate(headers, "customer").then((p) =>
-      ShoppingProvider.products(p, input),
-    );
-  }
-  @core.TypedRoute.Get(
-    "customer/product/:id",
-  ) public productAt(@core.TypedHeaders() headers: { authorization?: string }, @core.TypedParam(
-    "id",
-  ) id: string & tags.Format<"uuid">): Promise<IShoppingProduct.IDetail> {
-    return ShoppingProvider.authenticate(headers, "customer").then((p) =>
-      ShoppingProvider.productAt(p, id),
-    );
-  }
-  @core.TypedRoute.Patch("seller/product/:id/snapshot") public sellerProductSnapshots(@core.TypedHeaders() headers: { authorization?: string }, @core.TypedParam("id") id: string & tags.Format<"uuid">, @core.TypedBody() input: IPage.IRequest): Promise<IPage<IShoppingProduct.ISnapshot>> {
-    return ShoppingProvider.authenticate(headers, "seller").then((p) => ShoppingProvider.productSnapshots(p, id, input, false));
-  }
-  @core.TypedRoute.Patch("admin/product") public adminProducts(@core.TypedHeaders() headers: { authorization?: string }, @core.TypedBody() input: IShoppingProduct.IRequest): Promise<IPage<IShoppingProduct.ISummary>> {
-    return ShoppingProvider.authenticateAny(headers).then((p) => ShoppingProvider.adminProducts(p, input));
-  }
-  @core.TypedRoute.Get("admin/product/:id") public adminProductAt(@core.TypedHeaders() headers: { authorization?: string }, @core.TypedParam("id") id: string & tags.Format<"uuid">): Promise<IShoppingProduct.IDetail> {
-    return ShoppingProvider.authenticateAny(headers).then((p) => ShoppingProvider.adminProductAt(p, id));
-  }
-  @core.TypedRoute.Delete("admin/product/:id") public adminProductDelete(@core.TypedHeaders() headers: { authorization?: string }, @core.TypedParam("id") id: string & tags.Format<"uuid">, @core.TypedBody() body: IShoppingAdmin.IReason): Promise<IEntity> {
-    return ShoppingProvider.authenticateAny(headers).then((p) => ShoppingProvider.policyDeleteProduct(p, id, body));
-  }
-  @core.TypedRoute.Patch("admin/product/:id/snapshot") public adminProductSnapshots(@core.TypedHeaders() headers: { authorization?: string }, @core.TypedParam("id") id: string & tags.Format<"uuid">, @core.TypedBody() input: IPage.IRequest): Promise<IPage<IShoppingProduct.ISnapshot>> {
-    return ShoppingProvider.authenticateAny(headers).then((p) => ShoppingProvider.productSnapshots(p, id, input, true));
-  }
-  @core.TypedRoute.Post("seller/product/:id/variant") public variantCreate(@core.TypedHeaders() headers: { authorization?: string }, @core.TypedParam(
-    "id",
-  ) id: string & tags.Format<"uuid">, @core.TypedBody() body: IShoppingProduct.IVariantCreate): Promise<IShoppingProduct.IDetail> {
-    return ShoppingProvider.authenticate(headers, "seller").then((p) =>
-      ShoppingProvider.variantCreate(p, id, body),
-    );
-  }
-  @core.TypedRoute.Put("seller/product/:productId/variant/:id") public variantUpdate(@core.TypedHeaders() headers: { authorization?: string }, @core.TypedParam(
-    "productId",
-  ) productId: string & tags.Format<"uuid">, @core.TypedParam(
-    "id",
-  ) id: string & tags.Format<"uuid">, @core.TypedBody() body: IShoppingProduct.IVariantUpdate): Promise<IShoppingProduct.IDetail> {
-    return ShoppingProvider.authenticate(headers, "seller").then((p) =>
-      ShoppingProvider.variantUpdate(p, productId, id, body),
-    );
-  }
-  @core.TypedRoute.Delete("seller/product/:productId/variant/:id") public variantDelete(@core.TypedHeaders() headers: { authorization?: string }, @core.TypedParam(
-    "productId",
-  ) productId: string & tags.Format<"uuid">, @core.TypedParam(
-    "id",
-  ) id: string & tags.Format<"uuid">): Promise<IShoppingProduct.IDetail> {
-    return ShoppingProvider.authenticate(headers, "seller").then((p) =>
-      ShoppingProvider.variantDelete(p, productId, id),
-    );
-  }
-  @core.TypedRoute.Post("seller/product/variant/inventory/:id") public inventoryAdd(@core.TypedHeaders() headers: { authorization?: string }, @core.TypedParam(
-    "id",
-  ) id: string & tags.Format<"uuid">, @core.TypedBody() body: IShoppingInventory.ICreate): Promise<IShoppingProduct.IDetail> {
-    return ShoppingProvider.authenticate(headers, "seller").then((p) =>
-      ShoppingProvider.inventory(p, "", id, body),
-    );
-  }
-  @core.TypedRoute.Patch("seller/product/variant/inventory/:id") public inventoryHistory(@core.TypedHeaders() headers: { authorization?: string }, @core.TypedParam(
-    "id",
-  ) id: string & tags.Format<"uuid">, @core.TypedBody() input: IPage.IRequest): Promise<IShoppingInventory.IHistory> {
-    return ShoppingProvider.authenticate(headers, "seller").then((p) =>
-      ShoppingProvider.inventoryHistory(p, "", id, input),
-    );
-  }
+  /** Lists the visible customer catalog. */
+  @core.TypedRoute.Patch("customer/product") public async productIndex(@Headers("authorization") authorization: string | undefined, @core.TypedBody() body: api.IShoppingProduct.IRequest): Promise<api.IPage<api.IShoppingProduct.ISummary>> { return ShoppingProvider.products(await this.auth(authorization, "customer"), body); }
+  /** Opens a visible product detail. */
+  @core.TypedRoute.Get("customer/product/:id") public async productAt(@Headers("authorization") authorization: string | undefined, @core.TypedParam("id") id: string): Promise<api.IShoppingProduct> { return ShoppingProvider.product(await this.auth(authorization, "customer"), id, false); }
+  /** Creates a seller product. */
+  @core.TypedRoute.Post("seller/product") public async productCreate(@Headers("authorization") authorization: string | undefined, @core.TypedBody() body: api.IShoppingProduct.ICreate): Promise<api.IShoppingProduct> { return ShoppingProvider.createProduct(await this.auth(authorization, "seller"), body); }
+  /** Edits a seller product. */
+  @core.TypedRoute.Put("seller/product/:id") public async productUpdate(@Headers("authorization") authorization: string | undefined, @core.TypedParam("id") id: string, @core.TypedBody() body: api.IShoppingProduct.IUpdate): Promise<api.IShoppingProduct> { return ShoppingProvider.updateProduct(await this.auth(authorization, "seller"), id, body); }
+  /** Deletes a seller product. */
+  @core.TypedRoute.Delete("seller/product/:id") public async productDelete(@Headers("authorization") authorization: string | undefined, @core.TypedParam("id") id: string): Promise<api.IShoppingSuccess> { return this.done(ShoppingProvider.deleteProduct(await this.auth(authorization, "seller"), id)); }
+  /** Deletes any product for policy violation. */
+  @core.TypedRoute.Delete("admin/product/:id") public async productPolicyDelete(@Headers("authorization") authorization: string | undefined, @core.TypedParam("id") id: string, @core.TypedBody() body: api.IShoppingModeration): Promise<api.IShoppingSuccess> { return this.done(ShoppingProvider.policyDeleteProduct(await this.adminAuth(authorization), id, body)); }
+  /** Lists all live products for administrators. */
+  @core.TypedRoute.Patch("admin/product") public async adminProductIndex(@Headers("authorization") authorization: string | undefined, @core.TypedBody() body: api.IShoppingProduct.IRequest): Promise<api.IPage<api.IShoppingProduct.ISummary>> { return ShoppingProvider.adminProducts(await this.adminAuth(authorization), body); }
+  /** Lists immutable snapshots for an owned product. */
+  @core.TypedRoute.Patch("seller/product/:id/snapshot") public async productSnapshots(@Headers("authorization") authorization: string | undefined, @core.TypedParam("id") id: string, @core.TypedBody() body: api.IPage.IRequest): Promise<api.IPage<api.IShoppingProduct.ISnapshot>> { return ShoppingProvider.productSnapshots(await this.auth(authorization, "seller"), id, body, false); }
+  /** Lists immutable snapshots for any product. */
+  @core.TypedRoute.Patch("admin/product/:id/snapshot") public async adminProductSnapshots(@Headers("authorization") authorization: string | undefined, @core.TypedParam("id") id: string, @core.TypedBody() body: api.IPage.IRequest): Promise<api.IPage<api.IShoppingProduct.ISnapshot>> { return ShoppingProvider.productSnapshots(await this.adminAuth(authorization), id, body, true); }
 
-  @core.TypedRoute.Get("customer/cart") public cart(@core.TypedHeaders() headers: { authorization?: string }): Promise<IShoppingCart.ISummary> {
-    return ShoppingProvider.authenticate(headers, "customer").then(
-      ShoppingProvider.cart,
-    );
-  }
-  @core.TypedRoute.Post("customer/cart") public cartAdd(@core.TypedHeaders() headers: { authorization?: string }, @core.TypedBody() body: IShoppingCart.ICreate): Promise<IShoppingCart.ISummary> {
-    return ShoppingProvider.authenticate(headers, "customer").then((p) =>
-      ShoppingProvider.cartAdd(p, body),
-    );
-  }
-  @core.TypedRoute.Put(
-    "customer/cart/:id",
-  ) public cartUpdate(@core.TypedHeaders() headers: { authorization?: string }, @core.TypedParam(
-    "id",
-  ) id: string & tags.Format<"uuid">, @core.TypedBody() body: IShoppingCart.IUpdate): Promise<IShoppingCart.ISummary> {
-    return ShoppingProvider.authenticate(headers, "customer").then((p) =>
-      ShoppingProvider.cartUpdate(p, id, body),
-    );
-  }
-  @core.TypedRoute.Delete(
-    "customer/cart/:id",
-  ) public cartDelete(@core.TypedHeaders() headers: { authorization?: string }, @core.TypedParam(
-    "id",
-  ) id: string & tags.Format<"uuid">): Promise<IEntity> {
-    return ShoppingProvider.authenticate(headers, "customer").then((p) =>
-      ShoppingProvider.cartDelete(p, id),
-    );
-  }
-  @core.TypedRoute.Patch("customer/wishlist") public wishlist(@core.TypedHeaders() headers: { authorization?: string }, @core.TypedBody() input: IPage.IRequest): Promise<IPage<IShoppingWishlist.ISummary>> {
-    return ShoppingProvider.authenticate(headers, "customer").then((p) =>
-      ShoppingProvider.wishlist(p, input),
-    );
-  }
-  @core.TypedRoute.Post("customer/wishlist/:id") public wishlistAdd(@core.TypedHeaders() headers: { authorization?: string }, @core.TypedParam(
-    "id",
-  ) id: string & tags.Format<"uuid">): Promise<IEntity> {
-    return ShoppingProvider.authenticate(headers, "customer").then((p) =>
-      ShoppingProvider.wishlistAdd(p, id),
-    );
-  }
-  @core.TypedRoute.Delete("customer/wishlist/:id") public wishlistDelete(@core.TypedHeaders() headers: { authorization?: string }, @core.TypedParam(
-    "id",
-  ) id: string & tags.Format<"uuid">): Promise<IEntity> {
-    return ShoppingProvider.authenticate(headers, "customer").then((p) =>
-      ShoppingProvider.wishlistDelete(p, id),
-    );
-  }
+  /** Uploads images to a product. */
+  @core.TypedRoute.Post("seller/product/:productId/image") public async imageUpload(@Headers("authorization") authorization: string | undefined, @core.TypedParam("productId") productId: string, @core.TypedBody() body: api.IShoppingProduct.IImages): Promise<api.IShoppingProduct> { return ShoppingProvider.uploadImages(await this.auth(authorization, "seller"), productId, body); }
+  /** Reorders product images. */
+  @core.TypedRoute.Put("seller/product/:productId/image") public async imageReorder(@Headers("authorization") authorization: string | undefined, @core.TypedParam("productId") productId: string, @core.TypedBody() body: api.IShoppingProduct.IImageOrder): Promise<api.IShoppingProduct> { return ShoppingProvider.reorderImages(await this.auth(authorization, "seller"), productId, body); }
+  /** Deletes one product image. */
+  @core.TypedRoute.Delete("seller/product/:productId/image/:id") public async imageDelete(@Headers("authorization") authorization: string | undefined, @core.TypedParam("productId") productId: string, @core.TypedParam("id") id: string): Promise<api.IShoppingProduct> { return ShoppingProvider.deleteImage(await this.auth(authorization, "seller"), productId, id); }
+  /** Adds a variant. */
+  @core.TypedRoute.Post("seller/product/:productId/variant") public async variantCreate(@Headers("authorization") authorization: string | undefined, @core.TypedParam("productId") productId: string, @core.TypedBody() body: api.IShoppingVariant.ICreate): Promise<api.IShoppingVariant> { return ShoppingProvider.createVariant(await this.auth(authorization, "seller"), productId, body); }
+  /** Edits a variant. */
+  @core.TypedRoute.Put("seller/product/variant/:id") public async variantUpdate(@Headers("authorization") authorization: string | undefined, @core.TypedParam("id") id: string, @core.TypedBody() body: api.IShoppingVariant.IUpdate): Promise<api.IShoppingVariant> { return ShoppingProvider.updateVariant(await this.auth(authorization, "seller"), id, body); }
+  /** Deletes a variant. */
+  @core.TypedRoute.Delete("seller/product/variant/:id") public async variantDelete(@Headers("authorization") authorization: string | undefined, @core.TypedParam("id") id: string): Promise<api.IShoppingSuccess> { return this.done(ShoppingProvider.deleteVariant(await this.auth(authorization, "seller"), id)); }
+  /** Restocks a variant. */
+  @core.TypedRoute.Post("seller/product/variant/:id/restock") public async restock(@Headers("authorization") authorization: string | undefined, @core.TypedParam("id") id: string, @core.TypedBody() body: api.IShoppingVariant.IInventory): Promise<api.IShoppingVariant> { return ShoppingProvider.restock(await this.auth(authorization, "seller"), id, body); }
+  /** Subtracts seller inventory. */
+  @core.TypedRoute.Post("seller/product/variant/:id/subtract") public async subtract(@Headers("authorization") authorization: string | undefined, @core.TypedParam("id") id: string, @core.TypedBody() body: api.IShoppingVariant.IInventory): Promise<api.IShoppingVariant> { return ShoppingProvider.subtract(await this.auth(authorization, "seller"), id, body); }
+  /** Lists variant inventory history. */
+  @core.TypedRoute.Patch("seller/product/variant/:id/inventory") public async inventory(@Headers("authorization") authorization: string | undefined, @core.TypedParam("id") id: string, @core.TypedBody() body: api.IPage.IRequest): Promise<api.IPage<{ id: string; quantityChange: number; reason: string; createdAt: string }>> { return ShoppingProvider.inventory(await this.auth(authorization, "seller"), id, body); }
 
-  @core.TypedRoute.Post("customer/checkout/start") public checkoutStart(@core.TypedHeaders() headers: { authorization?: string }, @core.TypedBody() body: IShoppingCheckout.IStart): Promise<IShoppingCheckout.ISummary> {
-    return ShoppingProvider.authenticate(headers, "customer").then((p) => ShoppingProvider.checkoutStart(p, body));
-  }
-  @core.TypedRoute.Get("customer/checkout/:id") public checkoutReview(@core.TypedHeaders() headers: { authorization?: string }, @core.TypedParam("id") id: string & tags.Format<"uuid">): Promise<IShoppingCheckout.ISummary> {
-    return ShoppingProvider.authenticate(headers, "customer").then((p) => ShoppingProvider.checkoutReview(p, id));
-  }
-  @core.TypedRoute.Post("customer/checkout/:id/payment") public checkoutPayment(@core.TypedHeaders() headers: { authorization?: string }, @core.TypedParam("id") id: string & tags.Format<"uuid">, @core.TypedBody() body: IShoppingCheckout.IPayment): Promise<IShoppingCheckout.IPaymentResult> {
-    return ShoppingProvider.authenticate(headers, "customer").then((p) => ShoppingProvider.checkoutPayment(p, id, body));
-  }
-  @core.TypedRoute.Patch("customer/order") public orderList(@core.TypedHeaders() headers: { authorization?: string }, @core.TypedBody() input: IPage.IRequest): Promise<IPage<IShoppingOrder.ISummary>> {
-    return ShoppingProvider.authenticate(headers, "customer").then((p) =>
-      ShoppingProvider.orderList(p, input),
-    );
-  }
-  @core.TypedRoute.Get(
-    "customer/order/:id",
-  ) public orderAt(@core.TypedHeaders() headers: { authorization?: string }, @core.TypedParam(
-    "id",
-  ) id: string & tags.Format<"uuid">): Promise<IShoppingOrder.IDetail> {
-    return ShoppingProvider.authenticate(headers, "customer").then((p) =>
-      ShoppingProvider.orderAt(p, id),
-    );
-  }
-  @core.TypedRoute.Patch("admin/order") public adminOrderList(@core.TypedHeaders() headers: { authorization?: string }, @core.TypedBody() input: IShoppingOrder.IAdminRequest): Promise<IPage<IShoppingAdmin.IOrderSummary>> {
-    return ShoppingProvider.authenticateAny(headers).then((p) => ShoppingProvider.adminOrderList(p, input));
-  }
-  @core.TypedRoute.Get("admin/order/:id") public adminOrderAt(@core.TypedHeaders() headers: { authorization?: string }, @core.TypedParam("id") id: string & tags.Format<"uuid">): Promise<IShoppingOrder.IDetail> {
-    return ShoppingProvider.authenticateAny(headers).then((p) => ShoppingProvider.adminOrderAt(p, id));
-  }
-  @core.TypedRoute.Patch("admin/action") public adminActions(@core.TypedHeaders() headers: { authorization?: string }, @core.TypedBody() input: IShoppingAdmin.IActionRequest): Promise<IPage<IShoppingAdmin.IAction>> {
-    return ShoppingProvider.authenticateAny(headers).then((p) => ShoppingProvider.adminActions(p, input));
-  }
-  @core.TypedRoute.Put("admin/order-item/cancel/:id") public forceCancelItem(@core.TypedHeaders() headers: { authorization?: string }, @core.TypedParam("id") id: string & tags.Format<"uuid">, @core.TypedBody() body: IShoppingAdmin.IReason): Promise<IShoppingOrder.IDetail> {
-    return ShoppingProvider.authenticateAny(headers).then((p) => ShoppingProvider.forceCancelItem(p, id, body));
-  }
-  @core.TypedRoute.Put("admin/order/cancel/:id") public forceCancelOrder(@core.TypedHeaders() headers: { authorization?: string }, @core.TypedParam("id") id: string & tags.Format<"uuid">, @core.TypedBody() body: IShoppingAdmin.IReason): Promise<IShoppingOrder.IDetail> {
-    return ShoppingProvider.authenticateAny(headers).then((p) => ShoppingProvider.forceCancelOrder(p, id, body));
-  }
-  @core.TypedRoute.Put("admin/order-item/refund/:id") public forceRefundItem(@core.TypedHeaders() headers: { authorization?: string }, @core.TypedParam("id") id: string & tags.Format<"uuid">, @core.TypedBody() body: IShoppingAdmin.IReason): Promise<IShoppingOrder.IDetail> {
-    return ShoppingProvider.authenticateAny(headers).then((p) => ShoppingProvider.forceRefundItem(p, id, body));
-  }
-  @core.TypedRoute.Put("admin/order/refund/:id") public forceRefundOrder(@core.TypedHeaders() headers: { authorization?: string }, @core.TypedParam("id") id: string & tags.Format<"uuid">, @core.TypedBody() body: IShoppingAdmin.IReason): Promise<IShoppingOrder.IDetail> {
-    return ShoppingProvider.authenticateAny(headers).then((p) => ShoppingProvider.forceRefundOrder(p, id, body));
-  }
-  @core.TypedRoute.Post("seller/order/shipment/:id") public shipmentCreate(@core.TypedHeaders() headers: { authorization?: string }, @core.TypedParam(
-    "id",
-  ) id: string & tags.Format<"uuid">, @core.TypedBody() body: IShoppingShipment.ICreate): Promise<IShoppingOrder.IDetail> {
-    return ShoppingProvider.authenticate(headers, "seller").then((p) =>
-      ShoppingProvider.shipmentCreate(p, id, body),
-    );
-  }
-  @core.TypedRoute.Put("customer/shipment/deliver/:id") public shipmentDeliver(@core.TypedHeaders() headers: { authorization?: string }, @core.TypedParam(
-    "id",
-  ) id: string & tags.Format<"uuid">): Promise<IShoppingOrder.IDetail> {
-    return ShoppingProvider.authenticate(headers, "customer").then((p) =>
-      ShoppingProvider.shipmentDeliver(p, id),
-    );
-  }
-  @core.TypedRoute.Get("customer/shipment/:id") public shipmentTrack(@core.TypedHeaders() headers: { authorization?: string }, @core.TypedParam("id") id: string & tags.Format<"uuid">): Promise<IShoppingOrder.IDetail> {
-    return ShoppingProvider.authenticate(headers, "customer").then((p) => ShoppingProvider.shipmentTrack(p, id));
-  }
-  @core.TypedRoute.Put("customer/shipment/auto-confirm/:id") public shipmentAutoConfirm(@core.TypedHeaders() headers: { authorization?: string }, @core.TypedParam("id") id: string & tags.Format<"uuid">): Promise<IShoppingOrder.IDetail> {
-    return ShoppingProvider.authenticate(headers, "customer").then((p) => ShoppingProvider.shipmentAutoConfirm(p, id));
-  }
-  @core.TypedRoute.Patch("seller/order-item") public sellerQueue(@core.TypedHeaders() headers: { authorization?: string }, @core.TypedBody() input: IShoppingOrder.ISellerRequest): Promise<IPage<IShoppingOrder.IItem>> {
-    return ShoppingProvider.authenticate(headers, "seller").then((p) =>
-      ShoppingProvider.sellerQueue(p, input),
-    );
-  }
-  @core.TypedRoute.Post("customer/cancellation") public cancellationCreate(@core.TypedHeaders() headers: { authorization?: string }, @core.TypedBody() body: IShoppingRequest.ICreate & { itemId: string }): Promise<IShoppingRequest.IDetail> {
-    return ShoppingProvider.authenticate(headers, "customer").then((p) =>
-      ShoppingProvider.requestCreate(p, body.itemId, "cancellation", body),
-    );
-  }
-  @core.TypedRoute.Post("customer/refund") public refundCreate(@core.TypedHeaders() headers: { authorization?: string }, @core.TypedBody() body: IShoppingRequest.ICreate & { itemId: string }): Promise<IShoppingRequest.IDetail> {
-    return ShoppingProvider.authenticate(headers, "customer").then((p) =>
-      ShoppingProvider.requestCreate(p, body.itemId, "refund", body),
-    );
-  }
-  @core.TypedRoute.Patch("seller/cancellation") public cancellationList(@core.TypedHeaders() headers: { authorization?: string }, @core.TypedBody() input: IPage.IRequest): Promise<IPage<IShoppingRequest.IDetail>> {
-    return ShoppingProvider.authenticate(headers, "seller").then((p) =>
-      ShoppingProvider.sellerRequests(p, "cancellation", input),
-    );
-  }
-  @core.TypedRoute.Patch("seller/refund") public refundList(@core.TypedHeaders() headers: { authorization?: string }, @core.TypedBody() input: IPage.IRequest): Promise<IPage<IShoppingRequest.IDetail>> {
-    return ShoppingProvider.authenticate(headers, "seller").then((p) =>
-      ShoppingProvider.sellerRequests(p, "refund", input),
-    );
-  }
-  @core.TypedRoute.Put("seller/request/approve/:id") public requestApprove(@core.TypedHeaders() headers: { authorization?: string }, @core.TypedParam(
-    "id",
-  ) id: string & tags.Format<"uuid">): Promise<IShoppingRequest.IDetail> {
-    return ShoppingProvider.authenticate(headers, "seller").then((p) =>
-      ShoppingProvider.decideRequest(p, id, true),
-    );
-  }
-  @core.TypedRoute.Put("seller/request/reject/:id") public requestReject(@core.TypedHeaders() headers: { authorization?: string }, @core.TypedParam(
-    "id",
-  ) id: string & tags.Format<"uuid">): Promise<IShoppingRequest.IDetail> {
-    return ShoppingProvider.authenticate(headers, "seller").then((p) =>
-      ShoppingProvider.decideRequest(p, id, false),
-    );
-  }
-  @core.TypedRoute.Post("customer/review") public reviewCreate(@core.TypedHeaders() headers: { authorization?: string }, @core.TypedBody() body: IShoppingReview.ICreate): Promise<IShoppingReview.IDetail> {
-    return ShoppingProvider.authenticate(headers, "customer").then((p) =>
-      ShoppingProvider.reviewCreate(p, body),
-    );
-  }
-  @core.TypedRoute.Put("customer/review/:id") public reviewUpdate(@core.TypedHeaders() headers: { authorization?: string }, @core.TypedParam(
-    "id",
-  ) id: string & tags.Format<"uuid">, @core.TypedBody() body: IShoppingReview.IUpdate): Promise<IShoppingReview.IDetail> {
-    return ShoppingProvider.authenticate(headers, "customer").then((p) =>
-      ShoppingProvider.reviewUpdate(p, id, body),
-    );
-  }
-  @core.TypedRoute.Delete("customer/review/:id") public reviewDelete(@core.TypedHeaders() headers: { authorization?: string }, @core.TypedParam(
-    "id",
-  ) id: string & tags.Format<"uuid">): Promise<IEntity> {
-    return ShoppingProvider.authenticate(headers, "customer").then((p) =>
-      ShoppingProvider.reviewDelete(p, id),
-    );
-  }
+  /** Returns the seller approval state. */
+  @core.TypedRoute.Get("seller/approval") public async sellerStatus(@Headers("authorization") authorization?: string): Promise<api.IShoppingSeller.IStatus> { return ShoppingProvider.sellerStatus(await this.auth(authorization, "seller")); }
+  /** Resubmits a rejected seller approval. */
+  @core.TypedRoute.Post("seller/approval") public async sellerResubmit(@Headers("authorization") authorization?: string): Promise<api.IShoppingSeller.IStatus> { return ShoppingProvider.resubmitSeller(await this.auth(authorization, "seller")); }
+  /** Lists pending seller approvals. */
+  @core.TypedRoute.Patch("admin/approval/seller") public async sellerApprovalIndex(@Headers("authorization") authorization: string | undefined, @core.TypedBody() body: api.IPage.IRequest): Promise<api.IPage<{ id: string; sellerId: string; shopName: string; createdAt: string }>> { return ShoppingProvider.sellerApprovals(await this.adminAuth(authorization), body); }
+  /** Approves a seller application. */
+  @core.TypedRoute.Put("admin/approval/seller/:id/approve") public async sellerApprove(@Headers("authorization") authorization: string | undefined, @core.TypedParam("id") id: string): Promise<api.IShoppingSeller.IStatus> { return ShoppingProvider.approveSeller(await this.adminAuth(authorization), id); }
+  /** Rejects a seller application. */
+  @core.TypedRoute.Put("admin/approval/seller/:id/reject") public async sellerReject(@Headers("authorization") authorization: string | undefined, @core.TypedParam("id") id: string, @core.TypedBody() body: api.IShoppingModeration): Promise<api.IShoppingSeller.IStatus> { return ShoppingProvider.rejectSeller(await this.adminAuth(authorization), id, body); }
+  /** Suspends a seller. */
+  @core.TypedRoute.Put("admin/seller/:id/suspend") public async sellerSuspend(@Headers("authorization") authorization: string | undefined, @core.TypedParam("id") id: string): Promise<api.IShoppingSuccess> { return this.done(ShoppingProvider.suspendSeller(await this.adminAuth(authorization), id)); }
+  /** Unsuspends a seller. */
+  @core.TypedRoute.Put("admin/seller/:id/unsuspend") public async sellerUnsuspend(@Headers("authorization") authorization: string | undefined, @core.TypedParam("id") id: string): Promise<api.IShoppingSuccess> { return this.done(ShoppingProvider.unsuspendSeller(await this.adminAuth(authorization), id)); }
+  /** Returns a public seller profile. */
+  @core.TypedRoute.Get("customer/seller/:id") public async sellerPublic(@Headers("authorization") authorization: string | undefined, @core.TypedParam("id") id: string): Promise<api.IShoppingSellerProfile & { id: string }> { await this.auth(authorization, "customer"); return ShoppingProvider.sellerProfile(id); }
+  /** Returns the seller's own profile. */
+  @core.TypedRoute.Get("seller/profile") public async sellerOwnProfile(@Headers("authorization") authorization?: string): Promise<api.IShoppingSellerProfile> { const actor = await this.auth(authorization, "seller"); const value = await ShoppingProvider.sellerProfile(actor.id); return { shopName: value.shopName, shopDescription: value.shopDescription, logo: value.logo }; }
+  /** Edits the seller profile. */
+  @core.TypedRoute.Put("seller/profile") public async sellerProfileUpdate(@Headers("authorization") authorization: string | undefined, @core.TypedBody() body: api.IShoppingSellerProfile.IUpdate): Promise<api.IShoppingSellerProfile> { return ShoppingProvider.updateSellerProfile(await this.auth(authorization, "seller"), body); }
+  /** Lists immutable seller-profile evidence for the owner. */
+  @core.TypedRoute.Patch("seller/profile/snapshot") public async sellerProfileSnapshots(@Headers("authorization") authorization: string | undefined, @core.TypedBody() body: api.IPage.IRequest): Promise<api.IPage<api.IShoppingSnapshot>> { return ShoppingProvider.sellerProfileSnapshots(await this.auth(authorization, "seller"), body, false); }
 
-  @core.TypedRoute.Post("customer/admin-application") public adminApplicationCreate(@core.TypedHeaders() headers: { authorization?: string }, @core.TypedBody() body: IShoppingAdminApplication.ICreate): Promise<IShoppingAdminApplication.IDetail> {
-    return ShoppingProvider.authenticate(headers, "customer").then((p) =>
-      ShoppingProvider.adminApplicationCreate(p, body),
-    );
-  }
-  @core.TypedRoute.Patch("customer/admin-application") public adminApplications(@core.TypedHeaders() headers: { authorization?: string }, @core.TypedBody() input: IPage.IRequest): Promise<IPage<IShoppingAdminApplication.IDetail>> {
-    return ShoppingProvider.authenticate(headers, "customer").then((p) =>
-      ShoppingProvider.adminApplications(p, input),
-    );
-  }
-  @core.TypedRoute.Post("seller/admin-application") public sellerAdminApplicationCreate(@core.TypedHeaders() headers: { authorization?: string }, @core.TypedBody() body: IShoppingAdminApplication.ICreate): Promise<IShoppingAdminApplication.IDetail> {
-    return ShoppingProvider.authenticate(headers, "seller").then((p) =>
-      ShoppingProvider.adminApplicationCreate(p, body),
-    );
-  }
-  @core.TypedRoute.Patch("seller/admin-application") public sellerAdminApplications(@core.TypedHeaders() headers: { authorization?: string }, @core.TypedBody() input: IPage.IRequest): Promise<IPage<IShoppingAdminApplication.IDetail>> {
-    return ShoppingProvider.authenticate(headers, "seller").then((p) =>
-      ShoppingProvider.adminApplications(p, input),
-    );
-  }
-  @core.TypedRoute.Patch("admin/admin-application") public adminApplicationsPending(@core.TypedHeaders() headers: { authorization?: string }, @core.TypedBody() input: IPage.IRequest): Promise<IPage<IShoppingAdminApplication.IDetail>> {
-    return ShoppingProvider.authenticateAny(headers).then((p) => ShoppingProvider.adminApplicationsPending(p, input));
-  }
-  @core.TypedRoute.Put("admin/admin-application/approve/:id") public adminApplicationApprove(@core.TypedHeaders() headers: { authorization?: string }, @core.TypedParam("id") id: string & tags.Format<"uuid">): Promise<IShoppingAdminApplication.IDetail> {
-    return ShoppingProvider.authenticateAny(headers).then((p) => ShoppingProvider.adminApplicationDecision(p, id, true));
-  }
-  @core.TypedRoute.Put("admin/admin-application/reject/:id") public adminApplicationReject(@core.TypedHeaders() headers: { authorization?: string }, @core.TypedParam("id") id: string & tags.Format<"uuid">): Promise<IShoppingAdminApplication.IDetail> {
-    return ShoppingProvider.authenticateAny(headers).then((p) => ShoppingProvider.adminApplicationDecision(p, id, false));
-  }
-  @core.TypedRoute.Put("admin/grade/promote/:id") public adminGradePromote(@core.TypedHeaders() headers: { authorization?: string }, @core.TypedParam("id") id: string & tags.Format<"uuid">): Promise<IShoppingAdmin.IUserSummary> {
-    return ShoppingProvider.authenticateAny(headers).then((p) => ShoppingProvider.adminGrade(p, id, true));
-  }
-  @core.TypedRoute.Put("admin/grade/demote/:id") public adminGradeDemote(@core.TypedHeaders() headers: { authorization?: string }, @core.TypedParam("id") id: string & tags.Format<"uuid">): Promise<IShoppingAdmin.IUserSummary> {
-    return ShoppingProvider.authenticateAny(headers).then((p) => ShoppingProvider.adminGrade(p, id, false));
-  }
-  @core.TypedRoute.Patch("admin/customer") public adminCustomers(@core.TypedHeaders() headers: { authorization?: string }, @core.TypedBody() input: IPage.IRequest): Promise<IPage<IShoppingAdmin.IUserSummary>> {
-    return ShoppingProvider.authenticateAny(headers).then((p) => ShoppingProvider.users(p, "customer", input));
-  }
-  @core.TypedRoute.Patch("admin/seller") public adminSellers(@core.TypedHeaders() headers: { authorization?: string }, @core.TypedBody() input: IPage.IRequest): Promise<IPage<IShoppingAdmin.IUserSummary>> {
-    return ShoppingProvider.authenticateAny(headers).then((p) => ShoppingProvider.users(p, "seller", input));
-  }
-  @core.TypedRoute.Put("admin/customer/ban/:id") public adminCustomerBan(@core.TypedHeaders() headers: { authorization?: string }, @core.TypedParam("id") id: string & tags.Format<"uuid">): Promise<IShoppingAdmin.IUserSummary> {
-    return ShoppingProvider.authenticateAny(headers).then((p) => ShoppingProvider.userBan(p, id, true, "customer"));
-  }
-  @core.TypedRoute.Put("admin/customer/unban/:id") public adminCustomerUnban(@core.TypedHeaders() headers: { authorization?: string }, @core.TypedParam("id") id: string & tags.Format<"uuid">): Promise<IShoppingAdmin.IUserSummary> {
-    return ShoppingProvider.authenticateAny(headers).then((p) => ShoppingProvider.userBan(p, id, false, "customer"));
-  }
-  @core.TypedRoute.Put("admin/seller/ban/:id") public adminSellerBan(@core.TypedHeaders() headers: { authorization?: string }, @core.TypedParam("id") id: string & tags.Format<"uuid">): Promise<IShoppingAdmin.IUserSummary> {
-    return ShoppingProvider.authenticateAny(headers).then((p) => ShoppingProvider.userBan(p, id, true, "seller"));
-  }
-  @core.TypedRoute.Put("admin/seller/unban/:id") public adminSellerUnban(@core.TypedHeaders() headers: { authorization?: string }, @core.TypedParam("id") id: string & tags.Format<"uuid">): Promise<IShoppingAdmin.IUserSummary> {
-    return ShoppingProvider.authenticateAny(headers).then((p) => ShoppingProvider.userBan(p, id, false, "seller"));
-  }
-  @core.TypedRoute.Get("seller/dashboard") public sellerDashboard(@core.TypedHeaders() headers: { authorization?: string }): Promise<IShoppingAdmin.ISummary> {
-    return ShoppingProvider.authenticate(headers, "seller").then(
-      ShoppingProvider.dashboard,
-    );
-  }
+  /** Adds a product to a customer wishlist. */
+  @core.TypedRoute.Post("customer/wishlist/:id") public async wishlistAdd(@Headers("authorization") authorization: string | undefined, @core.TypedParam("id") id: string): Promise<api.IShoppingWishlistEntry> { return ShoppingProvider.addWishlist(await this.auth(authorization, "customer"), id); }
+  /** Lists a customer wishlist. */
+  @core.TypedRoute.Patch("customer/wishlist") public async wishlistIndex(@Headers("authorization") authorization: string | undefined, @core.TypedBody() body: api.IPage.IRequest): Promise<api.IPage<api.IShoppingWishlistEntry>> { return ShoppingProvider.wishlist(await this.auth(authorization, "customer"), body); }
+  /** Removes a product from a customer wishlist. */
+  @core.TypedRoute.Delete("customer/wishlist/:id") public async wishlistDelete(@Headers("authorization") authorization: string | undefined, @core.TypedParam("id") id: string): Promise<api.IShoppingSuccess> { return this.done(ShoppingProvider.removeWishlist(await this.auth(authorization, "customer"), id)); }
+  /** Adds or merges a cart line. */
+  @core.TypedRoute.Post("customer/cart/:id") public async cartAdd(@Headers("authorization") authorization: string | undefined, @core.TypedParam("id") id: string, @core.TypedBody() body: { quantity: number }): Promise<api.IShoppingCart> { return ShoppingProvider.addCart(await this.auth(authorization, "customer"), id, body.quantity); }
+  /** Reads the current cart. */
+  @core.TypedRoute.Get("customer/cart") public async cartAt(@Headers("authorization") authorization?: string): Promise<api.IShoppingCart> { return ShoppingProvider.cart(await this.auth(authorization, "customer")); }
+  /** Replaces a cart quantity. */
+  @core.TypedRoute.Put("customer/cart/:id") public async cartUpdate(@Headers("authorization") authorization: string | undefined, @core.TypedParam("id") id: string, @core.TypedBody() body: { quantity: number }): Promise<api.IShoppingCart> { return ShoppingProvider.updateCart(await this.auth(authorization, "customer"), id, body.quantity); }
+  /** Removes a cart line. */
+  @core.TypedRoute.Delete("customer/cart/:id") public async cartDelete(@Headers("authorization") authorization: string | undefined, @core.TypedParam("id") id: string): Promise<api.IShoppingSuccess> { return this.done(ShoppingProvider.removeCart(await this.auth(authorization, "customer"), id)); }
+
+  /** Starts checkout review. */
+  @core.TypedRoute.Post("customer/checkout") public async checkout(@Headers("authorization") authorization: string | undefined, @core.TypedBody() body: api.IShoppingOrder.ICheckout): Promise<api.IShoppingOrder.ICheckoutSummary> { return ShoppingProvider.checkoutStart(await this.auth(authorization, "customer"), body); }
+  /** Confirms one payment attempt or records its failure. */
+  @core.TypedRoute.Post("customer/checkout/payment") public async payment(@Headers("authorization") authorization: string | undefined, @core.TypedBody() body: api.IShoppingOrder.IPayment): Promise<api.IShoppingOrder | { status: "failed" | "unknown" }> { return ShoppingProvider.payment(await this.auth(authorization, "customer"), body); }
+  /** Lists customer orders. */
+  @core.TypedRoute.Patch("customer/order") public async orderIndex(@Headers("authorization") authorization: string | undefined, @core.TypedBody() body: api.IPage.IRequest): Promise<api.IPage<api.IShoppingOrder.ISummary>> { return ShoppingProvider.orders(await this.auth(authorization, "customer"), body); }
+  /** Opens one customer order. */
+  @core.TypedRoute.Get("customer/order/:id") public async orderAt(@Headers("authorization") authorization: string | undefined, @core.TypedParam("id") id: string): Promise<api.IShoppingOrder> { return ShoppingProvider.order(await this.auth(authorization, "customer"), id); }
+  /** Lists request-decision evidence for one customer's order. */
+  @core.TypedRoute.Patch("customer/order/:id/snapshot") public async orderSnapshots(@Headers("authorization") authorization: string | undefined, @core.TypedParam("id") id: string, @core.TypedBody() body: api.IPage.IRequest): Promise<api.IPage<api.IShoppingSnapshot>> { return ShoppingProvider.orderSnapshots(await this.auth(authorization, "customer"), id, body, "customer"); }
+  /** Lists all retained platform orders for administrators. */
+  @core.TypedRoute.Patch("admin/order") public async adminOrderIndex(@Headers("authorization") authorization: string | undefined, @core.TypedBody() body: api.IShoppingOrder.IAdminRequest): Promise<api.IPage<api.IShoppingOrder.IAdminSummary>> { return ShoppingProvider.orders(await this.adminAuth(authorization), body, true); }
+  /** Opens any retained platform order for administrators. */
+  @core.TypedRoute.Get("admin/order/:id") public async adminOrderAt(@Headers("authorization") authorization: string | undefined, @core.TypedParam("id") id: string): Promise<api.IShoppingOrder> { return ShoppingProvider.order(await this.adminAuth(authorization), id, true); }
+  /** Lists request-decision evidence for any order. */
+  @core.TypedRoute.Patch("admin/order/:id/snapshot") public async adminOrderSnapshots(@Headers("authorization") authorization: string | undefined, @core.TypedParam("id") id: string, @core.TypedBody() body: api.IPage.IRequest): Promise<api.IPage<api.IShoppingSnapshot>> { return ShoppingProvider.orderSnapshots(await this.adminAuth(authorization), id, body, "admin"); }
+  /** Force-cancels one order item. */
+  @core.TypedRoute.Put("admin/order/item/:id/cancel") public async forceCancelItem(@Headers("authorization") authorization: string | undefined, @core.TypedParam("id") id: string, @core.TypedBody() body: api.IShoppingOrder.IForce): Promise<api.IShoppingOrder> { return ShoppingProvider.forceCancelItem(await this.adminAuth(authorization), id, body); }
+  /** Force-cancels every eligible item in an order. */
+  @core.TypedRoute.Put("admin/order/:id/cancel") public async forceCancelOrder(@Headers("authorization") authorization: string | undefined, @core.TypedParam("id") id: string, @core.TypedBody() body: api.IShoppingOrder.IForce): Promise<api.IShoppingOrder> { return ShoppingProvider.forceCancelOrder(await this.adminAuth(authorization), id, body); }
+  /** Force-refunds one order item. */
+  @core.TypedRoute.Put("admin/order/item/:id/refund") public async forceRefundItem(@Headers("authorization") authorization: string | undefined, @core.TypedParam("id") id: string, @core.TypedBody() body: api.IShoppingOrder.IForce): Promise<api.IShoppingOrder> { return ShoppingProvider.forceRefundItem(await this.adminAuth(authorization), id, body); }
+  /** Force-refunds every eligible item in an order. */
+  @core.TypedRoute.Put("admin/order/:id/refund") public async forceRefundOrder(@Headers("authorization") authorization: string | undefined, @core.TypedParam("id") id: string, @core.TypedBody() body: api.IShoppingOrder.IForce): Promise<api.IShoppingOrder> { return ShoppingProvider.forceRefundOrder(await this.adminAuth(authorization), id, body); }
+  /** Lists the seller's paid items awaiting shipment. */
+  @core.TypedRoute.Patch("seller/order/item") public async shippingQueue(@Headers("authorization") authorization: string | undefined, @core.TypedBody() body: api.IPage.IRequest): Promise<api.IPage<api.IShoppingOrderItem>> { return ShoppingProvider.shippingQueue(await this.auth(authorization, "seller"), body); }
+  /** Lists request-decision evidence for one seller's order. */
+  @core.TypedRoute.Patch("seller/order/:id/snapshot") public async sellerOrderSnapshots(@Headers("authorization") authorization: string | undefined, @core.TypedParam("id") id: string, @core.TypedBody() body: api.IPage.IRequest): Promise<api.IPage<api.IShoppingSnapshot>> { return ShoppingProvider.orderSnapshots(await this.auth(authorization, "seller"), id, body, "seller"); }
+  /** Creates a seller shipment. */
+  @core.TypedRoute.Post("seller/shipment") public async shipmentCreate(@Headers("authorization") authorization: string | undefined, @core.TypedBody() body: api.IShoppingShipment.ICreate): Promise<api.IShoppingShipment> { return ShoppingProvider.createShipment(await this.auth(authorization, "seller"), body); }
+  /** Confirms delivery of one customer shipment. */
+  @core.TypedRoute.Put("customer/shipment/:id/deliver") public async shipmentDeliver(@Headers("authorization") authorization: string | undefined, @core.TypedParam("id") id: string): Promise<api.IShoppingShipment> { return ShoppingProvider.deliverShipment(await this.auth(authorization, "customer"), id); }
+
+  /** Opens a cancellation request. */
+  @core.TypedRoute.Post("customer/order/item/:id/cancellation") public async cancellationCreate(@Headers("authorization") authorization: string | undefined, @core.TypedParam("id") id: string, @core.TypedBody() body: api.IShoppingRequest.ICreate): Promise<api.IShoppingRequest> { return ShoppingProvider.requestCancellation(await this.auth(authorization, "customer"), id, body); }
+  /** Lists pending cancellation requests. */
+  @core.TypedRoute.Patch("seller/cancellation") public async cancellationIndex(@Headers("authorization") authorization: string | undefined, @core.TypedBody() body: api.IPage.IRequest): Promise<api.IPage<api.IShoppingRequest>> { return ShoppingProvider.cancellationQueue(await this.auth(authorization, "seller"), body); }
+  /** Approves a cancellation request. */
+  @core.TypedRoute.Put("seller/cancellation/:id/approve") public async cancellationApprove(@Headers("authorization") authorization: string | undefined, @core.TypedParam("id") id: string): Promise<api.IShoppingRequest> { return ShoppingProvider.decideCancellation(await this.auth(authorization, "seller"), id, true); }
+  /** Rejects a cancellation request. */
+  @core.TypedRoute.Put("seller/cancellation/:id/reject") public async cancellationReject(@Headers("authorization") authorization: string | undefined, @core.TypedParam("id") id: string): Promise<api.IShoppingRequest> { return ShoppingProvider.decideCancellation(await this.auth(authorization, "seller"), id, false); }
+  /** Opens a refund request. */
+  @core.TypedRoute.Post("customer/order/item/:id/refund") public async refundCreate(@Headers("authorization") authorization: string | undefined, @core.TypedParam("id") id: string, @core.TypedBody() body: api.IShoppingRequest.ICreate): Promise<api.IShoppingRequest> { return ShoppingProvider.requestRefund(await this.auth(authorization, "customer"), id, body); }
+  /** Lists pending refund requests. */
+  @core.TypedRoute.Patch("seller/refund") public async refundIndex(@Headers("authorization") authorization: string | undefined, @core.TypedBody() body: api.IPage.IRequest): Promise<api.IPage<api.IShoppingRequest>> { return ShoppingProvider.refundQueue(await this.auth(authorization, "seller"), body); }
+  /** Approves a refund request. */
+  @core.TypedRoute.Put("seller/refund/:id/approve") public async refundApprove(@Headers("authorization") authorization: string | undefined, @core.TypedParam("id") id: string): Promise<api.IShoppingRequest> { return ShoppingProvider.decideRefund(await this.auth(authorization, "seller"), id, true); }
+  /** Rejects a refund request. */
+  @core.TypedRoute.Put("seller/refund/:id/reject") public async refundReject(@Headers("authorization") authorization: string | undefined, @core.TypedParam("id") id: string): Promise<api.IShoppingRequest> { return ShoppingProvider.decideRefund(await this.auth(authorization, "seller"), id, false); }
+
+  /** Publishes a product review. */
+  @core.TypedRoute.Post("customer/order/:orderId/product/:productId/review") public async reviewCreate(@Headers("authorization") authorization: string | undefined, @core.TypedParam("orderId") orderId: string, @core.TypedParam("productId") productId: string, @core.TypedBody() body: api.IShoppingReview.ICreate): Promise<api.IShoppingReview> { return ShoppingProvider.createReview(await this.auth(authorization, "customer"), productId, orderId, body); }
+  /** Edits an authored review. */
+  @core.TypedRoute.Put("customer/review/:id") public async reviewUpdate(@Headers("authorization") authorization: string | undefined, @core.TypedParam("id") id: string, @core.TypedBody() body: api.IShoppingReview.IUpdate): Promise<api.IShoppingReview> { return ShoppingProvider.updateReview(await this.auth(authorization, "customer"), id, body); }
+  /** Retires an authored review. */
+  @core.TypedRoute.Delete("customer/review/:id") public async reviewDelete(@Headers("authorization") authorization: string | undefined, @core.TypedParam("id") id: string): Promise<api.IShoppingSuccess> { return this.done(ShoppingProvider.deleteReview(await this.auth(authorization, "customer"), id)); }
+  /** Lists immutable review evidence for its author. */
+  @core.TypedRoute.Patch("customer/review/:id/snapshot") public async reviewSnapshots(@Headers("authorization") authorization: string | undefined, @core.TypedParam("id") id: string, @core.TypedBody() body: api.IPage.IRequest): Promise<api.IPage<api.IShoppingSnapshot>> { return ShoppingProvider.reviewSnapshots(await this.auth(authorization, "customer"), id, body, false); }
+  /** Returns seller dashboard metrics. */
+  @core.TypedRoute.Get("seller/dashboard") public async dashboard(@Headers("authorization") authorization?: string): Promise<api.IShoppingDashboard> { return ShoppingProvider.dashboard(await this.auth(authorization, "seller")); }
+  /** Lists seller order items. */
+  @core.TypedRoute.Patch("seller/dashboard/order-item") public async sellerItems(@Headers("authorization") authorization: string | undefined, @core.TypedBody() body: api.IPage.IRequest & { status?: api.IShoppingOrderItem["status"] | null }): Promise<api.IPage<api.IShoppingOrderItem>> { return ShoppingProvider.sellerOrderItems(await this.auth(authorization, "seller"), body, body.status ?? undefined); }
+
+  /** Submits an administrator application. */
+  @core.TypedRoute.Post("customer/administrator-application") public async customerApply(@Headers("authorization") authorization: string | undefined, @core.TypedBody() body: api.IShoppingAdministratorApplication.ICreate): Promise<api.IShoppingAdministratorApplication> { return ShoppingProvider.applyAdministrator(await this.auth(authorization, "customer"), body); }
+  /** Submits a seller administrator application. */
+  @core.TypedRoute.Post("seller/administrator-application") public async sellerApply(@Headers("authorization") authorization: string | undefined, @core.TypedBody() body: api.IShoppingAdministratorApplication.ICreate): Promise<api.IShoppingAdministratorApplication> { return ShoppingProvider.applyAdministrator(await this.auth(authorization, "seller"), body); }
+  /** Lists customer administrator applications. */
+  @core.TypedRoute.Patch("customer/administrator-application") public async customerApplications(@Headers("authorization") authorization: string | undefined, @core.TypedBody() body: api.IPage.IRequest): Promise<api.IPage<api.IShoppingAdministratorApplication>> { return ShoppingProvider.applications(await this.auth(authorization, "customer"), body); }
+  /** Lists seller administrator applications. */
+  @core.TypedRoute.Patch("seller/administrator-application") public async sellerApplications(@Headers("authorization") authorization: string | undefined, @core.TypedBody() body: api.IPage.IRequest): Promise<api.IPage<api.IShoppingAdministratorApplication>> { return ShoppingProvider.applications(await this.auth(authorization, "seller"), body); }
+  /** Lists pending administrator applications. */
+  @core.TypedRoute.Patch("admin/administrator-application") public async pendingApplications(@Headers("authorization") authorization: string | undefined, @core.TypedBody() body: api.IPage.IRequest): Promise<api.IPage<api.IShoppingAdministratorApplication>> { return ShoppingProvider.pendingApplications(await this.adminAuth(authorization), body); }
+  /** Approves an administrator application. */
+  @core.TypedRoute.Put("admin/administrator-application/:id/approve") public async applicationApprove(@Headers("authorization") authorization: string | undefined, @core.TypedParam("id") id: string): Promise<api.IShoppingAdministratorApplication> { return ShoppingProvider.approveApplication(await this.adminAuth(authorization), id); }
+  /** Rejects an administrator application. */
+  @core.TypedRoute.Put("admin/administrator-application/:id/reject") public async applicationReject(@Headers("authorization") authorization: string | undefined, @core.TypedParam("id") id: string): Promise<api.IShoppingAdministratorApplication> { return ShoppingProvider.rejectApplication(await this.adminAuth(authorization), id); }
+  /** Promotes a regular administrator. */
+  @core.TypedRoute.Put("admin/administrator/:type/:id/promote") public async promote(@Headers("authorization") authorization: string | undefined, @core.TypedParam("type") type: "customer"|"seller", @core.TypedParam("id") id: string): Promise<api.IShoppingSuccess> { return this.done(ShoppingProvider.promote(await this.adminAuth(authorization), id, type)); }
+  /** Demotes another super administrator. */
+  @core.TypedRoute.Put("admin/administrator/:type/:id/demote") public async demote(@Headers("authorization") authorization: string | undefined, @core.TypedParam("type") type: "customer"|"seller", @core.TypedParam("id") id: string): Promise<api.IShoppingSuccess> { return this.done(ShoppingProvider.demote(await this.adminAuth(authorization), id, type)); }
+  /** Lists customer accounts for administrators. */
+  @core.TypedRoute.Patch("admin/customer") public async customerDirectory(@Headers("authorization") authorization: string | undefined, @core.TypedBody() body: api.IPage.IRequest): Promise<api.IPage<api.IShoppingCustomer>> { return ShoppingProvider.customerDirectory(await this.adminAuth(authorization), body); }
+  /** Lists seller accounts for administrators. */
+  @core.TypedRoute.Patch("admin/seller") public async sellerDirectory(@Headers("authorization") authorization: string | undefined, @core.TypedBody() body: api.IPage.IRequest): Promise<api.IPage<api.IShoppingSeller>> { return ShoppingProvider.sellerDirectory(await this.adminAuth(authorization), body); }
+  /** Lists immutable seller-profile evidence for any seller. */
+  @core.TypedRoute.Patch("admin/seller/:id/snapshot") public async adminSellerProfileSnapshots(@Headers("authorization") authorization: string | undefined, @core.TypedParam("id") id: string, @core.TypedBody() body: api.IPage.IRequest): Promise<api.IPage<api.IShoppingSnapshot>> { return ShoppingProvider.sellerProfileSnapshots(await this.adminAuth(authorization), body, true, id); }
+  /** Bans a customer. */
+  @core.TypedRoute.Put("admin/customer/:id/ban") public async customerBan(@Headers("authorization") authorization: string | undefined, @core.TypedParam("id") id: string): Promise<api.IShoppingSuccess> { return this.done(ShoppingProvider.banCustomer(await this.adminAuth(authorization), id)); }
+  /** Unbans a customer. */
+  @core.TypedRoute.Put("admin/customer/:id/unban") public async customerUnban(@Headers("authorization") authorization: string | undefined, @core.TypedParam("id") id: string): Promise<api.IShoppingSuccess> { return this.done(ShoppingProvider.unbanCustomer(await this.adminAuth(authorization), id)); }
+  /** Bans a seller. */
+  @core.TypedRoute.Put("admin/seller/:id/ban") public async sellerBan(@Headers("authorization") authorization: string | undefined, @core.TypedParam("id") id: string): Promise<api.IShoppingSuccess> { return this.done(ShoppingProvider.banSeller(await this.adminAuth(authorization), id)); }
+  /** Unbans a seller. */
+  @core.TypedRoute.Put("admin/seller/:id/unban") public async sellerUnban(@Headers("authorization") authorization: string | undefined, @core.TypedParam("id") id: string): Promise<api.IShoppingSuccess> { return this.done(ShoppingProvider.unbanSeller(await this.adminAuth(authorization), id)); }
+  /** Lists immutable review evidence for any review. */
+  @core.TypedRoute.Patch("admin/review/:id/snapshot") public async adminReviewSnapshots(@Headers("authorization") authorization: string | undefined, @core.TypedParam("id") id: string, @core.TypedBody() body: api.IPage.IRequest): Promise<api.IPage<api.IShoppingSnapshot>> { return ShoppingProvider.reviewSnapshots(await this.adminAuth(authorization), id, body, true); }
+  /** Permanently closes the current customer account. */
+  @core.TypedRoute.Delete("customer/account") public async customerDelete(@Headers("authorization") authorization: string | undefined, @core.TypedBody() body: api.IShoppingCustomer.IDelete): Promise<api.IShoppingSuccess> { return this.done(ShoppingProvider.deleteCustomer(await this.auth(authorization, "customer"), body)); }
+  /** Permanently closes the current seller account. */
+  @core.TypedRoute.Delete("seller/account") public async sellerDelete(@Headers("authorization") authorization: string | undefined, @core.TypedBody() body: api.IShoppingSeller.IDelete): Promise<api.IShoppingSuccess> { return this.done(ShoppingProvider.deleteSeller(await this.auth(authorization, "seller"), body)); }
+
+  private async auth(authorization: string | undefined, type: ShoppingActor["type"]): Promise<ShoppingActor> { return ShoppingProvider.authenticate(authorization, type); }
+  private async adminAuth(authorization: string | undefined): Promise<ShoppingActor> { return ShoppingProvider.authenticateAdmin(authorization); }
+  private async logoutTask(authorization: string | undefined, type: ShoppingActor["type"]): Promise<void> { const actor = await ShoppingProvider.authenticateForLogout(authorization, type); if (actor !== null) await ShoppingProvider.logout(actor); }
+  private async logoutAllTask(authorization: string | undefined, type: ShoppingActor["type"]): Promise<void> { const actor = await ShoppingProvider.authenticateForLogout(authorization, type); if (actor !== null) await ShoppingProvider.logoutAll(actor); }
+  private async done(task: Promise<void>): Promise<api.IShoppingSuccess> { await task; return { success: true }; }
 }
 
-
-
-
+function page<T extends object>(values: T[], input: api.IPage.IRequest): api.IPage<T> { const limit = input.limit ?? 100; const current = input.page ?? 1; if (!Number.isInteger(limit) || limit < 0 || !Number.isInteger(current) || current < 1) throw ErrorUtil.unprocessable("Invalid pagination."); const records = values.length; const pages = limit === 0 ? 1 : Math.max(1, Math.ceil(records / limit)); if (current > pages) throw ErrorUtil.unprocessable("The requested page is outside the result set."); return { data: limit === 0 ? values : values.slice((current - 1) * limit, current * limit), pagination: { current, limit, records, pages } }; }

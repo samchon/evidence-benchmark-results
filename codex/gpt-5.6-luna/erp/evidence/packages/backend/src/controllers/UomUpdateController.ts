@@ -1,2 +1,0 @@
-import * as core from "@nestia/core"; import { Controller } from "@nestjs/common"; import type { IAuth, IUom } from "@benchmark/erp-api"; import { ReferenceDataProvider } from "../providers/ReferenceDataProvider";
-/** Revises a unit of measure. */ @Controller("uom-update") export class UomUpdateController { @core.TypedRoute.Put(":id") public async update(@core.TypedHeaders() headers: IAuth.IHeaders, @core.TypedParam("id") id: string, @core.TypedBody() input: IUom.IUpdate): Promise<IUom> { return ReferenceDataProvider.uomUpdate({ headers, id, input }); } }

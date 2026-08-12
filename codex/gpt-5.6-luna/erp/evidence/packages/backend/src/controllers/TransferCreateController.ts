@@ -1,2 +1,0 @@
-import * as core from "@nestia/core"; import { Controller } from "@nestjs/common"; import type { IAuth, ITransfer } from "@benchmark/erp-api"; import { InventoryOperationsProvider } from "../providers/InventoryOperationsProvider";
-/** Creates a draft warehouse transfer. */ @Controller("transfer-create") export class TransferCreateController { @core.TypedRoute.Post() public async create(@core.TypedHeaders() h: IAuth.IHeaders, @core.TypedBody() input: ITransfer.ICreate): Promise<ITransfer> { return InventoryOperationsProvider.transferCreate(h, input); } }

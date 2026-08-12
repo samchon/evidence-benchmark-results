@@ -1,2 +1,0 @@
-import * as core from "@nestia/core"; import { Controller } from "@nestjs/common"; import type { IAccount, IAuth } from "@benchmark/erp-api"; import { AccountProvider } from "../providers/AccountProvider";
-/** Updates a ledger account's descriptive fields. */ @Controller("account-update") export class AccountUpdateController { @core.TypedRoute.Put(":id") public async update(@core.TypedHeaders() headers: IAuth.IHeaders, @core.TypedParam("id") id: string, @core.TypedBody() input: IAccount.IUpdate): Promise<IAccount> { return AccountProvider.update(headers, id, input); } }

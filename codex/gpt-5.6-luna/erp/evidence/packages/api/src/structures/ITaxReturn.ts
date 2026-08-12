@@ -1,40 +1,73 @@
-import type { tags } from "typia";
-import type { IPage } from "../typings";
+import { tags } from "typia";
 
-/** Organization tax return and its filing version. */
+import type { IErpRecord } from "./IErpRecord";
+
 /**
- * @evidence prisma:tax_returns Exposes the persisted tax_returns record.
+ * TaxReturn public representation.
+ * @evidence docs/analysis/02-domain-model.md#req-dom-tax-return-tax-return-lifecycle Exposes the aggregate contract represented by this DTO.
+ * @evidenceReview docs/analysis/02-domain-model.md#req-dom-tax-return-tax-return-lifecycle Read the DTO declaration and checked its public and inherited fields against the cited requirement.
+ * @evidence prisma:tax_returns Represents the persisted tax_returns model.
+ * @evidenceReview prisma:tax_returns Read the DTO declaration and compared its concrete record shape with the cited Prisma model.
  */
-export interface ITaxReturn {
-  /** @evidence prisma:tax_returns.id Carries the persisted id value. */ id: string & tags.Format<"uuid">;
-/** @evidence prisma:tax_returns.jurisdiction_id Carries the persisted jurisdictionId value. */
-  jurisdictionId: string & tags.Format<"uuid">;
-/** @evidence prisma:tax_returns.period_start Carries the persisted periodStart value. */
-  periodStart: string & tags.Format<"date-time">;
-/** @evidence prisma:tax_returns.period_end Carries the persisted periodEnd value. */
-  periodEnd: string & tags.Format<"date-time">;
-/** @evidence prisma:tax_returns.status Carries the persisted status value. */
-  status: "prepared" | "under_review" | "filed" | "amended";
-/** @evidence prisma:tax_returns.total_tax Carries the persisted totalTax value. */
-  totalTax: number;
-/** @evidence prisma:tax_returns.notes Carries the persisted notes value. */
-  notes: null | string;
-/** @evidence prisma:tax_returns.original_return_id Carries the persisted originalReturnId value. */
-  originalReturnId: null | (string & tags.Format<"uuid">);
-/** @evidence prisma:tax_returns.version Carries the persisted version value. */
-  version: number;
-/** @evidence prisma:tax_returns.filed_at Carries the persisted filedAt value. */
-  filedAt: null | (string & tags.Format<"date-time">);
-/** @evidence prisma:tax_returns.created_by_user_id Carries the persisted createdByUserId value. */
-  createdByUserId: string & tags.Format<"uuid">;
-/** @evidence prisma:tax_returns.created_at Carries the persisted createdAt value. */
+export interface ITaxReturn extends IErpRecord {
+  /** id.
+   * @evidence prisma:tax_returns.id Carries the persisted id value.
+   * @evidenceReview prisma:tax_returns.id Read the DTO property and compared its type with the cited Prisma column.
+   */
+  id: string & tags.Format<"uuid">;
+  /** organizationId.
+   * @evidence prisma:tax_returns.organization_id Carries the persisted organization_id value.
+   * @evidenceReview prisma:tax_returns.organization_id Read the DTO property and compared its type with the cited Prisma column.
+   */
+  organizationId: string & tags.Format<"uuid">;
+  /** name.
+   * @evidence prisma:tax_returns.name Carries the persisted name value.
+   * @evidenceReview prisma:tax_returns.name Read the DTO property and compared its type with the cited Prisma column.
+   */
+  name: null | string;
+  /** status.
+   * @evidence prisma:tax_returns.status Carries the persisted status value.
+   * @evidenceReview prisma:tax_returns.status Read the DTO property and compared its type with the cited Prisma column.
+   */
+  status: null | string;
+  /** description.
+   * @evidence prisma:tax_returns.description Carries the persisted description value.
+   * @evidenceReview prisma:tax_returns.description Read the DTO property and compared its type with the cited Prisma column.
+   */
+  description: null | string;
+  /** referenceId.
+   * @evidence prisma:tax_returns.reference_id Carries the persisted reference_id value.
+   * @evidenceReview prisma:tax_returns.reference_id Read the DTO property and compared its type with the cited Prisma column.
+   */
+  referenceId: null | string & tags.Format<"uuid">;
+  /** quantity.
+   * @evidence prisma:tax_returns.quantity Carries the persisted quantity value.
+   * @evidenceReview prisma:tax_returns.quantity Read the DTO property and compared its type with the cited Prisma column.
+   */
+  quantity: null | number;
+  /** amount.
+   * @evidence prisma:tax_returns.amount Carries the persisted amount value.
+   * @evidenceReview prisma:tax_returns.amount Read the DTO property and compared its type with the cited Prisma column.
+   */
+  amount: null | number;
+  /** createdAt.
+   * @evidence prisma:tax_returns.created_at Carries the persisted created_at value.
+   * @evidenceReview prisma:tax_returns.created_at Read the DTO property and compared its type with the cited Prisma column.
+   */
   createdAt: string & tags.Format<"date-time">;
-/** @evidence prisma:tax_returns.updated_at Carries the persisted updatedAt value. */
-  updatedAt: string & tags.Format<"date-time">;
-}
-export namespace ITaxReturn {
-  export interface ICreate { jurisdictionId: string & tags.Format<"uuid">; periodStart: string & tags.Format<"date-time">; periodEnd: string & tags.Format<"date-time">; totalTax: number; notes?: null | string; }
-  export interface IRequest extends IPage.IRequest { jurisdictionId?: string; status?: ITaxReturn["status"]; }
-  export interface IStatus { status: "under_review" | "filed"; }
-  export interface IVersion { totalTax: number; notes?: null | string; }
+  /** updatedAt.
+   * @evidence prisma:tax_returns.updated_at Carries the persisted updated_at value.
+   * @evidenceReview prisma:tax_returns.updated_at Read the DTO property and compared its type with the cited Prisma column.
+   */
+  updatedAt: null | string & tags.Format<"date-time">;
+  /** deletedAt.
+   * @evidence prisma:tax_returns.deleted_at Carries the persisted deleted_at value.
+   * @evidenceReview prisma:tax_returns.deleted_at Read the DTO property and compared its type with the cited Prisma column.
+   */
+  deletedAt: null | string & tags.Format<"date-time">;
+  /** attributes.
+   * @evidence prisma:tax_returns.attributes Carries aggregate-specific persisted fields.
+   * @evidenceReview prisma:tax_returns.attributes Read the DTO property and compared its type with the cited Prisma column.
+   */
+  attributes: null | Record<string, unknown>;
 }

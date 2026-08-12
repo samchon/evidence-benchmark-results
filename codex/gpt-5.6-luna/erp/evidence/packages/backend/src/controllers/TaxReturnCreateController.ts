@@ -1,2 +1,0 @@
-import * as core from "@nestia/core"; import { Controller } from "@nestjs/common"; import type { IAuth, ITaxReturn } from "@benchmark/erp-api"; import { TaxReturnProvider } from "../providers/TaxReturnProvider";
-/** Creates a prepared tax return. */ @Controller("tax-return-create") export class TaxReturnCreateController { @core.TypedRoute.Post() public async create(@core.TypedHeaders() headers: IAuth.IHeaders, @core.TypedBody() input: ITaxReturn.ICreate): Promise<ITaxReturn> { return TaxReturnProvider.create(headers, input); } }

@@ -1,2 +1,0 @@
-import * as core from "@nestia/core"; import { Controller } from "@nestjs/common"; import type { IAuth, IPage, ISalesInvoice } from "@benchmark/erp-api"; import { SalesSettlementProvider } from "../providers/SalesSettlementProvider";
-/** Lists sales invoices. */ @Controller("sales-invoice-search") export class SalesInvoiceIndexController { @core.TypedRoute.Patch() public async index(@core.TypedHeaders() h: IAuth.IHeaders, @core.TypedBody() input: ISalesInvoice.IRequest): Promise<IPage<ISalesInvoice>> { return SalesSettlementProvider.invoiceIndex(h, input); } }

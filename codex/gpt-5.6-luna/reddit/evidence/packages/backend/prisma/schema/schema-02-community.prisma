@@ -1,0 +1,199 @@
+/// A public discussion community and its current ownership state.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-community-community-model Represents public community identity and lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-community-community-model Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-community-001-define-community-attributes Stores name, description, icon, and status.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-community-001-define-community-attributes Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-community-002-relate-a-community-to-its-owner Stores the current scoped owner.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-community-002-relate-a-community-to-its-owner Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-community-003-relate-communities-to-subscribers Relates subscriber records used for counts.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-community-003-relate-communities-to-subscribers Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-community-004-relate-communities-to-content-and-moderation Owns the community boundary for content and moderation.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-community-004-relate-communities-to-content-and-moderation Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-community-life-community-ownership-lifecycle Represents ownership succession and archival state.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-community-life-community-ownership-lifecycle Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-community-life-001-maintain-active-community-ownership Stores one current owner while active.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-community-life-001-maintain-active-community-ownership Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-community-life-002-transfer-ownership-after-owner-deletion Relates the owner to successor candidates.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-community-life-002-transfer-ownership-after-owner-deletion Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-community-life-003-archive-an-ownerless-community Stores the archived lifecycle state.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-community-life-003-archive-an-ownerless-community Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-community-life-004-enforce-archived-community-read-only-state Makes archive state queryable.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-community-life-004-enforce-archived-community-read-only-state Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/01-actors-and-auth.md#req-auth-role-001-bootstrap-community-owner-and-subscriber Stores the community creator's ownership boundary.
+/// @evidenceReview docs/analysis/01-actors-and-auth.md#req-auth-role-001-bootstrap-community-owner-and-subscriber Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/04-business-rules.md#req-rule-community-community-validation-and-discovery-rules Represents normalized public community identity.
+/// @evidenceReview docs/analysis/04-business-rules.md#req-rule-community-community-validation-and-discovery-rules Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/04-business-rules.md#req-rule-community-001-validate-community-creation-fields-and-unique-name Stores the unique normalized name and public fields.
+/// @evidenceReview docs/analysis/04-business-rules.md#req-rule-community-001-validate-community-creation-fields-and-unique-name Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/04-business-rules.md#req-rule-community-002-match-and-order-community-name-search Stores the normalized search key.
+/// @evidenceReview docs/analysis/04-business-rules.md#req-rule-community-002-match-and-order-community-name-search Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/04-business-rules.md#req-rule-moderation-moderation-authority-rules Provides the exact community scope for authority records.
+/// @evidenceReview docs/analysis/04-business-rules.md#req-rule-moderation-moderation-authority-rules Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/05-non-functional.md#req-nfr-privacy-002-keep-moderation-records-community-private Owns the community boundary for private moderation data.
+/// @evidenceReview docs/analysis/05-non-functional.md#req-nfr-privacy-002-keep-moderation-records-community-private Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/05-non-functional.md#req-nfr-privacy-003-preserve-public-profiles-and-community-content Stores public community content identity.
+/// @evidenceReview docs/analysis/05-non-functional.md#req-nfr-privacy-003-preserve-public-profiles-and-community-content Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+model reddit_communities {
+  /// Application-assigned UUID.
+  id String @id
+  /// Public community name spelling.
+  name String
+  /// Trimmed case-folded name used for uniqueness and search ordering.
+  name_normalized String @unique
+  /// Public community description.
+  description String
+  /// Accepted public icon payload.
+  icon String
+  /// Active or archived lifecycle state.
+  status String
+  /// Current owner account identifier, null only after archival.
+  owner_id String?
+  /// Community creation instant.
+  created_at DateTime
+  /// Last community mutation instant.
+  updated_at DateTime
+
+  /// Current owner.
+  owner reddit_users? @relation("communityOwner", fields: [owner_id], references: [id], onDelete: SetNull)
+  /// Active and historical subscriptions.
+  subscriptions reddit_subscriptions[]
+  /// Current and historical moderator assignments.
+  moderator_assignments reddit_moderator_assignments[]
+  /// Current and historical bans.
+  bans reddit_bans[]
+  /// Posts in the community.
+  posts reddit_posts[]
+  /// Reports in the community.
+  reports reddit_reports[]
+  /// Private moderation history.
+  moderation_actions reddit_moderation_actions[]
+
+  @@index([status, name_normalized])
+}
+
+/// One user-community subscription with retained tenure and end state.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-subscription-subscription-lifecycle Represents subscription state.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-subscription-subscription-lifecycle Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-subscription-001-establish-active-subscription-state Stores one active user-community relationship.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-subscription-001-establish-active-subscription-state Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-subscription-002-end-active-subscription-state Retains the relationship's end state and tenure.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-subscription-002-end-active-subscription-state Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/01-actors-and-auth.md#req-auth-role-001-bootstrap-community-owner-and-subscriber Stores creator subscription state.
+/// @evidenceReview docs/analysis/01-actors-and-auth.md#req-auth-role-001-bootstrap-community-owner-and-subscriber Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/04-business-rules.md#req-rule-participation-community-participation-rules Represents membership state used by participation checks.
+/// @evidenceReview docs/analysis/04-business-rules.md#req-rule-participation-community-participation-rules Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/04-business-rules.md#req-rule-participation-001-require-subscription-for-post-creation Stores the post-membership predicate.
+/// @evidenceReview docs/analysis/04-business-rules.md#req-rule-participation-001-require-subscription-for-post-creation Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/05-non-functional.md#req-nfr-integrity-002-keep-subscription-count-and-home-feed-mutually-consistent Stores the relationship underlying count and home scope.
+/// @evidenceReview docs/analysis/05-non-functional.md#req-nfr-integrity-002-keep-subscription-count-and-home-feed-mutually-consistent Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+model reddit_subscriptions {
+  /// Application-assigned UUID.
+  id String @id
+  /// Subscriber account identifier.
+  user_id String
+  /// Community identifier.
+  community_id String
+  /// Whether this relationship is currently active.
+  active Boolean
+  /// Current subscription start instant.
+  started_at DateTime
+  /// End instant for the current subscription, or null while active.
+  ended_at DateTime?
+  /// Relationship creation instant.
+  created_at DateTime
+  /// Subscriber account.
+  user reddit_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  /// Subscribed community.
+  community reddit_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, community_id])
+  @@index([community_id, active])
+}
+
+/// A scoped moderator assignment with revocation retained as history.
+/// @evidence docs/analysis/01-actors-and-auth.md#req-auth-role-community-scoped-authority Represents community-scoped moderator authority.
+/// @evidenceReview docs/analysis/01-actors-and-auth.md#req-auth-role-community-scoped-authority Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/01-actors-and-auth.md#req-auth-role-002-owner-appointment-of-moderators Stores owner-granted assignments.
+/// @evidenceReview docs/analysis/01-actors-and-auth.md#req-auth-role-002-owner-appointment-of-moderators Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/01-actors-and-auth.md#req-auth-role-003-moderator-appointment-of-peers Stores peer assignments.
+/// @evidenceReview docs/analysis/01-actors-and-auth.md#req-auth-role-003-moderator-appointment-of-peers Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/01-actors-and-auth.md#req-auth-role-004-owner-removal-of-moderators Retains assignment revocation.
+/// @evidenceReview docs/analysis/01-actors-and-auth.md#req-auth-role-004-owner-removal-of-moderators Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/01-actors-and-auth.md#req-auth-role-005-protect-owner-and-moderator-assignments Provides a unique scoped assignment.
+/// @evidenceReview docs/analysis/01-actors-and-auth.md#req-auth-role-005-protect-owner-and-moderator-assignments Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-community-004-relate-communities-to-content-and-moderation Stores community moderation relationships.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-community-004-relate-communities-to-content-and-moderation Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-community-life-002-transfer-ownership-after-owner-deletion Stores moderator tenure used in succession.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-community-life-002-transfer-ownership-after-owner-deletion Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/04-business-rules.md#req-rule-moderation-001-confine-moderation-actions-to-the-assigned-community Stores exact community scope.
+/// @evidenceReview docs/analysis/04-business-rules.md#req-rule-moderation-001-confine-moderation-actions-to-the-assigned-community Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/04-business-rules.md#req-rule-moderation-002-protect-owner-and-moderator-assignments-from-moderator-removal Stores one unique assignment.
+/// @evidenceReview docs/analysis/04-business-rules.md#req-rule-moderation-002-protect-owner-and-moderator-assignments-from-moderator-removal Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+model reddit_moderator_assignments {
+  /// Application-assigned UUID.
+  id String @id
+  /// Moderator account identifier.
+  user_id String
+  /// Community identifier.
+  community_id String
+  /// Whether this assignment is currently active.
+  active Boolean
+  /// Assignment start instant used for succession tenure.
+  started_at DateTime
+  /// Revocation instant, or null while active.
+  revoked_at DateTime?
+  /// Assignment creation instant.
+  created_at DateTime
+  /// Assigned account.
+  user reddit_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  /// Assigned community.
+  community reddit_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, community_id])
+  @@index([community_id, active, started_at])
+}
+
+/// One community ban, active until explicitly ended.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-ban-community-ban-lifecycle Represents active and resolved ban state.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-ban-community-ban-lifecycle Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-ban-001-enter-active-ban-state Stores target, community, actor, and activation.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-ban-001-enter-active-ban-state Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-ban-002-end-active-ban-state Stores the end of the restriction.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-ban-002-end-active-ban-state Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-ban-003-retain-resolved-ban-history Retains resolved ban history.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-ban-003-retain-resolved-ban-history Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-community-004-relate-communities-to-content-and-moderation Keeps bans community-scoped.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-community-004-relate-communities-to-content-and-moderation Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/04-business-rules.md#req-rule-participation-003-refuse-banned-user-posting-and-commenting Stores active participation restrictions.
+/// @evidenceReview docs/analysis/04-business-rules.md#req-rule-participation-003-refuse-banned-user-posting-and-commenting Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/04-business-rules.md#req-rule-moderation-003-protect-the-owner-from-community-bans Relates the protected owner and target community.
+/// @evidenceReview docs/analysis/04-business-rules.md#req-rule-moderation-003-protect-the-owner-from-community-bans Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/05-non-functional.md#req-nfr-privacy-002-keep-moderation-records-community-private Keeps ban history under a community relation.
+/// @evidenceReview docs/analysis/05-non-functional.md#req-nfr-privacy-002-keep-moderation-records-community-private Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+model reddit_bans {
+  /// Application-assigned UUID.
+  id String @id
+  /// Community identifier.
+  community_id String
+  /// Banned account identifier.
+  user_id String
+  /// Account that applied the ban.
+  moderator_id String
+  /// Whether the restriction is active.
+  active Boolean
+  /// Ban activation instant.
+  activated_at DateTime
+  /// Unban instant, or null while active.
+  ended_at DateTime?
+  /// Ban record creation instant.
+  created_at DateTime
+  /// Community containing the restriction.
+  community reddit_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  /// Restricted account.
+  user reddit_users @relation("banTarget", fields: [user_id], references: [id], onDelete: Cascade)
+  /// Acting moderator.
+  moderator reddit_users @relation("banModerator", fields: [moderator_id], references: [id], onDelete: Cascade)
+
+  @@unique([community_id, user_id])
+  @@index([community_id, active, activated_at])
+}

@@ -1,2 +1,0 @@
-import * as core from "@nestia/core"; import { Controller } from "@nestjs/common"; import type { IAuth, IPage, ITaxRate } from "@benchmark/erp-api"; import { TaxProvider } from "../providers/TaxProvider";
-/** Lists effective tax rates. */ @Controller("tax-rate-search") export class TaxRateIndexController { @core.TypedRoute.Patch() public async index(@core.TypedHeaders() headers: IAuth.IHeaders, @core.TypedBody() input: ITaxRate.IRequest): Promise<IPage<ITaxRate>> { return TaxProvider.rateIndex(headers, input); } }

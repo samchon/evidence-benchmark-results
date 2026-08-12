@@ -1,102 +1,71 @@
-import type { tags } from "typia";
+import { tags } from "typia";
 
-/** Organization tenant and its configurable defaults. */
 /**
- * @evidence prisma:organizations Exposes the persisted organizations record.
+ * Organization public identity and lifecycle shape.
+ * @evidence docs/analysis/02-domain-model.md#req-dom-org-organization-scope Exposes the caller-visible organization contract.
+ * @evidenceReview docs/analysis/02-domain-model.md#req-dom-org-organization-scope Read the DTO declaration and checked its public and inherited fields against the cited requirement.
+ * @evidence prisma:organizations Represents the persisted organizations model.
+ * @evidenceReview prisma:organizations Read the DTO declaration and compared its concrete record shape with the cited Prisma model.
  */
 export interface IOrganization {
-  /** Organization UUID. */
-  /** @evidence prisma:organizations.id Carries the persisted id value. */ id: string & tags.Format<"uuid">;
-  /** Display name. */
-  /** @evidence prisma:organizations.name Carries the persisted display name. */ name: string;
-  /** Stable organization code. */
-  /** @evidence prisma:organizations.code Carries the persisted stable code. */ code: string;
-  /** Organization lifecycle status. */
-  /** @evidence prisma:organizations.status Carries the persisted lifecycle status. */ status: string;
-  /** ISO base currency code. */
-  /** @evidence prisma:organizations.base_currency Carries the persisted baseCurrency value. */
+  /** id.
+   * @evidence prisma:organizations.id Carries the persisted id value.
+   * @evidenceReview prisma:organizations.id Read the DTO property and compared its type with the cited Prisma column.
+   */
+  id: string & tags.Format<"uuid">;
+  /** name.
+   * @evidence prisma:organizations.name Carries the persisted name value.
+   * @evidenceReview prisma:organizations.name Read the DTO property and compared its type with the cited Prisma column.
+   */
+  name: string;
+  /** baseCurrency.
+   * @evidence prisma:organizations.base_currency Carries the persisted base_currency value.
+   * @evidenceReview prisma:organizations.base_currency Read the DTO property and compared its type with the cited Prisma column.
+   */
   baseCurrency: string;
-  /** IANA timezone. */
-  /** @evidence prisma:organizations.timezone Carries the persisted timezone. */ timezone: string;
-  /** Fiscal year start month. */
-  /** @evidence prisma:organizations.fiscal_start_month Carries the persisted fiscalStartMonth value. */
-  fiscalStartMonth: number & tags.Type<"uint32"> & tags.Minimum<1> & tags.Maximum<12>;
-  /** Default tax jurisdiction code, when configured. */
-  /** @evidence prisma:organizations.default_tax_jurisdiction Carries the persisted defaultTaxJurisdiction value. */
-  defaultTaxJurisdiction: null | string;
-  /** Default payment term code, when configured. */
-  /** @evidence prisma:organizations.default_payment_term Carries the persisted defaultPaymentTerm value. */
-  defaultPaymentTerm: null | string;
-  /** Negative-stock policy identifier. */
-  /** @evidence prisma:organizations.negative_stock_policy Carries the persisted negativeStockPolicy value. */
+  /** timezone.
+   * @evidence prisma:organizations.timezone Carries the persisted timezone value.
+   * @evidenceReview prisma:organizations.timezone Read the DTO property and compared its type with the cited Prisma column.
+   */
+  timezone: string;
+  /** fiscalStartMonth.
+   * @evidence prisma:organizations.fiscal_start_month Carries the persisted fiscal_start_month value.
+   * @evidenceReview prisma:organizations.fiscal_start_month Read the DTO property and compared its type with the cited Prisma column.
+   */
+  fiscalStartMonth: number;
+  /** taxJurisdictionId.
+   * @evidence prisma:organizations.tax_jurisdiction_id Carries the persisted tax_jurisdiction_id value.
+   * @evidenceReview prisma:organizations.tax_jurisdiction_id Read the DTO property and compared its type with the cited Prisma column.
+   */
+  taxJurisdictionId: null | (string & tags.Format<"uuid">);
+  /** defaultPaymentTermId.
+   * @evidence prisma:organizations.default_payment_term_id Carries the persisted default_payment_term_id value.
+   * @evidenceReview prisma:organizations.default_payment_term_id Read the DTO property and compared its type with the cited Prisma column.
+   */
+  defaultPaymentTermId: null | (string & tags.Format<"uuid">);
+  /** negativeStockPolicy.
+   * @evidence prisma:organizations.negative_stock_policy Carries the persisted negative_stock_policy value.
+   * @evidenceReview prisma:organizations.negative_stock_policy Read the DTO property and compared its type with the cited Prisma column.
+   */
   negativeStockPolicy: string;
-  /** Approval threshold in base currency. */
-  /** @evidence prisma:organizations.approval_threshold Carries the persisted approvalThreshold value. */
+  /** approvalThreshold.
+   * @evidence prisma:organizations.approval_threshold Carries the persisted approval_threshold value.
+   * @evidenceReview prisma:organizations.approval_threshold Read the DTO property and compared its type with the cited Prisma column.
+   */
   approvalThreshold: number;
-  /** Numbering prefix used for generated documents. */
-  /** @evidence prisma:organizations.numbering_prefix Carries the persisted numberingPrefix value. */
-  numberingPrefix: string;
-  /** Whether the organization accepts new work. */
-  /** @evidence prisma:organizations.active Carries the persisted active flag. */ active: boolean;
-  /** Creation instant. */
-  /** @evidence prisma:organizations.created_at Carries the persisted creation instant. */ createdAt: string & tags.Format<"date-time">;
-  /** Last configuration update instant. */
-  /** @evidence prisma:organizations.updated_at Carries the persisted update instant. */ updatedAt: string & tags.Format<"date-time">;
-}
-
-export namespace IOrganization {
-  /** Deletion eligibility and retained blockers for an organization. */
-  export interface IDeleteCheck {
-    eligible: boolean;
-    blockers: string[];
-  }
-  /** Organization creation fields; the caller becomes its first Owner. */
-  export interface ICreate {
-    /** Display name. */
-    name: string & tags.MinLength<1> & tags.MaxLength<255>;
-    /** ISO base currency code. */
-    baseCurrency: string & tags.MinLength<3> & tags.MaxLength<3>;
-    /** IANA timezone. */
-    timezone: string & tags.MinLength<1>;
-    /** Fiscal year start month. */
-    fiscalStartMonth: number & tags.Type<"uint32"> & tags.Minimum<1> & tags.Maximum<12>;
-    /** Stable organization code. */
-    code: string & tags.MinLength<2> & tags.MaxLength<64>;
-    /** First Owner login email. */
-    ownerEmail: string & tags.Format<"email">;
-    /** First Owner password. */
-    ownerPassword: string & tags.MinLength<8> & tags.MaxLength<128>;
-    /** First Owner display name. */
-    ownerDisplayName: string & tags.MinLength<1> & tags.MaxLength<255>;
-  }
-
-  /** Mutable organization configuration fields. */
-  export interface IUpdate {
-    /** Display name. */
-    name?: null | (string & tags.MinLength<1> & tags.MaxLength<255>);
-    /** IANA timezone. */
-    timezone?: null | string;
-    /** Fiscal year start month. */
-    fiscalStartMonth?: null | (number & tags.Type<"uint32"> & tags.Minimum<1> & tags.Maximum<12>);
-    /** Default tax jurisdiction code. */
-    defaultTaxJurisdiction?: null | string;
-    /** Default payment term code. */
-    defaultPaymentTerm?: null | string;
-    /** Negative-stock policy identifier. */
-    negativeStockPolicy?: null | string;
-    /** Approval threshold in base currency. */
-    approvalThreshold?: null | number;
-    /** Numbering prefix. */
-    numberingPrefix?: null | string;
-  }
-
-  /** Pagination and optional search for organization membership catalogs. */
-  export interface IRequest {
-    /** One-indexed page. */
-    page?: null | (number & tags.Type<"uint32"> & tags.Minimum<1>);
-    /** Page size; zero means all. */
-    limit?: null | (number & tags.Type<"uint32">);
-    /** Case-insensitive name search. */
-    search?: null | string;
-  }
+  /** createdAt.
+   * @evidence prisma:organizations.created_at Carries the persisted created_at value.
+   * @evidenceReview prisma:organizations.created_at Read the DTO property and compared its type with the cited Prisma column.
+   */
+  createdAt: string & tags.Format<"date-time">;
+  /** updatedAt.
+   * @evidence prisma:organizations.updated_at Carries the persisted updated_at value.
+   * @evidenceReview prisma:organizations.updated_at Read the DTO property and compared its type with the cited Prisma column.
+   */
+  updatedAt: string & tags.Format<"date-time">;
+  /** deletedAt.
+   * @evidence prisma:organizations.deleted_at Carries the persisted deleted_at value.
+   * @evidenceReview prisma:organizations.deleted_at Read the DTO property and compared its type with the cited Prisma column.
+   */
+  deletedAt: null | (string & tags.Format<"date-time">);
 }

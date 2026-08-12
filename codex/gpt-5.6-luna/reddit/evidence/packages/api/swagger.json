@@ -8,22 +8,20 @@
   ],
   "info": {
     "version": "0.1.0",
-    "title": "@benchmark/reddit2-backend",
-    "description": "NestJS, Nestia, and Prisma backend for benchmark-reddit2"
+    "title": "@benchmark/reddit-backend",
+    "description": "NestJS, Nestia, and Prisma backend for benchmark-reddit"
   },
   "paths": {
-    "/auth/user/join/execute": {
+    "/auth/user/join": {
       "post": {
-        "summary": "Register a new account, profile, and authenticated session",
-        "description": "Register a new account, profile, and authenticated session.",
+        "description": "Registers an account and starts its first session. @setHeader token.access Authorization @tag Authentication",
         "tags": [],
         "parameters": [],
         "requestBody": {
-          "description": "Registration credentials.",
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/IAuth.IJoin"
+                "$ref": "#/components/schemas/IRedditUser.IJoin"
               }
             }
           },
@@ -31,11 +29,11 @@
         },
         "responses": {
           "201": {
-            "description": "The new identity and bearer material.",
+            "description": "",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/IAuth.IAuthorized"
+                  "$ref": "#/components/schemas/IRedditUser.IAuthorized"
                 }
               }
             }
@@ -44,25 +42,21 @@
         "x-samchon-accessor": [
           "auth",
           "user",
-          "join",
-          "execute",
           "join"
         ],
         "x-samchon-controller": "AuthController"
       }
     },
-    "/auth/user/login/execute": {
+    "/auth/user/login": {
       "post": {
-        "summary": "Log in with an active account's email and password",
-        "description": "Log in with an active account's email and password.",
+        "description": "Logs in with the private email identity. @setHeader token.access Authorization @tag Authentication",
         "tags": [],
         "parameters": [],
         "requestBody": {
-          "description": "Login credentials.",
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/IAuth.ILogin"
+                "$ref": "#/components/schemas/IRedditUser.ILogin"
               }
             }
           },
@@ -70,11 +64,11 @@
         },
         "responses": {
           "201": {
-            "description": "New session bearer material.",
+            "description": "",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/IAuth.IAuthorized"
+                  "$ref": "#/components/schemas/IRedditUser.IAuthorized"
                 }
               }
             }
@@ -83,24 +77,21 @@
         "x-samchon-accessor": [
           "auth",
           "user",
-          "login",
-          "execute",
           "login"
         ],
         "x-samchon-controller": "AuthController"
       }
     },
-    "/auth/user/refresh/execute": {
+    "/auth/user/refresh": {
       "post": {
-        "summary": "Continue a still-live session using its refresh token",
-        "description": "Continue a still-live session using its refresh token.",
+        "description": "Renews the presented session without creating a concurrent session. @setHeader token.access Authorization @tag Authentication",
         "tags": [],
         "parameters": [],
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/IAuth.IRefresh"
+                "$ref": "#/components/schemas/IRedditUser.IRefresh"
               }
             }
           },
@@ -112,7 +103,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/IAuth.IAuthorized"
+                  "$ref": "#/components/schemas/IRedditUser.IAuthorized"
                 }
               }
             }
@@ -121,80 +112,21 @@
         "x-samchon-accessor": [
           "auth",
           "user",
-          "refresh",
-          "execute",
           "refresh"
         ],
         "x-samchon-controller": "AuthController"
       }
     },
-    "/auth/user/logout/execute": {
-      "post": {
-        "summary": "Revoke only the current session",
-        "description": "Revoke only the current session.",
-        "tags": [],
-        "parameters": [],
-        "responses": {
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "boolean"
-                }
-              }
-            }
-          }
-        },
-        "x-samchon-accessor": [
-          "auth",
-          "user",
-          "logout",
-          "execute",
-          "logout"
-        ],
-        "x-samchon-controller": "AuthController"
-      }
-    },
-    "/auth/user/logout-all/execute": {
-      "post": {
-        "summary": "Revoke every active session for the current account",
-        "description": "Revoke every active session for the current account.",
-        "tags": [],
-        "parameters": [],
-        "responses": {
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "boolean"
-                }
-              }
-            }
-          }
-        },
-        "x-samchon-accessor": [
-          "auth",
-          "user",
-          "logout_all",
-          "execute",
-          "logoutAll"
-        ],
-        "x-samchon-controller": "AuthController"
-      }
-    },
-    "/auth/user/password/execute": {
+    "/auth/user/password": {
       "put": {
-        "summary": "Change the current password and revoke every other session",
-        "description": "Change the current password and revoke every other session.",
+        "description": "Changes the current password and revokes every other session. @tag Authentication",
         "tags": [],
         "parameters": [],
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/IAuth.IChangePassword"
+                "$ref": "#/components/schemas/IRedditUser.IPasswordUpdate"
               }
             }
           },
@@ -206,7 +138,18 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "boolean"
+                  "additionalProperties": false,
+                  "properties": {
+                    "success": {
+                      "const": true,
+                      "description": null,
+                      "title": null
+                    }
+                  },
+                  "required": [
+                    "success"
+                  ],
+                  "type": "object"
                 }
               }
             }
@@ -215,24 +158,21 @@
         "x-samchon-accessor": [
           "auth",
           "user",
-          "password",
-          "execute",
-          "changePassword"
+          "password"
         ],
         "x-samchon-controller": "AuthController"
       }
     },
-    "/auth/user/recovery/request/execute": {
+    "/auth/user/recovery/request": {
       "post": {
-        "summary": "Request neutral one-time recovery proof",
-        "description": "Request neutral one-time recovery proof.",
+        "description": "Requests neutral one-time recovery delivery. @tag Authentication",
         "tags": [],
         "parameters": [],
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/IAuth.IRecoveryRequest"
+                "$ref": "#/components/schemas/IRedditUser.IRecoveryRequest"
               }
             }
           },
@@ -244,7 +184,18 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "boolean"
+                  "additionalProperties": false,
+                  "properties": {
+                    "success": {
+                      "const": true,
+                      "description": null,
+                      "title": null
+                    }
+                  },
+                  "required": [
+                    "success"
+                  ],
+                  "type": "object"
                 }
               }
             }
@@ -255,23 +206,21 @@
           "user",
           "recovery",
           "request",
-          "execute",
           "recoveryRequest"
         ],
         "x-samchon-controller": "AuthController"
       }
     },
-    "/auth/user/recovery/complete/execute": {
+    "/auth/user/recovery/complete": {
       "post": {
-        "summary": "Complete password recovery with the latest proof",
-        "description": "Complete password recovery with the latest proof.",
+        "description": "Completes recovery with a current one-time proof. @tag Authentication",
         "tags": [],
         "parameters": [],
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/IAuth.IRecoveryComplete"
+                "$ref": "#/components/schemas/IRedditUser.IRecoveryComplete"
               }
             }
           },
@@ -283,7 +232,18 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "boolean"
+                  "additionalProperties": false,
+                  "properties": {
+                    "success": {
+                      "const": true,
+                      "description": null,
+                      "title": null
+                    }
+                  },
+                  "required": [
+                    "success"
+                  ],
+                  "type": "object"
                 }
               }
             }
@@ -294,23 +254,95 @@
           "user",
           "recovery",
           "complete",
-          "execute",
           "recoveryComplete"
         ],
         "x-samchon-controller": "AuthController"
       }
     },
-    "/auth/user/erase/execute": {
+    "/auth/user/session": {
+      "delete": {
+        "description": "Revokes only the current authenticated session. @tag Authentication",
+        "tags": [],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "success": {
+                      "const": true,
+                      "description": null,
+                      "title": null
+                    }
+                  },
+                  "required": [
+                    "success"
+                  ],
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "auth",
+          "user",
+          "session",
+          "logout"
+        ],
+        "x-samchon-controller": "AuthController"
+      }
+    },
+    "/auth/user/sessions": {
+      "delete": {
+        "description": "Revokes every active session for the current account. @tag Authentication",
+        "tags": [],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "success": {
+                      "const": true,
+                      "description": null,
+                      "title": null
+                    }
+                  },
+                  "required": [
+                    "success"
+                  ],
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "auth",
+          "user",
+          "sessions",
+          "logoutAll"
+        ],
+        "x-samchon-controller": "AuthController"
+      }
+    },
+    "/auth/user/account/delete": {
       "post": {
-        "summary": "Permanently delete the current account and dependent state",
-        "description": "Permanently delete the current account and dependent state.",
+        "description": "Permanently deletes the current account after password confirmation. @tag Authentication",
         "tags": [],
         "parameters": [],
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/IAuth.IDelete"
+                "$ref": "#/components/schemas/IRedditUser.ILogin"
               }
             }
           },
@@ -322,7 +354,18 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "boolean"
+                  "additionalProperties": false,
+                  "properties": {
+                    "success": {
+                      "const": true,
+                      "description": null,
+                      "title": null
+                    }
+                  },
+                  "required": [
+                    "success"
+                  ],
+                  "type": "object"
                 }
               }
             }
@@ -331,11 +374,442 @@
         "x-samchon-accessor": [
           "auth",
           "user",
-          "erase",
-          "execute",
+          "account",
+          "_delete",
           "erase"
         ],
         "x-samchon-controller": "AuthController"
+      }
+    },
+    "/comment/post/{postId}": {
+      "post": {
+        "description": "Creates a top-level comment without requiring subscription. @tag Comment",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "postId",
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IRedditComment.ICreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IRedditComment"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "comment",
+          "post",
+          "create"
+        ],
+        "x-samchon-controller": "CommentController"
+      },
+      "patch": {
+        "description": "Reads a recursively nested public thread. @tag Comment",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "postId",
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IRedditComment.IRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IPageIRedditComment"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "comment",
+          "post",
+          "index"
+        ],
+        "x-samchon-controller": "CommentController"
+      }
+    },
+    "/comment/{parentId}/reply": {
+      "post": {
+        "description": "Replies to an available comment at any finite depth. @tag Comment",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "parentId",
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IRedditComment.IReply"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IRedditComment"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "comment",
+          "reply"
+        ],
+        "x-samchon-controller": "CommentController"
+      }
+    },
+    "/comment/{id}": {
+      "put": {
+        "description": "Edits only the current author's available comment text. @tag Comment",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IRedditComment.IUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IRedditComment"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "comment",
+          "update"
+        ],
+        "x-samchon-controller": "CommentController"
+      },
+      "delete": {
+        "description": "Permanently removes current-author comment content and preserves replies when needed. @tag Comment",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "success": {
+                      "const": true,
+                      "description": null,
+                      "title": null
+                    }
+                  },
+                  "required": [
+                    "success"
+                  ],
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "comment",
+          "erase"
+        ],
+        "x-samchon-controller": "CommentController"
+      }
+    },
+    "/community": {
+      "patch": {
+        "description": "Lists or searches active and archived communities by normalized name. @tag Community",
+        "tags": [],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IRedditCommunity.IRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IPageIRedditCommunity.ISummary"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "community",
+          "index"
+        ],
+        "x-samchon-controller": "CommunityController"
+      },
+      "post": {
+        "description": "Creates an active community and bootstraps owner/subscriber roles. @tag Community",
+        "tags": [],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IRedditCommunity.ICreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IRedditCommunity"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "community",
+          "create"
+        ],
+        "x-samchon-controller": "CommunityController"
+      }
+    },
+    "/community/{id}": {
+      "get": {
+        "description": "Opens one public community, including its current subscriber count. @tag Community",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IRedditCommunity"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "community",
+          "at"
+        ],
+        "x-samchon-controller": "CommunityController"
+      }
+    },
+    "/feed/home": {
+      "patch": {
+        "description": "Lists available posts from the current user's subscriptions. @tag Feed",
+        "tags": [],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IRedditPost.IRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IPageIRedditPost.ISummary"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "feed",
+          "home"
+        ],
+        "x-samchon-controller": "FeedController"
+      }
+    },
+    "/feed/popular": {
+      "patch": {
+        "description": "Lists available posts across all communities publicly. @tag Feed",
+        "tags": [],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IRedditPost.IRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IPageIRedditPost.ISummary"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "feed",
+          "popular"
+        ],
+        "x-samchon-controller": "FeedController"
+      }
+    },
+    "/feed/community/{communityId}": {
+      "patch": {
+        "description": "Lists available posts in one public community. @tag Feed",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "communityId",
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IRedditPost.IRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IPageIRedditPost.ISummary"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "feed",
+          "community"
+        ],
+        "x-samchon-controller": "FeedController"
       }
     },
     "/health": {
@@ -363,8 +837,887 @@
         "x-samchon-controller": "HealthController"
       }
     },
-    "/profile/view/{username}": {
+    "/community/{communityId}/moderation/post/{postId}": {
+      "delete": {
+        "description": "Deletes any post as the current community owner or moderator. @tag Moderation",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "communityId",
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "name": "postId",
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "success": {
+                      "const": true,
+                      "description": null,
+                      "title": null
+                    }
+                  },
+                  "required": [
+                    "success"
+                  ],
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "community",
+          "moderation",
+          "post",
+          "deletePost"
+        ],
+        "x-samchon-controller": "ModerationController"
+      }
+    },
+    "/community/{communityId}/moderation/comment/{commentId}": {
+      "delete": {
+        "description": "Deletes any comment as the current community owner or moderator. @tag Moderation",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "communityId",
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "name": "commentId",
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "success": {
+                      "const": true,
+                      "description": null,
+                      "title": null
+                    }
+                  },
+                  "required": [
+                    "success"
+                  ],
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "community",
+          "moderation",
+          "comment",
+          "deleteComment"
+        ],
+        "x-samchon-controller": "ModerationController"
+      }
+    },
+    "/community/{communityId}/moderation/moderator/{userId}": {
+      "put": {
+        "description": "Appoints an active platform user as a moderator. @tag Moderation",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "communityId",
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "name": "userId",
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IRedditModeratorAssignment"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "community",
+          "moderation",
+          "moderator",
+          "appoint"
+        ],
+        "x-samchon-controller": "ModerationController"
+      },
+      "delete": {
+        "description": "Removes a moderator assignment as the current owner. @tag Moderation",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "communityId",
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "name": "userId",
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "success": {
+                      "const": true,
+                      "description": null,
+                      "title": null
+                    }
+                  },
+                  "required": [
+                    "success"
+                  ],
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "community",
+          "moderation",
+          "moderator",
+          "removeModerator"
+        ],
+        "x-samchon-controller": "ModerationController"
+      }
+    },
+    "/community/{communityId}/moderation/ban/{userId}": {
+      "put": {
+        "description": "Bans one eligible account from the community. @tag Moderation",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "communityId",
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "name": "userId",
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IRedditBan"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "community",
+          "moderation",
+          "ban",
+          "ban"
+        ],
+        "x-samchon-controller": "ModerationController"
+      },
+      "delete": {
+        "description": "Ends one active community ban. @tag Moderation",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "communityId",
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "name": "userId",
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "success": {
+                      "const": true,
+                      "description": null,
+                      "title": null
+                    }
+                  },
+                  "required": [
+                    "success"
+                  ],
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "community",
+          "moderation",
+          "ban",
+          "unban"
+        ],
+        "x-samchon-controller": "ModerationController"
+      }
+    },
+    "/community/{communityId}/moderation/bans": {
+      "patch": {
+        "description": "Lists active banned users in reverse activation order. @tag Moderation",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "communityId",
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IPage.IRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IPageIRedditBan"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "community",
+          "moderation",
+          "bans"
+        ],
+        "x-samchon-controller": "ModerationController"
+      }
+    },
+    "/community/{communityId}/moderation/report": {
+      "post": {
+        "description": "Submits a post or comment report to its exact community queue. @tag Moderation",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "communityId",
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IRedditReport.ICreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IRedditReport"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "community",
+          "moderation",
+          "report",
+          "report"
+        ],
+        "x-samchon-controller": "ModerationController"
+      }
+    },
+    "/community/{communityId}/moderation/reports": {
+      "patch": {
+        "description": "Lists unresolved reports for current community moderators. @tag Moderation",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "communityId",
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IPage.IRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IPageIRedditReport"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "community",
+          "moderation",
+          "reports"
+        ],
+        "x-samchon-controller": "ModerationController"
+      }
+    },
+    "/community/{communityId}/moderation/history": {
+      "patch": {
+        "description": "Lists resolved private moderation history for the current community moderators. @tag Moderation",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "communityId",
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IPage.IRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IPageIRedditModerationAction"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "community",
+          "moderation",
+          "history"
+        ],
+        "x-samchon-controller": "ModerationController"
+      }
+    },
+    "/community/{communityId}/moderation/report/{reportId}/approve": {
+      "post": {
+        "description": "Approves an unresolved report and deletes its target. @tag Moderation",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "communityId",
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "name": "reportId",
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "success": {
+                      "const": true,
+                      "description": null,
+                      "title": null
+                    }
+                  },
+                  "required": [
+                    "success"
+                  ],
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "community",
+          "moderation",
+          "report",
+          "approve"
+        ],
+        "x-samchon-controller": "ModerationController"
+      }
+    },
+    "/community/{communityId}/moderation/report/{reportId}/dismiss": {
+      "post": {
+        "description": "Dismisses an unresolved report while retaining its target. @tag Moderation",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "communityId",
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "name": "reportId",
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "success": {
+                      "const": true,
+                      "description": null,
+                      "title": null
+                    }
+                  },
+                  "required": [
+                    "success"
+                  ],
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "community",
+          "moderation",
+          "report",
+          "dismiss"
+        ],
+        "x-samchon-controller": "ModerationController"
+      }
+    },
+    "/post/community/{communityId}": {
+      "post": {
+        "description": "Creates one post for a subscribed, unbanned author. @tag Post",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "communityId",
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IRedditPost.ICreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IRedditPost"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "post",
+          "community",
+          "create"
+        ],
+        "x-samchon-controller": "PostController"
+      }
+    },
+    "/post/{id}": {
       "get": {
+        "description": "Opens one available post publicly. @tag Post",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IRedditPost"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "post",
+          "at"
+        ],
+        "x-samchon-controller": "PostController"
+      },
+      "put": {
+        "description": "Edits only the current author's title and same-type payload. @tag Post",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IRedditPost.IUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IRedditPost"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "post",
+          "update"
+        ],
+        "x-samchon-controller": "PostController"
+      },
+      "delete": {
+        "description": "Permanently deletes the current author's post and dependent participation. @tag Post",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "success": {
+                      "const": true,
+                      "description": null,
+                      "title": null
+                    }
+                  },
+                  "required": [
+                    "success"
+                  ],
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "post",
+          "erase"
+        ],
+        "x-samchon-controller": "PostController"
+      }
+    },
+    "/subscription": {
+      "patch": {
+        "description": "Lists the current user's active subscriptions. @tag Subscription",
+        "tags": [],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IPage.IRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IPageIRedditSubscription"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "subscription",
+          "index"
+        ],
+        "x-samchon-controller": "SubscriptionController"
+      }
+    },
+    "/subscription/{communityId}": {
+      "post": {
+        "description": "Activates the current user's subscription to one active community. @tag Subscription",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "communityId",
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IRedditSubscription"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "subscription",
+          "create"
+        ],
+        "x-samchon-controller": "SubscriptionController"
+      },
+      "delete": {
+        "description": "Ends the current user's subscription without changing roles or content. @tag Subscription",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "communityId",
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "success": {
+                      "const": true,
+                      "description": null,
+                      "title": null
+                    }
+                  },
+                  "required": [
+                    "success"
+                  ],
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "subscription",
+          "erase"
+        ],
+        "x-samchon-controller": "SubscriptionController"
+      }
+    },
+    "/user/username/{username}": {
+      "get": {
+        "description": "Opens one available public profile by username. @tag Profile",
         "tags": [],
         "parameters": [
           {
@@ -382,506 +1735,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/IProfile"
-                }
-              }
-            }
-          }
-        },
-        "x-samchon-accessor": [
-          "profile",
-          "view",
-          "profile"
-        ],
-        "x-samchon-controller": "RedditController"
-      }
-    },
-    "/profile/edit": {
-      "put": {
-        "tags": [],
-        "parameters": [],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/IProfile.IUpdate"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/IProfile"
-                }
-              }
-            }
-          }
-        },
-        "x-samchon-accessor": [
-          "profile",
-          "edit",
-          "profileUpdate"
-        ],
-        "x-samchon-controller": "RedditController"
-      }
-    },
-    "/community/create": {
-      "post": {
-        "tags": [],
-        "parameters": [],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ICommunity.ICreate"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ICommunity"
-                }
-              }
-            }
-          }
-        },
-        "x-samchon-accessor": [
-          "community",
-          "create",
-          "communityCreate"
-        ],
-        "x-samchon-controller": "RedditController"
-      }
-    },
-    "/community/list": {
-      "patch": {
-        "tags": [],
-        "parameters": [],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ICommunity.IRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/IPageICommunity"
-                }
-              }
-            }
-          }
-        },
-        "x-samchon-accessor": [
-          "community",
-          "list",
-          "communityIndex"
-        ],
-        "x-samchon-controller": "RedditController"
-      }
-    },
-    "/community/detail/{communityId}": {
-      "get": {
-        "tags": [],
-        "parameters": [
-          {
-            "name": "communityId",
-            "in": "path",
-            "schema": {
-              "type": "string"
-            },
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ICommunity"
-                }
-              }
-            }
-          }
-        },
-        "x-samchon-accessor": [
-          "community",
-          "detail",
-          "communityAt"
-        ],
-        "x-samchon-controller": "RedditController"
-      }
-    },
-    "/community/subscribe/{communityId}/execute": {
-      "post": {
-        "tags": [],
-        "parameters": [
-          {
-            "name": "communityId",
-            "in": "path",
-            "schema": {
-              "type": "string"
-            },
-            "required": true
-          }
-        ],
-        "responses": {
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ICommunity"
-                }
-              }
-            }
-          }
-        },
-        "x-samchon-accessor": [
-          "community",
-          "subscribe",
-          "execute",
-          "subscribe"
-        ],
-        "x-samchon-controller": "RedditController"
-      }
-    },
-    "/community/unsubscribe/{communityId}/execute": {
-      "post": {
-        "tags": [],
-        "parameters": [
-          {
-            "name": "communityId",
-            "in": "path",
-            "schema": {
-              "type": "string"
-            },
-            "required": true
-          }
-        ],
-        "responses": {
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "boolean"
-                }
-              }
-            }
-          }
-        },
-        "x-samchon-accessor": [
-          "community",
-          "unsubscribe",
-          "execute",
-          "unsubscribe"
-        ],
-        "x-samchon-controller": "RedditController"
-      }
-    },
-    "/subscription/list": {
-      "patch": {
-        "tags": [],
-        "parameters": [],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/IPage.IRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/IPageISubscription"
-                }
-              }
-            }
-          }
-        },
-        "x-samchon-accessor": [
-          "subscription",
-          "list",
-          "subscriptions"
-        ],
-        "x-samchon-controller": "RedditController"
-      }
-    },
-    "/post/create/{communityId}": {
-      "post": {
-        "tags": [],
-        "parameters": [
-          {
-            "name": "communityId",
-            "in": "path",
-            "schema": {
-              "type": "string"
-            },
-            "required": true
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/IPost.ICreate"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/IPost"
-                }
-              }
-            }
-          }
-        },
-        "x-samchon-accessor": [
-          "post",
-          "create",
-          "postCreate"
-        ],
-        "x-samchon-controller": "RedditController"
-      }
-    },
-    "/post/detail/{id}": {
-      "get": {
-        "tags": [],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "schema": {
-              "type": "string"
-            },
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/IPost"
-                }
-              }
-            }
-          }
-        },
-        "x-samchon-accessor": [
-          "post",
-          "detail",
-          "postAt"
-        ],
-        "x-samchon-controller": "RedditController"
-      }
-    },
-    "/post/update/{id}": {
-      "put": {
-        "tags": [],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "schema": {
-              "type": "string"
-            },
-            "required": true
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/IPost.IUpdate"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/IPost"
-                }
-              }
-            }
-          }
-        },
-        "x-samchon-accessor": [
-          "post",
-          "update",
-          "postUpdate"
-        ],
-        "x-samchon-controller": "RedditController"
-      }
-    },
-    "/post/{id}/erase": {
-      "post": {
-        "tags": [],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "schema": {
-              "type": "string"
-            },
-            "required": true
-          }
-        ],
-        "responses": {
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "boolean"
-                }
-              }
-            }
-          }
-        },
-        "x-samchon-accessor": [
-          "post",
-          "erase",
-          "postErase"
-        ],
-        "x-samchon-controller": "RedditController"
-      }
-    },
-    "/community/{communityId}/post/{id}/erase": {
-      "post": {
-        "tags": [],
-        "parameters": [
-          {
-            "name": "communityId",
-            "in": "path",
-            "schema": {
-              "type": "string"
-            },
-            "required": true
-          },
-          {
-            "name": "id",
-            "in": "path",
-            "schema": {
-              "type": "string"
-            },
-            "required": true
-          }
-        ],
-        "responses": {
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "boolean"
-                }
-              }
-            }
-          }
-        },
-        "x-samchon-accessor": [
-          "community",
-          "post",
-          "erase",
-          "postModerateErase"
-        ],
-        "x-samchon-controller": "RedditController"
-      }
-    },
-    "/feed/popular": {
-      "patch": {
-        "tags": [],
-        "parameters": [],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/IPost.IRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/IPageIPost.ISummary"
-                }
-              }
-            }
-          }
-        },
-        "x-samchon-accessor": [
-          "feed",
-          "popular",
-          "feedPopular"
-        ],
-        "x-samchon-controller": "RedditController"
-      }
-    },
-    "/user/feed/home": {
-      "patch": {
-        "tags": [],
-        "parameters": [],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/IPost.IRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/IPageIPost.ISummary"
+                  "$ref": "#/components/schemas/IRedditUser"
                 }
               }
             }
@@ -889,357 +1743,22 @@
         },
         "x-samchon-accessor": [
           "user",
-          "feed",
-          "home",
-          "feedHome"
+          "username",
+          "at"
         ],
-        "x-samchon-controller": "RedditController"
+        "x-samchon-controller": "UserController"
       }
     },
-    "/community/{communityId}/feed": {
-      "patch": {
-        "tags": [],
-        "parameters": [
-          {
-            "name": "communityId",
-            "in": "path",
-            "schema": {
-              "type": "string"
-            },
-            "required": true
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/IPost.IRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/IPageIPost.ISummary"
-                }
-              }
-            }
-          }
-        },
-        "x-samchon-accessor": [
-          "community",
-          "feed",
-          "feedCommunity"
-        ],
-        "x-samchon-controller": "RedditController"
-      }
-    },
-    "/post/{id}/vote": {
-      "post": {
-        "tags": [],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "schema": {
-              "type": "string"
-            },
-            "required": true
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/IVote.IRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/IVote"
-                }
-              }
-            }
-          }
-        },
-        "x-samchon-accessor": [
-          "post",
-          "vote",
-          "postVote"
-        ],
-        "x-samchon-controller": "RedditController"
-      }
-    },
-    "/post/{id}/vote/remove": {
-      "post": {
-        "tags": [],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "schema": {
-              "type": "string"
-            },
-            "required": true
-          }
-        ],
-        "responses": {
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/IVote"
-                }
-              }
-            }
-          }
-        },
-        "x-samchon-accessor": [
-          "post",
-          "vote",
-          "remove",
-          "postVoteRemove"
-        ],
-        "x-samchon-controller": "RedditController"
-      }
-    },
-    "/comment/{id}/vote": {
-      "post": {
-        "tags": [],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "schema": {
-              "type": "string"
-            },
-            "required": true
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/IVote.IRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/IVote"
-                }
-              }
-            }
-          }
-        },
-        "x-samchon-accessor": [
-          "comment",
-          "vote",
-          "commentVote"
-        ],
-        "x-samchon-controller": "RedditController"
-      }
-    },
-    "/comment/{id}/vote/remove": {
-      "post": {
-        "tags": [],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "schema": {
-              "type": "string"
-            },
-            "required": true
-          }
-        ],
-        "responses": {
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/IVote"
-                }
-              }
-            }
-          }
-        },
-        "x-samchon-accessor": [
-          "comment",
-          "vote",
-          "remove",
-          "commentVoteRemove"
-        ],
-        "x-samchon-controller": "RedditController"
-      }
-    },
-    "/post/{postId}/comment": {
-      "post": {
-        "tags": [],
-        "parameters": [
-          {
-            "name": "postId",
-            "in": "path",
-            "schema": {
-              "type": "string"
-            },
-            "required": true
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/IComment.ICreate"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/IComment"
-                }
-              }
-            }
-          }
-        },
-        "x-samchon-accessor": [
-          "post",
-          "comment",
-          "commentCreate"
-        ],
-        "x-samchon-controller": "RedditController"
-      }
-    },
-    "/comment/{commentId}/reply": {
-      "post": {
-        "tags": [],
-        "parameters": [
-          {
-            "name": "commentId",
-            "in": "path",
-            "schema": {
-              "type": "string"
-            },
-            "required": true
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/IComment.ICreate"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/IComment"
-                }
-              }
-            }
-          }
-        },
-        "x-samchon-accessor": [
-          "comment",
-          "reply",
-          "commentReply"
-        ],
-        "x-samchon-controller": "RedditController"
-      }
-    },
-    "/post/{postId}/comments": {
-      "patch": {
-        "tags": [],
-        "parameters": [
-          {
-            "name": "postId",
-            "in": "path",
-            "schema": {
-              "type": "string"
-            },
-            "required": true
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/IComment.IRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/IPageIComment"
-                }
-              }
-            }
-          }
-        },
-        "x-samchon-accessor": [
-          "post",
-          "comments",
-          "commentIndex"
-        ],
-        "x-samchon-controller": "RedditController"
-      }
-    },
-    "/comment/{id}": {
+    "/user/profile": {
       "put": {
+        "description": "Changes only the authenticated user's public profile fields. @tag Profile",
         "tags": [],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "schema": {
-              "type": "string"
-            },
-            "required": true
-          }
-        ],
+        "parameters": [],
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/IComment.IUpdate"
+                "$ref": "#/components/schemas/IRedditUser.IUpdate"
               }
             }
           },
@@ -1251,309 +1770,30 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/IComment"
+                  "$ref": "#/components/schemas/IRedditUser"
                 }
               }
             }
           }
         },
         "x-samchon-accessor": [
-          "comment",
-          "commentUpdate"
+          "user",
+          "profile",
+          "update"
         ],
-        "x-samchon-controller": "RedditController"
+        "x-samchon-controller": "UserController"
       }
     },
-    "/comment/{id}/erase": {
-      "post": {
-        "tags": [],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "schema": {
-              "type": "string"
-            },
-            "required": true
-          }
-        ],
-        "responses": {
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "boolean"
-                }
-              }
-            }
-          }
-        },
-        "x-samchon-accessor": [
-          "comment",
-          "erase",
-          "commentErase"
-        ],
-        "x-samchon-controller": "RedditController"
-      }
-    },
-    "/community/{communityId}/comment/{id}/erase": {
-      "post": {
-        "tags": [],
-        "parameters": [
-          {
-            "name": "communityId",
-            "in": "path",
-            "schema": {
-              "type": "string"
-            },
-            "required": true
-          },
-          {
-            "name": "id",
-            "in": "path",
-            "schema": {
-              "type": "string"
-            },
-            "required": true
-          }
-        ],
-        "responses": {
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "boolean"
-                }
-              }
-            }
-          }
-        },
-        "x-samchon-accessor": [
-          "community",
-          "comment",
-          "erase",
-          "commentModerateErase"
-        ],
-        "x-samchon-controller": "RedditController"
-      }
-    },
-    "/moderator/add/{communityId}/{userId}": {
-      "post": {
-        "tags": [],
-        "parameters": [
-          {
-            "name": "communityId",
-            "in": "path",
-            "schema": {
-              "type": "string"
-            },
-            "required": true
-          },
-          {
-            "name": "userId",
-            "in": "path",
-            "schema": {
-              "type": "string"
-            },
-            "required": true
-          }
-        ],
-        "responses": {
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "boolean"
-                }
-              }
-            }
-          }
-        },
-        "x-samchon-accessor": [
-          "moderator",
-          "add",
-          "moderatorAdd"
-        ],
-        "x-samchon-controller": "RedditController"
-      }
-    },
-    "/moderator/remove/{communityId}/{userId}": {
-      "post": {
-        "tags": [],
-        "parameters": [
-          {
-            "name": "communityId",
-            "in": "path",
-            "schema": {
-              "type": "string"
-            },
-            "required": true
-          },
-          {
-            "name": "userId",
-            "in": "path",
-            "schema": {
-              "type": "string"
-            },
-            "required": true
-          }
-        ],
-        "responses": {
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "boolean"
-                }
-              }
-            }
-          }
-        },
-        "x-samchon-accessor": [
-          "moderator",
-          "remove",
-          "moderatorRemove"
-        ],
-        "x-samchon-controller": "RedditController"
-      }
-    },
-    "/ban/create/{communityId}/{userId}": {
-      "post": {
-        "tags": [],
-        "parameters": [
-          {
-            "name": "communityId",
-            "in": "path",
-            "schema": {
-              "type": "string"
-            },
-            "required": true
-          },
-          {
-            "name": "userId",
-            "in": "path",
-            "schema": {
-              "type": "string"
-            },
-            "required": true
-          }
-        ],
-        "responses": {
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "boolean"
-                }
-              }
-            }
-          }
-        },
-        "x-samchon-accessor": [
-          "ban",
-          "create",
-          "ban"
-        ],
-        "x-samchon-controller": "RedditController"
-      }
-    },
-    "/ban/remove/{communityId}/{userId}": {
-      "post": {
-        "tags": [],
-        "parameters": [
-          {
-            "name": "communityId",
-            "in": "path",
-            "schema": {
-              "type": "string"
-            },
-            "required": true
-          },
-          {
-            "name": "userId",
-            "in": "path",
-            "schema": {
-              "type": "string"
-            },
-            "required": true
-          }
-        ],
-        "responses": {
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "boolean"
-                }
-              }
-            }
-          }
-        },
-        "x-samchon-accessor": [
-          "ban",
-          "remove",
-          "unban"
-        ],
-        "x-samchon-controller": "RedditController"
-      }
-    },
-    "/ban/list/{communityId}": {
-      "patch": {
-        "tags": [],
-        "parameters": [
-          {
-            "name": "communityId",
-            "in": "path",
-            "schema": {
-              "type": "string"
-            },
-            "required": true
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/IPage.IRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/IPageIBan"
-                }
-              }
-            }
-          }
-        },
-        "x-samchon-accessor": [
-          "ban",
-          "list",
-          "bans"
-        ],
-        "x-samchon-controller": "RedditController"
-      }
-    },
-    "/post/{postId}/report": {
-      "post": {
+    "/vote/post/{postId}": {
+      "put": {
+        "description": "Sets or replaces the current user's post vote. @tag Vote",
         "tags": [],
         "parameters": [
           {
             "name": "postId",
             "in": "path",
             "schema": {
+              "format": "uuid",
               "type": "string"
             },
             "required": true
@@ -1563,93 +1803,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/IReport.ICreate"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/IReport"
-                }
-              }
-            }
-          }
-        },
-        "x-samchon-accessor": [
-          "post",
-          "report",
-          "postReport"
-        ],
-        "x-samchon-controller": "RedditController"
-      }
-    },
-    "/comment/{commentId}/report": {
-      "post": {
-        "tags": [],
-        "parameters": [
-          {
-            "name": "commentId",
-            "in": "path",
-            "schema": {
-              "type": "string"
-            },
-            "required": true
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/IReport.ICreate"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/IReport"
-                }
-              }
-            }
-          }
-        },
-        "x-samchon-accessor": [
-          "comment",
-          "report",
-          "commentReport"
-        ],
-        "x-samchon-controller": "RedditController"
-      }
-    },
-    "/report/list/{communityId}": {
-      "patch": {
-        "tags": [],
-        "parameters": [
-          {
-            "name": "communityId",
-            "in": "path",
-            "schema": {
-              "type": "string"
-            },
-            "required": true
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/IPage.IRequest"
+                "$ref": "#/components/schemas/IRedditVote.IRequest"
               }
             }
           },
@@ -1661,159 +1815,260 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/IPageIReport"
+                  "$ref": "#/components/schemas/IRedditVote"
                 }
               }
             }
           }
         },
         "x-samchon-accessor": [
-          "report",
-          "list",
-          "reports"
+          "vote",
+          "post",
+          "post"
         ],
-        "x-samchon-controller": "RedditController"
-      }
-    },
-    "/report/{id}/approve": {
-      "post": {
+        "x-samchon-controller": "VoteController"
+      },
+      "delete": {
+        "description": "Removes the current user's post vote, including an absent-vote no-op. @tag Vote",
         "tags": [],
         "parameters": [
           {
-            "name": "id",
+            "name": "postId",
             "in": "path",
             "schema": {
+              "format": "uuid",
               "type": "string"
             },
             "required": true
           }
         ],
         "responses": {
-          "201": {
+          "200": {
             "description": "",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "boolean"
+                  "additionalProperties": false,
+                  "properties": {
+                    "success": {
+                      "const": true,
+                      "description": null,
+                      "title": null
+                    }
+                  },
+                  "required": [
+                    "success"
+                  ],
+                  "type": "object"
                 }
               }
             }
           }
         },
         "x-samchon-accessor": [
-          "report",
-          "approve",
-          "reportApprove"
+          "vote",
+          "post",
+          "erasePost"
         ],
-        "x-samchon-controller": "RedditController"
+        "x-samchon-controller": "VoteController"
       }
     },
-    "/report/{id}/dismiss": {
-      "post": {
+    "/vote/comment/{commentId}": {
+      "put": {
+        "description": "Sets or replaces the current user's comment vote. @tag Vote",
         "tags": [],
         "parameters": [
           {
-            "name": "id",
+            "name": "commentId",
             "in": "path",
             "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IRedditVote.IRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IRedditVote"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "vote",
+          "comment",
+          "comment"
+        ],
+        "x-samchon-controller": "VoteController"
+      },
+      "delete": {
+        "description": "Removes the current user's comment vote, including an absent-vote no-op. @tag Vote",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "commentId",
+            "in": "path",
+            "schema": {
+              "format": "uuid",
               "type": "string"
             },
             "required": true
           }
         ],
         "responses": {
-          "201": {
+          "200": {
             "description": "",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "boolean"
+                  "additionalProperties": false,
+                  "properties": {
+                    "success": {
+                      "const": true,
+                      "description": null,
+                      "title": null
+                    }
+                  },
+                  "required": [
+                    "success"
+                  ],
+                  "type": "object"
                 }
               }
             }
           }
         },
         "x-samchon-accessor": [
-          "report",
-          "dismiss",
-          "reportDismiss"
+          "vote",
+          "comment",
+          "eraseComment"
         ],
-        "x-samchon-controller": "RedditController"
+        "x-samchon-controller": "VoteController"
       }
     }
   },
   "components": {
     "schemas": {
-      "IAuth.IAuthorized": {
+      "IRedditUser.IAuthorized": {
         "additionalProperties": false,
-        "description": "Authenticated identity and issued bearer material.",
+        "description": "Authentication response containing only issued authorization material.",
+        "properties": {
+          "accessToken": {
+            "description": "Short-lived bearer token.",
+            "type": "string"
+          },
+          "refreshToken": {
+            "description": "Long-lived session continuation token.",
+            "type": "string"
+          },
+          "user": {
+            "$ref": "#/components/schemas/IRedditUser.ISummary",
+            "description": "Public identity of the authenticated account."
+          }
+        },
+        "required": [
+          "accessToken",
+          "refreshToken",
+          "user"
+        ],
+        "type": "object"
+      },
+      "IRedditUser.ISummary": {
+        "additionalProperties": false,
+        "description": "Compact public identity embedded in content responses.",
         "properties": {
           "id": {
+            "description": "Stable public account identifier.",
             "format": "uuid",
             "type": "string"
           },
           "username": {
+            "description": "Case-preserving public username.",
             "type": "string"
           },
-          "token": {
-            "additionalProperties": false,
-            "properties": {
-              "access": {
-                "type": "string"
+          "displayName": {
+            "description": "Public display name.",
+            "type": "string"
+          },
+          "avatar": {
+            "description": "Optional public avatar payload.",
+            "oneOf": [
+              {
+                "type": "null"
               },
-              "refresh": {
+              {
                 "type": "string"
               }
-            },
-            "required": [
-              "access",
-              "refresh"
-            ],
-            "type": "object"
+            ]
           }
         },
         "required": [
           "id",
           "username",
-          "token"
+          "displayName",
+          "avatar"
         ],
         "type": "object"
       },
-      "IAuth.IJoin": {
+      "IRedditUser.IJoin": {
         "additionalProperties": false,
-        "description": "Creates an account and starts a session.",
+        "description": "Registration input.",
         "properties": {
           "email": {
+            "description": "Private sign-in email.",
             "format": "email",
             "type": "string"
           },
-          "password": {
-            "minLength": 8,
-            "type": "string"
-          },
           "username": {
+            "description": "Public username.",
             "maxLength": 30,
             "minLength": 3,
+            "pattern": "^[A-Za-z0-9_]+$",
+            "type": "string"
+          },
+          "password": {
+            "description": "New password, never returned.",
+            "maxLength": 128,
+            "minLength": 8,
             "type": "string"
           }
         },
         "required": [
           "email",
-          "password",
-          "username"
+          "username",
+          "password"
         ],
         "type": "object"
       },
-      "IAuth.ILogin": {
+      "IRedditUser.ILogin": {
         "additionalProperties": false,
-        "description": "Starts a session for an existing account.",
+        "description": "Credential login input.",
         "properties": {
           "email": {
+            "description": "Private sign-in email.",
             "format": "email",
             "type": "string"
           },
           "password": {
-            "minLength": 1,
+            "description": "Candidate password.",
+            "maxLength": 128,
+            "minLength": 8,
             "type": "string"
           }
         },
@@ -1823,11 +2078,12 @@
         ],
         "type": "object"
       },
-      "IAuth.IRefresh": {
+      "IRedditUser.IRefresh": {
         "additionalProperties": false,
-        "description": "Continues one existing session.",
+        "description": "Session continuation input.",
         "properties": {
           "refreshToken": {
+            "description": "Current refresh token.",
             "minLength": 1,
             "type": "string"
           }
@@ -1837,15 +2093,19 @@
         ],
         "type": "object"
       },
-      "IAuth.IChangePassword": {
+      "IRedditUser.IPasswordUpdate": {
         "additionalProperties": false,
-        "description": "Replaces the current password.",
+        "description": "Current-password replacement input.",
         "properties": {
           "currentPassword": {
-            "minLength": 1,
+            "description": "Existing password proof.",
+            "maxLength": 128,
+            "minLength": 8,
             "type": "string"
           },
           "newPassword": {
+            "description": "Replacement password.",
+            "maxLength": 128,
             "minLength": 8,
             "type": "string"
           }
@@ -1856,11 +2116,12 @@
         ],
         "type": "object"
       },
-      "IAuth.IRecoveryRequest": {
+      "IRedditUser.IRecoveryRequest": {
         "additionalProperties": false,
-        "description": "Requests one-time recovery proof by email.",
+        "description": "Neutral forgotten-password request input.",
         "properties": {
           "email": {
+            "description": "Email that may identify an active account.",
             "format": "email",
             "type": "string"
           }
@@ -1870,19 +2131,23 @@
         ],
         "type": "object"
       },
-      "IAuth.IRecoveryComplete": {
+      "IRedditUser.IRecoveryComplete": {
         "additionalProperties": false,
-        "description": "Completes recovery with the latest proof.",
+        "description": "One-time recovery completion input.",
         "properties": {
           "email": {
+            "description": "Registered email.",
             "format": "email",
             "type": "string"
           },
           "proof": {
+            "description": "Delivered one-time proof.",
             "minLength": 1,
             "type": "string"
           },
           "newPassword": {
+            "description": "Replacement password.",
+            "maxLength": 128,
             "minLength": 8,
             "type": "string"
           }
@@ -1894,28 +2159,28 @@
         ],
         "type": "object"
       },
-      "IAuth.IDelete": {
+      "IRedditComment": {
         "additionalProperties": false,
-        "description": "Confirms permanent account deletion.",
-        "properties": {
-          "password": {
-            "minLength": 1,
-            "type": "string"
-          }
-        },
-        "required": [
-          "password"
-        ],
-        "type": "object"
-      },
-      "IComment.ISummary": {
-        "additionalProperties": false,
+        "description": "Public recursive comment response.",
         "properties": {
           "id": {
+            "description": "Comment identifier.",
             "format": "uuid",
             "type": "string"
           },
+          "author": {
+            "description": "Author identity, absent for a de-identified marker.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/IRedditUser.ISummary"
+              }
+            ]
+          },
           "text": {
+            "description": "Comment text, absent for a deleted marker.",
             "oneOf": [
               {
                 "type": "null"
@@ -1926,22 +2191,64 @@
             ]
           },
           "deleted": {
+            "description": "Whether this row is the neutral deleted marker.",
             "type": "boolean"
           },
           "score": {
+            "description": "Current signed score.",
             "type": "number"
           },
           "createdAt": {
+            "description": "Immutable creation instant.",
             "format": "date-time",
             "type": "string"
+          },
+          "replies": {
+            "description": "Direct replies in the selected sibling order.",
+            "items": {
+              "$ref": "#/components/schemas/IRedditComment"
+            },
+            "type": "array"
           }
         },
         "required": [
           "id",
+          "author",
           "text",
           "deleted",
           "score",
-          "createdAt"
+          "createdAt",
+          "replies"
+        ],
+        "type": "object"
+      },
+      "IRedditComment.ICreate": {
+        "additionalProperties": false,
+        "description": "Top-level comment input.",
+        "properties": {
+          "text": {
+            "description": "Nonblank comment text.",
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "type": "object"
+      },
+      "IRedditComment.IReply": {
+        "additionalProperties": false,
+        "description": "Reply input.",
+        "properties": {
+          "text": {
+            "description": "Nonblank reply text.",
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "text"
         ],
         "type": "object"
       },
@@ -1968,9 +2275,33 @@
             "description": "Total pages matching the request.",
             "minimum": 0,
             "type": "integer"
+          }
+        },
+        "required": [
+          "current",
+          "limit",
+          "records",
+          "pages"
+        ],
+        "type": "object"
+      },
+      "IPageIRedditComment": {
+        "additionalProperties": false,
+        "description": "One page of a larger result set.",
+        "properties": {
+          "pagination": {
+            "$ref": "#/components/schemas/IPage.IPagination",
+            "description": "Position and size of this page within the complete result set."
           },
-          "continuation": {
-            "description": "Continuation for the next page, or null when this is the final page.",
+          "data": {
+            "description": "Records returned for the current page.",
+            "items": {
+              "$ref": "#/components/schemas/IRedditComment"
+            },
+            "type": "array"
+          },
+          "next": {
+            "description": "Opaque continuation for the next page, or null on the final page.",
             "oneOf": [
               {
                 "type": "null"
@@ -1981,244 +2312,78 @@
             ]
           },
           "reset": {
-            "description": "Whether an invalid or stale continuation caused a fresh first page.",
+            "description": "True when an invalid continuation caused a fresh traversal reset.",
             "type": "boolean"
           }
         },
         "required": [
-          "current",
-          "limit",
-          "records",
-          "pages",
-          "continuation"
-        ],
-        "type": "object"
-      },
-      "IPageIComment.ISummary": {
-        "additionalProperties": false,
-        "description": "One page of a larger result set.",
-        "properties": {
-          "pagination": {
-            "$ref": "#/components/schemas/IPage.IPagination",
-            "description": "Position and size of this page within the complete result set."
-          },
-          "data": {
-            "description": "Records returned for the current page.",
-            "items": {
-              "$ref": "#/components/schemas/IComment.ISummary"
-            },
-            "type": "array"
-          }
-        },
-        "required": [
           "pagination",
-          "data"
+          "data",
+          "next",
+          "reset"
         ],
         "type": "object"
       },
-      "IPageIPost.ISummary": {
+      "IRedditComment.IRequest": {
         "additionalProperties": false,
-        "description": "One page of a larger result set.",
+        "description": "Nested thread request.",
         "properties": {
-          "pagination": {
-            "$ref": "#/components/schemas/IPage.IPagination",
-            "description": "Position and size of this page within the complete result set."
-          },
-          "data": {
-            "description": "Records returned for the current page.",
-            "items": {
-              "$ref": "#/components/schemas/IPost.ISummary"
-            },
-            "type": "array"
-          }
-        },
-        "required": [
-          "pagination",
-          "data"
-        ],
-        "type": "object"
-      },
-      "IPost.ICommunity": {
-        "additionalProperties": false,
-        "properties": {
-          "id": {
-            "format": "uuid",
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "name"
-        ],
-        "type": "object"
-      },
-      "IPost.ISummary": {
-        "additionalProperties": false,
-        "description": "Compact post card used by feeds and authored lists.",
-        "properties": {
-          "id": {
-            "format": "uuid",
-            "type": "string"
-          },
-          "title": {
-            "type": "string"
-          },
-          "type": {
+          "page": {
+            "description": "One-indexed page to read.",
             "oneOf": [
               {
-                "const": "image",
+                "type": "null"
+              },
+              {
+                "minimum": 1,
+                "type": "integer"
+              }
+            ]
+          },
+          "limit": {
+            "description": "Maximum number of records returned per page, from 1 through 100.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "maximum": 100,
+                "minimum": 1,
+                "type": "integer"
+              }
+            ]
+          },
+          "cursor": {
+            "description": "Opaque continuation from the preceding page.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "sort": {
+            "description": "Best, New, or Controversial sibling order.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "const": "best",
                 "description": null,
                 "title": null
               },
               {
-                "const": "link",
+                "const": "controversial",
                 "description": null,
                 "title": null
               },
               {
-                "const": "text",
+                "const": "new",
                 "description": null,
                 "title": null
-              }
-            ]
-          },
-          "preview": {
-            "type": "string"
-          },
-          "author": {
-            "$ref": "#/components/schemas/IPost.IUser"
-          },
-          "community": {
-            "$ref": "#/components/schemas/IPost.ICommunity"
-          },
-          "score": {
-            "type": "number"
-          },
-          "commentCount": {
-            "minimum": 0,
-            "type": "integer"
-          },
-          "createdAt": {
-            "format": "date-time",
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "title",
-          "type",
-          "preview",
-          "author",
-          "community",
-          "score",
-          "commentCount",
-          "createdAt"
-        ],
-        "type": "object"
-      },
-      "IPost.IUser": {
-        "additionalProperties": false,
-        "properties": {
-          "id": {
-            "format": "uuid",
-            "type": "string"
-          },
-          "username": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "username"
-        ],
-        "type": "object"
-      },
-      "IProfile": {
-        "additionalProperties": false,
-        "description": "Public profile and editable profile fields.",
-        "properties": {
-          "id": {
-            "format": "uuid",
-            "type": "string"
-          },
-          "username": {
-            "type": "string"
-          },
-          "displayName": {
-            "type": "string"
-          },
-          "bio": {
-            "type": "string"
-          },
-          "avatarUrl": {
-            "oneOf": [
-              {
-                "type": "null"
-              },
-              {
-                "type": "string"
-              }
-            ]
-          },
-          "karma": {
-            "type": "number"
-          },
-          "posts": {
-            "$ref": "#/components/schemas/IPageIPost.ISummary"
-          },
-          "comments": {
-            "$ref": "#/components/schemas/IPageIComment.ISummary"
-          }
-        },
-        "required": [
-          "id",
-          "username",
-          "displayName",
-          "bio",
-          "avatarUrl",
-          "karma",
-          "posts",
-          "comments"
-        ],
-        "type": "object"
-      },
-      "IProfile.IUpdate": {
-        "additionalProperties": false,
-        "description": "Partial update of the current user's public profile.",
-        "properties": {
-          "displayName": {
-            "oneOf": [
-              {
-                "type": "null"
-              },
-              {
-                "maxLength": 80,
-                "minLength": 1,
-                "type": "string"
-              }
-            ]
-          },
-          "bio": {
-            "oneOf": [
-              {
-                "type": "null"
-              },
-              {
-                "maxLength": 5000,
-                "type": "string"
-              }
-            ]
-          },
-          "avatarUrl": {
-            "oneOf": [
-              {
-                "type": "null"
-              },
-              {
-                "type": "string"
               }
             ]
           }
@@ -2226,21 +2391,38 @@
         "required": [],
         "type": "object"
       },
-      "ICommunity": {
+      "IRedditComment.IUpdate": {
         "additionalProperties": false,
-        "description": "Public community descriptor and lifecycle state.",
+        "description": "Comment edit input.",
         "properties": {
-          "id": {
-            "format": "uuid",
+          "text": {
+            "description": "Replacement nonblank text.",
+            "minLength": 1,
             "type": "string"
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "type": "object"
+      },
+      "IPageIRedditCommunity.ISummary": {
+        "additionalProperties": false,
+        "description": "One page of a larger result set.",
+        "properties": {
+          "pagination": {
+            "$ref": "#/components/schemas/IPage.IPagination",
+            "description": "Position and size of this page within the complete result set."
           },
-          "name": {
-            "type": "string"
+          "data": {
+            "description": "Records returned for the current page.",
+            "items": {
+              "$ref": "#/components/schemas/IRedditCommunity.ISummary"
+            },
+            "type": "array"
           },
-          "description": {
-            "type": "string"
-          },
-          "iconUrl": {
+          "next": {
+            "description": "Opaque continuation for the next page, or null on the final page.",
             "oneOf": [
               {
                 "type": "null"
@@ -2250,7 +2432,42 @@
               }
             ]
           },
+          "reset": {
+            "description": "True when an invalid continuation caused a fresh traversal reset.",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "pagination",
+          "data",
+          "next",
+          "reset"
+        ],
+        "type": "object"
+      },
+      "IRedditCommunity.ISummary": {
+        "additionalProperties": false,
+        "description": "Compact public community identity.",
+        "properties": {
+          "id": {
+            "description": "Community identifier.",
+            "format": "uuid",
+            "type": "string"
+          },
+          "name": {
+            "description": "Public name.",
+            "type": "string"
+          },
+          "description": {
+            "description": "Public description.",
+            "type": "string"
+          },
+          "icon": {
+            "description": "Public icon payload.",
+            "type": "string"
+          },
           "status": {
+            "description": "Active or archived status.",
             "oneOf": [
               {
                 "const": "active",
@@ -2265,6 +2482,7 @@
             ]
           },
           "subscriberCount": {
+            "description": "Count of active subscriptions.",
             "minimum": 0,
             "type": "integer"
           }
@@ -2273,164 +2491,15 @@
           "id",
           "name",
           "description",
-          "iconUrl",
+          "icon",
           "status",
           "subscriberCount"
         ],
         "type": "object"
       },
-      "ICommunity.ICreate": {
+      "IRedditCommunity.IRequest": {
         "additionalProperties": false,
-        "description": "Creates a community and bootstraps owner subscription.",
-        "properties": {
-          "name": {
-            "maxLength": 80,
-            "minLength": 3,
-            "type": "string"
-          },
-          "description": {
-            "maxLength": 5000,
-            "minLength": 1,
-            "type": "string"
-          },
-          "iconUrl": {
-            "oneOf": [
-              {
-                "type": "null"
-              },
-              {
-                "type": "string"
-              }
-            ]
-          }
-        },
-        "required": [
-          "name",
-          "description"
-        ],
-        "type": "object"
-      },
-      "IPageICommunity": {
-        "additionalProperties": false,
-        "description": "One page of a larger result set.",
-        "properties": {
-          "pagination": {
-            "$ref": "#/components/schemas/IPage.IPagination",
-            "description": "Position and size of this page within the complete result set."
-          },
-          "data": {
-            "description": "Records returned for the current page.",
-            "items": {
-              "$ref": "#/components/schemas/ICommunity"
-            },
-            "type": "array"
-          }
-        },
-        "required": [
-          "pagination",
-          "data"
-        ],
-        "type": "object"
-      },
-      "ICommunity.IRequest": {
-        "additionalProperties": false,
-        "description": "Name-filtered public community listing.",
-        "properties": {
-          "page": {
-            "oneOf": [
-              {
-                "type": "null"
-              },
-              {
-                "minimum": 1,
-                "type": "integer"
-              }
-            ]
-          },
-          "continuation": {
-            "oneOf": [
-              {
-                "type": "null"
-              },
-              {
-                "type": "string"
-              }
-            ]
-          },
-          "limit": {
-            "oneOf": [
-              {
-                "type": "null"
-              },
-              {
-                "maximum": 100,
-                "minimum": 0,
-                "type": "integer"
-              }
-            ]
-          },
-          "search": {
-            "oneOf": [
-              {
-                "type": "null"
-              },
-              {
-                "type": "string"
-              }
-            ]
-          }
-        },
-        "required": [],
-        "type": "object"
-      },
-      "IPageISubscription": {
-        "additionalProperties": false,
-        "description": "One page of a larger result set.",
-        "properties": {
-          "pagination": {
-            "$ref": "#/components/schemas/IPage.IPagination",
-            "description": "Position and size of this page within the complete result set."
-          },
-          "data": {
-            "description": "Records returned for the current page.",
-            "items": {
-              "$ref": "#/components/schemas/ISubscription"
-            },
-            "type": "array"
-          }
-        },
-        "required": [
-          "pagination",
-          "data"
-        ],
-        "type": "object"
-      },
-      "ISubscription": {
-        "additionalProperties": false,
-        "description": "Current user subscription projection.",
-        "properties": {
-          "id": {
-            "format": "uuid",
-            "type": "string"
-          },
-          "createdAt": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "community": {
-            "$ref": "#/components/schemas/ICommunity"
-          }
-        },
-        "required": [
-          "id",
-          "createdAt",
-          "community"
-        ],
-        "type": "object"
-      },
-      "IPage.IRequest": {
-        "additionalProperties": false,
-        "description": "Pagination controls accepted by list operations.",
+        "description": "Public catalog/search input.",
         "properties": {
           "page": {
             "description": "One-indexed page to read.",
@@ -2444,19 +2513,8 @@
               }
             ]
           },
-          "continuation": {
-            "description": "Opaque continuation returned by the previous page. It binds the\ntraversal scope, ordering, page size, and snapshot.",
-            "oneOf": [
-              {
-                "type": "null"
-              },
-              {
-                "type": "string"
-              }
-            ]
-          },
           "limit": {
-            "description": "Maximum number of records returned per page.",
+            "description": "Maximum number of records returned per page, from 1 through 100.",
             "oneOf": [
               {
                 "type": "null"
@@ -2467,239 +2525,244 @@
                 "type": "integer"
               }
             ]
+          },
+          "cursor": {
+            "description": "Opaque continuation from the preceding page.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "search": {
+            "description": "Case-insensitive name substring.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string"
+              }
+            ]
           }
         },
         "required": [],
         "type": "object"
       },
-      "IPost": {
+      "IRedditCommunity": {
         "additionalProperties": false,
-        "description": "Public post with one type-specific payload and live aggregates.",
+        "description": "Public community identity, lifecycle, and derived subscription count.",
         "properties": {
           "id": {
+            "description": "Community identifier.",
             "format": "uuid",
             "type": "string"
           },
-          "title": {
+          "name": {
+            "description": "Case-preserving public name.",
             "type": "string"
           },
-          "type": {
+          "description": {
+            "description": "Public description.",
+            "type": "string"
+          },
+          "icon": {
+            "description": "Accepted public icon payload.",
+            "type": "string"
+          },
+          "status": {
+            "description": "Active or archived status.",
             "oneOf": [
               {
-                "const": "image",
+                "const": "active",
                 "description": null,
                 "title": null
               },
               {
-                "const": "link",
-                "description": null,
-                "title": null
-              },
-              {
-                "const": "text",
+                "const": "archived",
                 "description": null,
                 "title": null
               }
             ]
           },
-          "text": {
-            "oneOf": [
-              {
-                "type": "null"
-              },
-              {
-                "type": "string"
-              }
-            ]
-          },
-          "url": {
-            "oneOf": [
-              {
-                "type": "null"
-              },
-              {
-                "format": "uri",
-                "type": "string"
-              }
-            ]
-          },
-          "imageUrl": {
-            "oneOf": [
-              {
-                "type": "null"
-              },
-              {
-                "type": "string"
-              }
-            ]
-          },
-          "author": {
-            "$ref": "#/components/schemas/IPost.IUser"
-          },
-          "community": {
-            "$ref": "#/components/schemas/IPost.ICommunity"
-          },
-          "score": {
-            "type": "number"
-          },
-          "commentCount": {
+          "subscriberCount": {
+            "description": "Count of active subscriptions.",
             "minimum": 0,
             "type": "integer"
           },
-          "createdAt": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "updatedAt": {
+          "owner": {
+            "description": "Current owner when the community is active.",
             "oneOf": [
               {
                 "type": "null"
               },
               {
-                "format": "date-time",
-                "type": "string"
+                "$ref": "#/components/schemas/IRedditCommunity.IOwner"
               }
             ]
           }
         },
         "required": [
           "id",
-          "title",
-          "type",
-          "text",
-          "url",
-          "imageUrl",
-          "author",
-          "community",
-          "score",
-          "commentCount",
-          "createdAt",
-          "updatedAt"
+          "name",
+          "description",
+          "icon",
+          "status",
+          "subscriberCount",
+          "owner"
         ],
         "type": "object"
       },
-      "IPost.ICreate": {
+      "IRedditCommunity.IOwner": {
         "additionalProperties": false,
-        "description": "Creation payload with exactly one payload variant.",
+        "description": "Public owner identity.",
         "properties": {
-          "title": {
-            "maxLength": 300,
-            "minLength": 1,
+          "id": {
+            "description": "Owner account identifier.",
+            "format": "uuid",
             "type": "string"
           },
-          "type": {
-            "oneOf": [
-              {
-                "const": "image",
-                "description": null,
-                "title": null
-              },
-              {
-                "const": "link",
-                "description": null,
-                "title": null
-              },
-              {
-                "const": "text",
-                "description": null,
-                "title": null
-              }
-            ]
-          },
-          "text": {
-            "oneOf": [
-              {
-                "type": "null"
-              },
-              {
-                "type": "string"
-              }
-            ]
-          },
-          "url": {
-            "oneOf": [
-              {
-                "type": "null"
-              },
-              {
-                "format": "uri",
-                "type": "string"
-              }
-            ]
-          },
-          "imageUrl": {
-            "oneOf": [
-              {
-                "type": "null"
-              },
-              {
-                "type": "string"
-              }
-            ]
+          "username": {
+            "description": "Owner username.",
+            "type": "string"
           }
         },
         "required": [
-          "title",
-          "type"
+          "id",
+          "username"
         ],
         "type": "object"
       },
-      "IPost.IUpdate": {
+      "IRedditCommunity.ICreate": {
         "additionalProperties": false,
-        "description": "Partial update preserving the existing payload type.",
+        "description": "Community creation input.",
         "properties": {
-          "title": {
-            "oneOf": [
-              {
-                "type": "null"
-              },
-              {
-                "maxLength": 300,
-                "minLength": 1,
-                "type": "string"
-              }
-            ]
+          "name": {
+            "description": "Unique public name.",
+            "maxLength": 50,
+            "minLength": 3,
+            "pattern": "^[A-Za-z0-9_-]+$",
+            "type": "string"
           },
-          "text": {
-            "oneOf": [
-              {
-                "type": "null"
-              },
-              {
-                "type": "string"
-              }
-            ]
+          "description": {
+            "description": "Nonblank public description.",
+            "maxLength": 1000,
+            "minLength": 1,
+            "type": "string"
           },
-          "url": {
-            "oneOf": [
-              {
-                "type": "null"
-              },
-              {
-                "format": "uri",
-                "type": "string"
-              }
-            ]
-          },
-          "imageUrl": {
-            "oneOf": [
-              {
-                "type": "null"
-              },
-              {
-                "type": "string"
-              }
-            ]
+          "icon": {
+            "description": "Accepted icon payload.",
+            "minLength": 1,
+            "type": "string"
           }
         },
-        "required": [],
+        "required": [
+          "name",
+          "description",
+          "icon"
+        ],
         "type": "object"
       },
-      "IPost.IRequest": {
+      "IPageIRedditPost.ISummary": {
         "additionalProperties": false,
-        "description": "Feed sort and page controls.",
+        "description": "One page of a larger result set.",
+        "properties": {
+          "pagination": {
+            "$ref": "#/components/schemas/IPage.IPagination",
+            "description": "Position and size of this page within the complete result set."
+          },
+          "data": {
+            "description": "Records returned for the current page.",
+            "items": {
+              "$ref": "#/components/schemas/IRedditPost.ISummary"
+            },
+            "type": "array"
+          },
+          "next": {
+            "description": "Opaque continuation for the next page, or null on the final page.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "reset": {
+            "description": "True when an invalid continuation caused a fresh traversal reset.",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "pagination",
+          "data",
+          "next",
+          "reset"
+        ],
+        "type": "object"
+      },
+      "IRedditPost.ISummary": {
+        "additionalProperties": false,
+        "description": "Feed and profile post card.",
+        "properties": {
+          "id": {
+            "description": "Post identifier.",
+            "format": "uuid",
+            "type": "string"
+          },
+          "title": {
+            "description": "Post title.",
+            "type": "string"
+          },
+          "author": {
+            "$ref": "#/components/schemas/IRedditUser.ISummary",
+            "description": "Author identity."
+          },
+          "community": {
+            "$ref": "#/components/schemas/IRedditCommunity.ISummary",
+            "description": "Community identity."
+          },
+          "preview": {
+            "description": "Type-specific preview.",
+            "type": "string"
+          },
+          "score": {
+            "description": "Current signed score.",
+            "type": "number"
+          },
+          "commentCount": {
+            "description": "Current available comment count.",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "createdAt": {
+            "description": "Immutable creation instant.",
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "author",
+          "community",
+          "preview",
+          "score",
+          "commentCount",
+          "createdAt"
+        ],
+        "type": "object"
+      },
+      "IRedditPost.IRequest": {
+        "additionalProperties": false,
+        "description": "Shared feed request.",
         "properties": {
           "page": {
+            "description": "One-indexed page to read.",
             "oneOf": [
               {
                 "type": "null"
@@ -2710,7 +2773,21 @@
               }
             ]
           },
-          "continuation": {
+          "limit": {
+            "description": "Maximum number of records returned per page, from 1 through 100.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "maximum": 100,
+                "minimum": 1,
+                "type": "integer"
+              }
+            ]
+          },
+          "cursor": {
+            "description": "Opaque continuation from the preceding page.",
             "oneOf": [
               {
                 "type": "null"
@@ -2720,19 +2797,8 @@
               }
             ]
           },
-          "limit": {
-            "oneOf": [
-              {
-                "type": "null"
-              },
-              {
-                "maximum": 100,
-                "minimum": 0,
-                "type": "integer"
-              }
-            ]
-          },
           "sort": {
+            "description": "Hot, New, Top, or Controversial.",
             "oneOf": [
               {
                 "type": "null"
@@ -2760,6 +2826,7 @@
             ]
           },
           "range": {
+            "description": "Required only with Top sort.",
             "oneOf": [
               {
                 "type": "null"
@@ -2795,19 +2862,959 @@
         "required": [],
         "type": "object"
       },
-      "IVote": {
+      "IRedditModeratorAssignment": {
         "additionalProperties": false,
-        "description": "Result of a post or comment vote transition.",
+        "description": "Private scoped moderator assignment projection.",
         "properties": {
-          "value": {
+          "id": {
+            "description": "Assignment identifier.",
+            "format": "uuid",
+            "type": "string"
+          },
+          "user": {
+            "$ref": "#/components/schemas/IRedditUser.ISummary",
+            "description": "Assigned moderator."
+          },
+          "active": {
+            "description": "Current assignment state.",
+            "type": "boolean"
+          },
+          "startedAt": {
+            "description": "Assignment start instant.",
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "user",
+          "active",
+          "startedAt"
+        ],
+        "type": "object"
+      },
+      "IRedditBan": {
+        "additionalProperties": false,
+        "description": "Private active community ban projection.",
+        "properties": {
+          "id": {
+            "description": "Ban identifier.",
+            "format": "uuid",
+            "type": "string"
+          },
+          "user": {
+            "$ref": "#/components/schemas/IRedditUser.ISummary",
+            "description": "Banned account."
+          },
+          "moderator": {
+            "$ref": "#/components/schemas/IRedditUser.ISummary",
+            "description": "Moderator who activated it."
+          },
+          "activatedAt": {
+            "description": "Activation instant.",
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "user",
+          "moderator",
+          "activatedAt"
+        ],
+        "type": "object"
+      },
+      "IPageIRedditBan": {
+        "additionalProperties": false,
+        "description": "One page of a larger result set.",
+        "properties": {
+          "pagination": {
+            "$ref": "#/components/schemas/IPage.IPagination",
+            "description": "Position and size of this page within the complete result set."
+          },
+          "data": {
+            "description": "Records returned for the current page.",
+            "items": {
+              "$ref": "#/components/schemas/IRedditBan"
+            },
+            "type": "array"
+          },
+          "next": {
+            "description": "Opaque continuation for the next page, or null on the final page.",
             "oneOf": [
               {
-                "const": -1,
+                "type": "null"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "reset": {
+            "description": "True when an invalid continuation caused a fresh traversal reset.",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "pagination",
+          "data",
+          "next",
+          "reset"
+        ],
+        "type": "object"
+      },
+      "IPage.IRequest": {
+        "additionalProperties": false,
+        "description": "Pagination controls accepted by list operations.",
+        "properties": {
+          "page": {
+            "description": "One-indexed page to read.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "minimum": 1,
+                "type": "integer"
+              }
+            ]
+          },
+          "limit": {
+            "description": "Maximum number of records returned per page, from 1 through 100.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "maximum": 100,
+                "minimum": 1,
+                "type": "integer"
+              }
+            ]
+          },
+          "cursor": {
+            "description": "Opaque continuation from the preceding page.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
+      "IRedditPost": {
+        "additionalProperties": false,
+        "description": "Complete public post response.",
+        "properties": {
+          "id": {
+            "description": "Post identifier.",
+            "format": "uuid",
+            "type": "string"
+          },
+          "author": {
+            "$ref": "#/components/schemas/IRedditUser.ISummary",
+            "description": "Original author."
+          },
+          "community": {
+            "$ref": "#/components/schemas/IRedditCommunity.ISummary",
+            "description": "Containing community."
+          },
+          "title": {
+            "description": "Reader-facing title.",
+            "type": "string"
+          },
+          "type": {
+            "description": "Text, link, or image discriminator.",
+            "oneOf": [
+              {
+                "const": "image",
                 "description": null,
                 "title": null
               },
               {
-                "const": 0,
+                "const": "link",
+                "description": null,
+                "title": null
+              },
+              {
+                "const": "text",
+                "description": null,
+                "title": null
+              }
+            ]
+          },
+          "text": {
+            "description": "Full text for a text post.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "url": {
+            "description": "Full URL for a link post.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "image": {
+            "description": "Full image payload for an image post.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "score": {
+            "description": "Current signed vote score.",
+            "type": "number"
+          },
+          "commentCount": {
+            "description": "Current available comment count.",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "createdAt": {
+            "description": "Immutable creation instant.",
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "author",
+          "community",
+          "title",
+          "type",
+          "text",
+          "url",
+          "image",
+          "score",
+          "commentCount",
+          "createdAt"
+        ],
+        "type": "object"
+      },
+      "IRedditReport": {
+        "additionalProperties": false,
+        "description": "Private pending or resolved content report.",
+        "properties": {
+          "id": {
+            "description": "Report identifier.",
+            "format": "uuid",
+            "type": "string"
+          },
+          "targetType": {
+            "description": "Target kind, derived from the target relation.",
+            "oneOf": [
+              {
+                "const": "comment",
+                "description": null,
+                "title": null
+              },
+              {
+                "const": "post",
+                "description": null,
+                "title": null
+              }
+            ]
+          },
+          "post": {
+            "description": "Reported post, when applicable.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/IRedditPost"
+              }
+            ]
+          },
+          "comment": {
+            "description": "Reported comment, when applicable.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/IRedditComment"
+              }
+            ]
+          },
+          "reporter": {
+            "description": "Reporting account.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/IRedditUser.ISummary"
+              }
+            ]
+          },
+          "reason": {
+            "description": "Trimmed report reason.",
+            "type": "string"
+          },
+          "outcome": {
+            "description": "Unresolved, approved, or dismissed.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "const": "approved",
+                "description": null,
+                "title": null
+              },
+              {
+                "const": "dismissed",
+                "description": null,
+                "title": null
+              }
+            ]
+          },
+          "createdAt": {
+            "description": "Submission instant.",
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "targetType",
+          "post",
+          "comment",
+          "reporter",
+          "reason",
+          "outcome",
+          "createdAt"
+        ],
+        "type": "object"
+      },
+      "IRedditReport.ICreate": {
+        "additionalProperties": false,
+        "description": "Report submission input.",
+        "properties": {
+          "targetType": {
+            "description": "Target kind.",
+            "oneOf": [
+              {
+                "const": "comment",
+                "description": null,
+                "title": null
+              },
+              {
+                "const": "post",
+                "description": null,
+                "title": null
+              }
+            ]
+          },
+          "targetId": {
+            "description": "Target identifier.",
+            "format": "uuid",
+            "type": "string"
+          },
+          "reason": {
+            "description": "Nonblank bounded reason.",
+            "maxLength": 2000,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "targetType",
+          "targetId",
+          "reason"
+        ],
+        "type": "object"
+      },
+      "IPageIRedditReport": {
+        "additionalProperties": false,
+        "description": "One page of a larger result set.",
+        "properties": {
+          "pagination": {
+            "$ref": "#/components/schemas/IPage.IPagination",
+            "description": "Position and size of this page within the complete result set."
+          },
+          "data": {
+            "description": "Records returned for the current page.",
+            "items": {
+              "$ref": "#/components/schemas/IRedditReport"
+            },
+            "type": "array"
+          },
+          "next": {
+            "description": "Opaque continuation for the next page, or null on the final page.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "reset": {
+            "description": "True when an invalid continuation caused a fresh traversal reset.",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "pagination",
+          "data",
+          "next",
+          "reset"
+        ],
+        "type": "object"
+      },
+      "IPageIRedditModerationAction": {
+        "additionalProperties": false,
+        "description": "One page of a larger result set.",
+        "properties": {
+          "pagination": {
+            "$ref": "#/components/schemas/IPage.IPagination",
+            "description": "Position and size of this page within the complete result set."
+          },
+          "data": {
+            "description": "Records returned for the current page.",
+            "items": {
+              "$ref": "#/components/schemas/IRedditModerationAction"
+            },
+            "type": "array"
+          },
+          "next": {
+            "description": "Opaque continuation for the next page, or null on the final page.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "reset": {
+            "description": "True when an invalid continuation caused a fresh traversal reset.",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "pagination",
+          "data",
+          "next",
+          "reset"
+        ],
+        "type": "object"
+      },
+      "IRedditModerationAction": {
+        "additionalProperties": false,
+        "description": "Private resolved moderation history record.",
+        "properties": {
+          "id": {
+            "description": "History identifier.",
+            "format": "uuid",
+            "type": "string"
+          },
+          "outcome": {
+            "description": "Approved or dismissed outcome.",
+            "oneOf": [
+              {
+                "const": "approved",
+                "description": null,
+                "title": null
+              },
+              {
+                "const": "dismissed",
+                "description": null,
+                "title": null
+              }
+            ]
+          },
+          "targetType": {
+            "description": "Target kind.",
+            "oneOf": [
+              {
+                "const": "comment",
+                "description": null,
+                "title": null
+              },
+              {
+                "const": "post",
+                "description": null,
+                "title": null
+              }
+            ]
+          },
+          "reporter": {
+            "description": "Former reporter, when still identifiable.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/IRedditUser.ISummary"
+              }
+            ]
+          },
+          "moderator": {
+            "description": "Acting moderator, when still identifiable.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/IRedditUser.ISummary"
+              }
+            ]
+          },
+          "reason": {
+            "description": "Original report reason.",
+            "type": "string"
+          },
+          "decidedAt": {
+            "description": "Decision instant.",
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "outcome",
+          "targetType",
+          "reporter",
+          "moderator",
+          "reason",
+          "decidedAt"
+        ],
+        "type": "object"
+      },
+      "IRedditPost.ICreate": {
+        "additionalProperties": false,
+        "description": "New post input.",
+        "properties": {
+          "title": {
+            "description": "Required title.",
+            "maxLength": 300,
+            "minLength": 1,
+            "type": "string"
+          },
+          "type": {
+            "description": "Selected payload kind.",
+            "oneOf": [
+              {
+                "const": "image",
+                "description": null,
+                "title": null
+              },
+              {
+                "const": "link",
+                "description": null,
+                "title": null
+              },
+              {
+                "const": "text",
+                "description": null,
+                "title": null
+              }
+            ]
+          },
+          "text": {
+            "description": "Text payload for text posts.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "maxLength": 40000,
+                "minLength": 1,
+                "type": "string"
+              }
+            ]
+          },
+          "url": {
+            "description": "Absolute HTTP(S) URL for link posts.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "maxLength": 2048,
+                "minLength": 1,
+                "type": "string"
+              }
+            ]
+          },
+          "image": {
+            "description": "Image payload for image posts.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          }
+        },
+        "required": [
+          "title",
+          "type"
+        ],
+        "type": "object"
+      },
+      "IRedditPost.IUpdate": {
+        "additionalProperties": false,
+        "description": "Author-only mutable post input.",
+        "properties": {
+          "title": {
+            "description": "Replacement title, when supplied.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "maxLength": 300,
+                "minLength": 1,
+                "type": "string"
+              }
+            ]
+          },
+          "text": {
+            "description": "Replacement payload within the original type.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "maxLength": 40000,
+                "minLength": 1,
+                "type": "string"
+              }
+            ]
+          },
+          "url": {
+            "description": "Replacement URL within the original type.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "maxLength": 2048,
+                "minLength": 1,
+                "type": "string"
+              }
+            ]
+          },
+          "image": {
+            "description": "Replacement image within the original type.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
+      "IPageIRedditSubscription": {
+        "additionalProperties": false,
+        "description": "One page of a larger result set.",
+        "properties": {
+          "pagination": {
+            "$ref": "#/components/schemas/IPage.IPagination",
+            "description": "Position and size of this page within the complete result set."
+          },
+          "data": {
+            "description": "Records returned for the current page.",
+            "items": {
+              "$ref": "#/components/schemas/IRedditSubscription"
+            },
+            "type": "array"
+          },
+          "next": {
+            "description": "Opaque continuation for the next page, or null on the final page.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "reset": {
+            "description": "True when an invalid continuation caused a fresh traversal reset.",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "pagination",
+          "data",
+          "next",
+          "reset"
+        ],
+        "type": "object"
+      },
+      "IRedditSubscription": {
+        "additionalProperties": false,
+        "description": "One user-community subscription projection.",
+        "properties": {
+          "id": {
+            "description": "Subscription identifier.",
+            "format": "uuid",
+            "type": "string"
+          },
+          "community": {
+            "$ref": "#/components/schemas/IRedditCommunity.ISummary",
+            "description": "Subscribed community."
+          },
+          "active": {
+            "description": "Current active state.",
+            "type": "boolean"
+          },
+          "startedAt": {
+            "description": "Current subscription start instant.",
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "community",
+          "active",
+          "startedAt"
+        ],
+        "type": "object"
+      },
+      "IPageIRedditComment.ISummary": {
+        "additionalProperties": false,
+        "description": "One page of a larger result set.",
+        "properties": {
+          "pagination": {
+            "$ref": "#/components/schemas/IPage.IPagination",
+            "description": "Position and size of this page within the complete result set."
+          },
+          "data": {
+            "description": "Records returned for the current page.",
+            "items": {
+              "$ref": "#/components/schemas/IRedditComment.ISummary"
+            },
+            "type": "array"
+          },
+          "next": {
+            "description": "Opaque continuation for the next page, or null on the final page.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "reset": {
+            "description": "True when an invalid continuation caused a fresh traversal reset.",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "pagination",
+          "data",
+          "next",
+          "reset"
+        ],
+        "type": "object"
+      },
+      "IRedditComment.ISummary": {
+        "additionalProperties": false,
+        "description": "Compact comment used in profile authorship.",
+        "properties": {
+          "id": {
+            "description": "Comment identifier.",
+            "format": "uuid",
+            "type": "string"
+          },
+          "author": {
+            "description": "Author identity, or null after de-identification.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/IRedditUser.ISummary"
+              }
+            ]
+          },
+          "text": {
+            "description": "Text, or null for a deleted marker.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "deleted": {
+            "description": "Whether content was deleted.",
+            "type": "boolean"
+          },
+          "score": {
+            "description": "Current signed score.",
+            "type": "number"
+          },
+          "createdAt": {
+            "description": "Immutable creation instant.",
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "author",
+          "text",
+          "deleted",
+          "score",
+          "createdAt"
+        ],
+        "type": "object"
+      },
+      "IRedditUser": {
+        "additionalProperties": false,
+        "description": "Public account identity and available authored content.",
+        "properties": {
+          "id": {
+            "description": "Stable public account identifier.",
+            "format": "uuid",
+            "type": "string"
+          },
+          "username": {
+            "description": "Case-preserving public username.",
+            "type": "string"
+          },
+          "displayName": {
+            "description": "Editable public display name.",
+            "type": "string"
+          },
+          "bio": {
+            "description": "Editable public biography, possibly empty.",
+            "type": "string"
+          },
+          "avatar": {
+            "description": "Optional accepted avatar payload.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "karma": {
+            "description": "Signed karma from available authored content.",
+            "type": "number"
+          },
+          "posts": {
+            "$ref": "#/components/schemas/IPageIRedditPost.ISummary",
+            "description": "Independently paginated available posts."
+          },
+          "comments": {
+            "$ref": "#/components/schemas/IPageIRedditComment.ISummary",
+            "description": "Independently paginated available comments."
+          }
+        },
+        "required": [
+          "id",
+          "username",
+          "displayName",
+          "bio",
+          "avatar",
+          "karma",
+          "posts",
+          "comments"
+        ],
+        "type": "object"
+      },
+      "IRedditUser.IUpdate": {
+        "additionalProperties": false,
+        "description": "Partial current-profile update.",
+        "properties": {
+          "displayName": {
+            "description": "New visible display name, when supplied.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "minLength": 1,
+                "type": "string"
+              }
+            ]
+          },
+          "bio": {
+            "description": "New biography, including empty string to clear it.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "avatar": {
+            "description": "New avatar payload or null to remove it.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
+      "IRedditVote": {
+        "additionalProperties": false,
+        "description": "One user's active signed evaluation of a post or comment.",
+        "properties": {
+          "id": {
+            "description": "Vote identifier.",
+            "format": "uuid",
+            "type": "string"
+          },
+          "value": {
+            "description": "Signed direction: +1 upvote or -1 downvote.",
+            "oneOf": [
+              {
+                "const": -1,
                 "description": null,
                 "title": null
               },
@@ -2818,29 +3825,25 @@
               }
             ]
           },
-          "score": {
-            "type": "number"
-          },
-          "karma": {
-            "type": "number"
-          },
-          "targetId": {
-            "format": "uuid",
+          "createdAt": {
+            "description": "Creation or latest transition instant.",
+            "format": "date-time",
             "type": "string"
           }
         },
         "required": [
+          "id",
           "value",
-          "score",
-          "karma",
-          "targetId"
+          "createdAt"
         ],
         "type": "object"
       },
-      "IVote.IRequest": {
+      "IRedditVote.IRequest": {
         "additionalProperties": false,
+        "description": "Vote state command.",
         "properties": {
           "value": {
+            "description": "Desired signed direction.",
             "oneOf": [
               {
                 "const": -1,
@@ -2857,389 +3860,6 @@
         },
         "required": [
           "value"
-        ],
-        "type": "object"
-      },
-      "IComment": {
-        "additionalProperties": false,
-        "description": "Public nested comment node and its descendants.",
-        "properties": {
-          "id": {
-            "format": "uuid",
-            "type": "string"
-          },
-          "author": {
-            "oneOf": [
-              {
-                "type": "null"
-              },
-              {
-                "$ref": "#/components/schemas/IComment.IUser"
-              }
-            ]
-          },
-          "text": {
-            "oneOf": [
-              {
-                "type": "null"
-              },
-              {
-                "type": "string"
-              }
-            ]
-          },
-          "deleted": {
-            "type": "boolean"
-          },
-          "score": {
-            "type": "number"
-          },
-          "createdAt": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "updatedAt": {
-            "oneOf": [
-              {
-                "type": "null"
-              },
-              {
-                "format": "date-time",
-                "type": "string"
-              }
-            ]
-          },
-          "children": {
-            "items": {
-              "$ref": "#/components/schemas/IComment"
-            },
-            "type": "array"
-          }
-        },
-        "required": [
-          "id",
-          "author",
-          "text",
-          "deleted",
-          "score",
-          "createdAt",
-          "updatedAt",
-          "children"
-        ],
-        "type": "object"
-      },
-      "IComment.IUser": {
-        "additionalProperties": false,
-        "properties": {
-          "id": {
-            "format": "uuid",
-            "type": "string"
-          },
-          "username": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "username"
-        ],
-        "type": "object"
-      },
-      "IComment.ICreate": {
-        "additionalProperties": false,
-        "properties": {
-          "text": {
-            "maxLength": 10000,
-            "minLength": 1,
-            "type": "string"
-          }
-        },
-        "required": [
-          "text"
-        ],
-        "type": "object"
-      },
-      "IPageIComment": {
-        "additionalProperties": false,
-        "description": "One page of a larger result set.",
-        "properties": {
-          "pagination": {
-            "$ref": "#/components/schemas/IPage.IPagination",
-            "description": "Position and size of this page within the complete result set."
-          },
-          "data": {
-            "description": "Records returned for the current page.",
-            "items": {
-              "$ref": "#/components/schemas/IComment"
-            },
-            "type": "array"
-          }
-        },
-        "required": [
-          "pagination",
-          "data"
-        ],
-        "type": "object"
-      },
-      "IComment.IRequest": {
-        "additionalProperties": false,
-        "properties": {
-          "page": {
-            "oneOf": [
-              {
-                "type": "null"
-              },
-              {
-                "minimum": 1,
-                "type": "integer"
-              }
-            ]
-          },
-          "continuation": {
-            "oneOf": [
-              {
-                "type": "null"
-              },
-              {
-                "type": "string"
-              }
-            ]
-          },
-          "limit": {
-            "oneOf": [
-              {
-                "type": "null"
-              },
-              {
-                "maximum": 100,
-                "minimum": 0,
-                "type": "integer"
-              }
-            ]
-          },
-          "sort": {
-            "oneOf": [
-              {
-                "type": "null"
-              },
-              {
-                "const": "best",
-                "description": null,
-                "title": null
-              },
-              {
-                "const": "controversial",
-                "description": null,
-                "title": null
-              },
-              {
-                "const": "new",
-                "description": null,
-                "title": null
-              }
-            ]
-          }
-        },
-        "required": [],
-        "type": "object"
-      },
-      "IComment.IUpdate": {
-        "additionalProperties": false,
-        "properties": {
-          "text": {
-            "maxLength": 10000,
-            "minLength": 1,
-            "type": "string"
-          }
-        },
-        "required": [
-          "text"
-        ],
-        "type": "object"
-      },
-      "IBan": {
-        "additionalProperties": false,
-        "description": "Private active community-ban projection.",
-        "properties": {
-          "id": {
-            "format": "uuid",
-            "type": "string"
-          },
-          "user": {
-            "$ref": "#/components/schemas/IBan.IUser"
-          },
-          "actor": {
-            "$ref": "#/components/schemas/IBan.IUser"
-          },
-          "createdAt": {
-            "format": "date-time",
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "user",
-          "actor",
-          "createdAt"
-        ],
-        "type": "object"
-      },
-      "IBan.IUser": {
-        "additionalProperties": false,
-        "properties": {
-          "id": {
-            "format": "uuid",
-            "type": "string"
-          },
-          "username": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "username"
-        ],
-        "type": "object"
-      },
-      "IPageIBan": {
-        "additionalProperties": false,
-        "description": "One page of a larger result set.",
-        "properties": {
-          "pagination": {
-            "$ref": "#/components/schemas/IPage.IPagination",
-            "description": "Position and size of this page within the complete result set."
-          },
-          "data": {
-            "description": "Records returned for the current page.",
-            "items": {
-              "$ref": "#/components/schemas/IBan"
-            },
-            "type": "array"
-          }
-        },
-        "required": [
-          "pagination",
-          "data"
-        ],
-        "type": "object"
-      },
-      "IReport": {
-        "additionalProperties": false,
-        "description": "Private moderation report projection.",
-        "properties": {
-          "id": {
-            "format": "uuid",
-            "type": "string"
-          },
-          "targetId": {
-            "format": "uuid",
-            "type": "string"
-          },
-          "targetType": {
-            "oneOf": [
-              {
-                "const": "comment",
-                "description": null,
-                "title": null
-              },
-              {
-                "const": "post",
-                "description": null,
-                "title": null
-              }
-            ]
-          },
-          "reason": {
-            "type": "string"
-          },
-          "status": {
-            "oneOf": [
-              {
-                "const": "approved",
-                "description": null,
-                "title": null
-              },
-              {
-                "const": "dismissed",
-                "description": null,
-                "title": null
-              },
-              {
-                "const": "unresolved",
-                "description": null,
-                "title": null
-              }
-            ]
-          },
-          "reporter": {
-            "$ref": "#/components/schemas/IReport.IUser"
-          },
-          "createdAt": {
-            "format": "date-time",
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "targetId",
-          "targetType",
-          "reason",
-          "status",
-          "reporter",
-          "createdAt"
-        ],
-        "type": "object"
-      },
-      "IReport.IUser": {
-        "additionalProperties": false,
-        "properties": {
-          "id": {
-            "format": "uuid",
-            "type": "string"
-          },
-          "username": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "username"
-        ],
-        "type": "object"
-      },
-      "IReport.ICreate": {
-        "additionalProperties": false,
-        "properties": {
-          "reason": {
-            "maxLength": 2000,
-            "minLength": 1,
-            "type": "string"
-          }
-        },
-        "required": [
-          "reason"
-        ],
-        "type": "object"
-      },
-      "IPageIReport": {
-        "additionalProperties": false,
-        "description": "One page of a larger result set.",
-        "properties": {
-          "pagination": {
-            "$ref": "#/components/schemas/IPage.IPagination",
-            "description": "Position and size of this page within the complete result set."
-          },
-          "data": {
-            "description": "Records returned for the current page.",
-            "items": {
-              "$ref": "#/components/schemas/IReport"
-            },
-            "type": "array"
-          }
-        },
-        "required": [
-          "pagination",
-          "data"
         ],
         "type": "object"
       }

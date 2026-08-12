@@ -1,2 +1,0 @@
-import * as core from "@nestia/core"; import { Controller } from "@nestjs/common"; import type { IAuth, IJournal } from "@benchmark/erp-api"; import { JournalProvider } from "../providers/JournalProvider";
-/** Posts a balanced journal and freezes its financial history. */ @Controller("journal-post") export class JournalPostController { @core.TypedRoute.Post(":id") public async post(@core.TypedHeaders() headers: IAuth.IHeaders, @core.TypedParam("id") id: string): Promise<IJournal> { return JournalProvider.post(headers, id); } }

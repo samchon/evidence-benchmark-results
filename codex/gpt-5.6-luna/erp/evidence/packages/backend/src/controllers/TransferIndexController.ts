@@ -1,2 +1,0 @@
-import * as core from "@nestia/core"; import { Controller } from "@nestjs/common"; import type { IAuth, IPage, ITransfer } from "@benchmark/erp-api"; import { InventoryOperationsProvider } from "../providers/InventoryOperationsProvider";
-/** Lists warehouse transfers. */ @Controller("transfer-search") export class TransferIndexController { @core.TypedRoute.Patch() public async index(@core.TypedHeaders() h: IAuth.IHeaders, @core.TypedBody() input: ITransfer.IRequest): Promise<IPage<ITransfer>> { return InventoryOperationsProvider.transferIndex(h, input); } }

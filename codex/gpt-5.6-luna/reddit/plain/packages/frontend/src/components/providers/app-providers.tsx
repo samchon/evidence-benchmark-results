@@ -1,7 +1,15 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { useState, type ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { BrowserRouter } from "react-router-dom";
 import { Toaster } from "sonner";
+
+import {
+  applySession,
+  clearSession,
+  readStoredSession,
+  type StoredSession,
+} from "@/lib/client";
+import { SessionContext, type SessionContextValue } from "@/lib/session";
 
 /** Installs the shared routing, query, and notification providers. */
 export function AppProviders(props: { children: ReactNode }) {
@@ -20,10 +28,31 @@ export function AppProviders(props: { children: ReactNode }) {
         },
       }),
   );
+  const [session, setSession] = useState<StoredSession | null>(() => {
+    const stored = readStoredSession();
+    if (stored !== null) applySession(stored);
+    return stored;
+  });
+  const sessionValue = useMemo<SessionContextValue>(
+    () => ({
+      session,
+      signIn: (next) => {
+        applySession(next);
+        setSession(next);
+      },
+      signOut: () => {
+        clearSession();
+        setSession(null);
+      },
+    }),
+    [session],
+  );
   return (
     <BrowserRouter>
       <QueryClientProvider client={queryClient}>
-        {props.children}
+        <SessionContext.Provider value={sessionValue}>
+          {props.children}
+        </SessionContext.Provider>
         <Toaster position="top-right" richColors />
       </QueryClientProvider>
     </BrowserRouter>

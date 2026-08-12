@@ -1,2 +1,0 @@
-import * as core from "@nestia/core"; import { Controller } from "@nestjs/common"; import type { IAuth, IPage, ISalesQuote } from "@benchmark/erp-api"; import { SalesProvider } from "../providers/SalesProvider";
-/** Lists customer sales quotes. */ @Controller("sales-quote-search") export class SalesQuoteIndexController { @core.TypedRoute.Patch() public async index(@core.TypedHeaders() h: IAuth.IHeaders, @core.TypedBody() input: ISalesQuote.IRequest): Promise<IPage<ISalesQuote>> { return SalesProvider.quoteIndex(h, input); } }

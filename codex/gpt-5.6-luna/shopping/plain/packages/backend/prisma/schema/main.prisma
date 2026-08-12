@@ -12,3 +12,621 @@ generator markdown {
   provider = "prisma-markdown"
   output   = "../../../../docs/ERD.md"
 }
+
+/// A registered customer identity.
+model shopping_customers {
+  /// Primary identifier.
+  id String @id
+  /// Canonical login email.
+  email String
+  /// Case-insensitive trimmed email used for uniqueness.
+  email_normalized String @unique
+  /// Password hash owned by the identity.
+  password_hash String
+  /// Current login state: active, banned, or deleted.
+  login_state String
+  /// Registration instant.
+  created_at DateTime
+  /// Deletion instant, when closed.
+  deleted_at DateTime?
+  @@index([created_at])
+}
+
+/// The one live profile belonging to a customer.
+model shopping_customer_profiles {
+  /// Primary identifier.
+  id String @id
+  /// Owning customer identifier.
+  customer_id String @unique
+  /// Customer-facing display name.
+  display_name String
+  /// Customer contact phone number.
+  phone_number String
+  /// Last modification instant.
+  updated_at DateTime
+}
+
+/// An authenticated customer session.
+model shopping_customer_sessions {
+  /// Primary identifier.
+  id String @id
+  /// Owning customer identifier.
+  customer_id String
+  /// Hash of the access token.
+  access_hash String @unique
+  /// Hash of the refresh token.
+  refresh_hash String @unique
+  /// Session expiry instant.
+  expired_at DateTime
+  /// Revocation instant.
+  revoked_at DateTime?
+  /// Creation instant.
+  created_at DateTime
+  @@index([customer_id])
+}
+
+/// A registered seller identity.
+model shopping_sellers {
+  /// Primary identifier.
+  id String @id
+  /// Login email.
+  email String
+  /// Canonical login email used for uniqueness.
+  email_normalized String @unique
+  /// Password hash owned by the identity.
+  password_hash String
+  /// Approval lifecycle state.
+  approval_state String
+  /// Rejection explanation from the latest decision.
+  rejection_reason String?
+  /// Whether catalog activity is suspended.
+  suspended Boolean
+  /// Current login state: active, banned, or deleted.
+  login_state String
+  /// Registration instant.
+  created_at DateTime
+  /// Deletion instant, when closed.
+  deleted_at DateTime?
+  @@index([created_at])
+}
+
+/// One recorded out-of-band password recovery delivery.
+model shopping_recovery_deliveries {
+  /// Primary identifier.
+  id String @id
+  /// Identity kind receiving the delivery.
+  actor_type String
+  /// Identity receiving the delivery.
+  actor_id String
+  /// Registered email recipient.
+  recipient String
+  /// Delivery effect kind.
+  kind String
+  /// Serialized delivery payload retained for the configured delivery sink.
+  payload String
+  /// Hash used to consume the one-time secret without searching plaintext.
+  secret_hash String @unique
+  /// Delivery creation instant.
+  created_at DateTime
+  /// Expiry instant.
+  expires_at DateTime
+  /// Consumption instant, when recovery succeeds.
+  consumed_at DateTime?
+  @@index([actor_type, actor_id, created_at])
+  @@index([expires_at, consumed_at])
+}
+
+/// The one live shop profile belonging to a seller.
+model shopping_seller_profiles {
+  /// Primary identifier.
+  id String @id
+  /// Owning seller identifier.
+  seller_id String @unique
+  /// Public shop name.
+  shop_name String
+  /// Public shop description.
+  shop_description String
+  /// Optional logo reference.
+  logo String?
+  /// Last modification instant.
+  updated_at DateTime
+}
+
+/// An authenticated seller session.
+model shopping_seller_sessions {
+  /// Primary identifier.
+  id String @id
+  /// Owning seller identifier.
+  seller_id String
+  /// Hash of the access token.
+  access_hash String @unique
+  /// Hash of the refresh token.
+  refresh_hash String @unique
+  /// Session expiry instant.
+  expired_at DateTime
+  /// Revocation instant.
+  revoked_at DateTime?
+  /// Creation instant.
+  created_at DateTime
+  @@index([seller_id])
+}
+
+/// A platform grade held by a customer or seller identity.
+model shopping_administrator_grades {
+  /// Primary identifier.
+  id String @id
+  /// Identity kind: customer or seller.
+  actor_type String
+  /// Identity identifier.
+  actor_id String
+  /// Grade vocabulary: regularAdministrator or superAdministrator.
+  grade String
+  /// Grant instant.
+  created_at DateTime
+  @@unique([actor_type, actor_id, grade])
+  @@index([actor_type, actor_id])
+}
+
+/// An application for regular administrator authority.
+model shopping_administrator_applications {
+  /// Primary identifier.
+  id String @id
+  /// Applicant kind.
+  actor_type String
+  /// Applicant identity.
+  actor_id String
+  /// Applicant reason.
+  reason String
+  /// Application state.
+  status String
+  /// Non-null only while this actor has a pending application.
+  pending_key String? @unique
+  /// Deciding super administrator identity.
+  decided_by String?
+  /// Decision instant.
+  decided_at DateTime?
+  /// Creation instant.
+  created_at DateTime
+  @@index([actor_type, actor_id, status])
+  @@index([status, created_at])
+}
+
+/// A seller approval submission and its final decision.
+model shopping_seller_approval_requests {
+  /// Primary identifier.
+  id String @id
+  /// Seller identity.
+  seller_id String
+  /// Request state.
+  status String
+  /// Non-null only while this seller has a pending request.
+  pending_key String? @unique
+  /// Rejection reason.
+  reason String?
+  /// Deciding administrator identity.
+  decided_by String?
+  /// Decision instant.
+  decided_at DateTime?
+  /// Creation instant.
+  created_at DateTime
+  @@index([seller_id, status])
+  @@index([status, created_at])
+}
+
+/// A reusable customer-owned shipping destination.
+model shopping_shipping_addresses {
+  /// Primary identifier.
+  id String @id
+  /// Owning customer identifier.
+  customer_id String
+  /// Recipient name.
+  recipient_name String
+  /// Recipient phone number.
+  recipient_phone String
+  /// Street address.
+  street_address String
+  /// City.
+  city String
+  /// State or province.
+  state_or_province String
+  /// Postal code.
+  postal_code String
+  /// Country.
+  country String
+  /// Whether this is the customer's current default.
+  is_default Boolean
+  /// Creation instant.
+  created_at DateTime
+  @@index([customer_id, created_at])
+}
+
+/// A two-level shared product category.
+model shopping_categories {
+  /// Primary identifier.
+  id String @id
+  /// Category name.
+  name String
+  /// Category description.
+  description String
+  /// Direct top-level parent, or null for a top-level category.
+  parent_id String?
+  /// Creation instant.
+  created_at DateTime
+  /// Retirement instant.
+  deleted_at DateTime?
+  @@index([parent_id])
+}
+
+/// Seller-owned live merchandise.
+model shopping_products {
+  /// Primary identifier.
+  id String @id
+  /// Owning seller identifier.
+  seller_id String
+  /// Current category, or null after category retirement.
+  category_id String?
+  /// Product name.
+  name String
+  /// Product description.
+  description String
+  /// Base price.
+  base_price Float
+  /// Creation instant.
+  created_at DateTime
+  /// Retirement instant.
+  deleted_at DateTime?
+  @@index([seller_id, created_at])
+  @@index([category_id, created_at])
+}
+
+/// One ordered product image.
+model shopping_product_images {
+  /// Primary identifier.
+  id String @id
+  /// Product identifier.
+  product_id String
+  /// Image reference.
+  url String
+  /// Zero-based display order.
+  display_order Int
+  /// Creation instant.
+  created_at DateTime
+  @@index([product_id, display_order])
+}
+
+/// One live or retired purchasable SKU.
+model shopping_variants {
+  /// Primary identifier.
+  id String @id
+  /// Parent product identifier.
+  product_id String
+  /// Seller identifier retained for direct ownership checks.
+  seller_id String
+  /// SKU code as entered.
+  sku String
+  /// Normalized globally unique SKU code.
+  sku_normalized String @unique
+  /// JSON encoded option name/value pairs.
+  options String
+  /// Optional price override; null means use product base price.
+  price_override Float?
+  /// Retirement instant.
+  deleted_at DateTime?
+  /// Creation instant.
+  created_at DateTime
+  @@index([product_id, deleted_at])
+}
+
+/// An append-only signed inventory movement.
+model shopping_inventory_movements {
+  /// Primary identifier.
+  id String @id
+  /// Variant identity, retained after retirement.
+  variant_id String
+  /// Signed whole-unit quantity change.
+  quantity_change Int
+  /// Business cause.
+  reason String
+  /// Related order item when automatic.
+  order_item_id String?
+  /// Creation instant.
+  created_at DateTime
+  @@index([variant_id, created_at])
+}
+
+/// One customer-product wishlist relation.
+model shopping_wishlist_entries {
+  /// Primary identifier.
+  id String @id
+  /// Owning customer identifier.
+  customer_id String
+  /// Saved product identifier.
+  product_id String
+  /// Saved instant.
+  created_at DateTime
+  @@unique([customer_id, product_id])
+  @@index([customer_id, created_at])
+}
+
+/// One customer-variant cart line.
+model shopping_cart_lines {
+  /// Primary identifier.
+  id String @id
+  /// Owning customer identifier.
+  customer_id String
+  /// Selected variant identifier.
+  variant_id String
+  /// Requested whole-unit quantity.
+  quantity Int
+  /// Creation instant.
+  created_at DateTime
+  @@unique([customer_id, variant_id])
+  @@index([customer_id, created_at])
+}
+
+/// One successful or retained payment attempt.
+model shopping_checkout_attempts {
+  /// Primary identifier.
+  id String @id
+  /// Public payment-attempt identifier.
+  attempt_id String @unique
+  /// Purchasing customer identifier.
+  customer_id String
+  /// Serialized reviewed variant quantities.
+  lines String
+  /// Serialized selected shipping address.
+  address String
+  /// Reviewed total amount.
+  amount Float
+  /// Attempt state: pending, succeeded, failed, or unknown.
+  status String
+  /// Created order identifier after success.
+  order_id String?
+  /// Creation instant.
+  created_at DateTime
+}
+
+/// Temporary quantity reserved while one payment attempt is being resolved.
+model shopping_checkout_holds {
+  /// Primary identifier.
+  id String @id
+  /// Public payment-attempt identifier owning this hold.
+  attempt_id String
+  /// Variant whose available quantity is held.
+  variant_id String
+  /// Whole-unit quantity reserved for this attempt.
+  quantity Int
+  /// Creation instant.
+  created_at DateTime
+  @@unique([attempt_id, variant_id])
+  @@index([variant_id, created_at])
+}
+
+/// Immutable payment and refund evidence.
+model shopping_payment_transactions {
+  /// Primary identifier.
+  id String @id
+  /// Payment attempt or deterministic refund reference.
+  reference_id String @unique
+  /// Transaction kind: payment or refund.
+  kind String
+  /// Order receiving or reversing the money.
+  order_id String
+  /// Order item for a line refund, otherwise null for the order payment.
+  order_item_id String?
+  /// Exact money amount.
+  amount Float
+  /// Creation instant.
+  created_at DateTime
+  @@index([order_id, created_at])
+  @@index([order_item_id, kind])
+}
+
+/// One durable order created by successful payment.
+model shopping_orders {
+  /// Primary identifier.
+  id String @id
+  /// Immutable globally unique order number.
+  order_number String @unique
+  /// Purchasing customer identifier, retained after closure.
+  customer_id String
+  /// Purchase time.
+  purchased_at DateTime
+  /// Fixed total amount.
+  total_price Float
+  /// Immutable recipient name.
+  recipient_name String
+  /// Immutable recipient phone.
+  recipient_phone String
+  /// Immutable street address.
+  street_address String
+  /// Immutable city.
+  city String
+  /// Immutable state or province.
+  state_or_province String
+  /// Immutable postal code.
+  postal_code String
+  /// Immutable country.
+  country String
+  /// Derived overall status.
+  status String
+  /// Creation instant.
+  created_at DateTime
+  @@index([customer_id, purchased_at])
+}
+
+/// One independently progressing purchased variant line.
+model shopping_order_items {
+  /// Primary identifier.
+  id String @id
+  /// Parent order identifier.
+  order_id String
+  /// Live or retired variant identity.
+  variant_id String
+  /// Purchase-time seller identity.
+  seller_id String
+  /// Purchase-time product name.
+  product_name String
+  /// Purchase-time product description.
+  product_description String
+  /// Purchase-time SKU.
+  variant_sku String
+  /// Purchase-time option values.
+  variant_options String
+  /// Purchase-time shop name.
+  seller_shop_name String
+  /// Purchase-time shop logo.
+  seller_logo String?
+  /// Fixed unit price.
+  unit_price Float
+  /// Purchased quantity.
+  quantity Int
+  /// Current item status.
+  status String
+  /// Delivery instant, when delivered.
+  delivered_at DateTime?
+  /// Shipment identifier, when shipped.
+  shipment_id String?
+  /// Purchase instant.
+  purchased_at DateTime
+  @@index([order_id])
+  @@index([seller_id, purchased_at])
+  @@index([variant_id, status])
+}
+
+/// One seller shipment package.
+model shopping_shipments {
+  /// Primary identifier.
+  id String @id
+  /// Parent order identifier.
+  order_id String
+  /// Owning seller identifier.
+  seller_id String
+  /// Carrier name.
+  carrier String
+  /// Tracking number.
+  tracking_number String
+  /// Shipping instant.
+  shipped_at DateTime
+  /// Delivery instant, when customer-confirmed or automatic.
+  delivered_at DateTime?
+  /// Creation instant.
+  created_at DateTime
+  @@index([order_id, shipped_at])
+}
+
+/// A pending or decided cancellation request.
+model shopping_cancellation_requests {
+  /// Primary identifier.
+  id String @id
+  /// Target order item.
+  order_item_id String
+  /// Purchasing customer.
+  customer_id String
+  /// Target seller.
+  seller_id String
+  /// Request reason.
+  reason String
+  /// Request state.
+  status String
+  /// Non-null only while this item has a pending cancellation.
+  pending_key String? @unique
+  /// Decision actor identity.
+  decided_by String?
+  /// Decision instant.
+  decided_at DateTime?
+  /// Creation instant.
+  created_at DateTime
+  @@index([seller_id, status, created_at])
+  @@index([order_item_id, status])
+}
+
+/// A pending or decided refund request.
+model shopping_refund_requests {
+  /// Primary identifier.
+  id String @id
+  /// Target order item.
+  order_item_id String
+  /// Purchasing customer.
+  customer_id String
+  /// Target seller.
+  seller_id String
+  /// Request reason.
+  reason String
+  /// Request state.
+  status String
+  /// Non-null only while this item has a pending refund.
+  pending_key String? @unique
+  /// Decision actor identity.
+  decided_by String?
+  /// Decision instant.
+  decided_at DateTime?
+  /// Creation instant.
+  created_at DateTime
+  @@index([seller_id, status, created_at])
+  @@index([order_item_id, status])
+}
+
+/// Immutable evidence for covered commercial changes.
+model shopping_snapshots {
+  /// Primary identifier.
+  id String @id
+  /// Evidence kind.
+  kind String
+  /// Subject identity kind.
+  subject_type String
+  /// Subject identifier.
+  subject_id String
+  /// Changed element names.
+  changed String
+  /// Serialized before-state.
+  before_data String
+  /// Serialized after-state.
+  after_data String
+  /// Creation instant.
+  created_at DateTime
+  @@index([subject_type, subject_id, created_at])
+}
+
+/// A product review, including retired and anonymized reviews.
+model shopping_reviews {
+  /// Primary identifier.
+  id String @id
+  /// Author identifier, null after customer closure.
+  customer_id String?
+  /// Product identifier retained after product retirement.
+  product_id String
+  /// Qualifying order identifier.
+  order_id String
+  /// Required rating from one through five.
+  rating Int
+  /// Optional review text.
+  text String?
+  /// Publication instant.
+  published_at DateTime
+  /// Retirement instant, when author deleted it.
+  deleted_at DateTime?
+  @@unique([customer_id, product_id, order_id])
+  @@index([product_id, published_at])
+}
+
+/// Immutable administrator moderation or force-resolution evidence.
+model shopping_admin_actions {
+  /// Primary identifier.
+  id String @id
+  /// Action kind.
+  kind String
+  /// Acting administrator identity.
+  actor_id String
+  /// Target identity.
+  target_id String
+  /// Policy reason or serialized action details.
+  reason String
+  /// State immediately before the action, when the action changes a stateful target.
+  before_state String?
+  /// State immediately after the action, when the action changes a stateful target.
+  after_state String?
+  /// Creation instant shared by an atomic action.
+  created_at DateTime
+  @@index([target_id, created_at])
+}

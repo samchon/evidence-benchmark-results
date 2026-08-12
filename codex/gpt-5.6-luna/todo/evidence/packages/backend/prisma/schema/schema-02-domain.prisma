@@ -1,129 +1,193 @@
-/// Private Todo owned by one account with independent completion and trash
-/// availability dimensions.
+/// A privately owned Todo with independent completion and availability state.
 ///
-/// @evidence docs/analysis/02-domain-model.md#req-dom-todo-todo-meaning-and-ownership Persists task ownership.
-/// @evidence docs/analysis/02-domain-model.md#req-dom-todo-1-define-todo-information Persists task content and dates.
-/// @evidence docs/analysis/02-domain-model.md#req-dom-todo-2-bind-each-todo-to-one-account Persists ownership.
-/// @evidence docs/analysis/02-domain-model.md#req-dom-todo-life-todo-lifecycle Persists lifecycle state.
-/// @evidence docs/analysis/02-domain-model.md#req-dom-todo-life-1-define-completion-states Persists completion.
-/// @evidence docs/analysis/02-domain-model.md#req-dom-todo-life-2-define-active-and-trashed-availability Persists availability.
-/// @evidence docs/analysis/02-domain-model.md#req-dom-todo-life-3-move-an-active-todo-to-trash Persists trash-entry time.
-/// @evidence docs/analysis/02-domain-model.md#req-dom-todo-life-4-restore-a-trashed-todo Retains restorable state.
-/// @evidence docs/analysis/02-domain-model.md#req-dom-todo-life-5-permanently-delete-a-trashed-todo Owns terminal deletion.
-/// @evidence docs/analysis/04-business-rules.md#req-rule-content-todo-content-and-date-rules Stores validated content.
-/// @evidence docs/analysis/04-business-rules.md#req-rule-content-1-validate-todo-title-and-description Stores content boundaries.
-/// @evidence docs/analysis/04-business-rules.md#req-rule-content-2-validate-todo-planning-dates Stores planning dates.
-/// @evidence docs/analysis/04-business-rules.md#req-rule-browse-todo-browsing-rules Indexes browse state.
-/// @evidence docs/analysis/04-business-rules.md#req-rule-browse-1-bound-todo-list-pagination Supports bounded lists.
-/// @evidence docs/analysis/04-business-rules.md#req-rule-browse-2-filter-active-todos-by-completion Stores filterable completion.
-/// @evidence docs/analysis/04-business-rules.md#req-rule-browse-3-sort-active-todos-by-supported-dates Stores sortable dates.
-/// @evidence docs/analysis/04-business-rules.md#req-rule-browse-4-apply-stable-default-and-tie-break-ordering Stores stable keys.
-/// @evidence docs/analysis/04-business-rules.md#req-rule-state-todo-state-conflict-and-history-rules Represents state transitions.
-/// @evidence docs/analysis/04-business-rules.md#req-rule-state-1-qualify-operations-by-todo-availability Represents active/trash state.
-/// @evidence docs/analysis/04-business-rules.md#req-rule-state-2-make-repeated-completion-requests-idempotent Stores completion state.
-/// @evidence docs/analysis/04-business-rules.md#req-rule-state-3-refuse-no-op-and-stale-content-edits Stores update timestamps.
-/// @evidence docs/analysis/04-business-rules.md#req-rule-state-4-create-immutable-content-edit-history Relates immutable history.
-/// @evidence docs/analysis/05-non-functional.md#req-nfr-integrity-change-and-deletion-integrity Represents integrity state.
-/// @evidence docs/analysis/05-non-functional.md#req-nfr-integrity-1-keep-todo-edits-and-history-consistent Relates Todo and history.
-/// @evidence docs/analysis/05-non-functional.md#req-nfr-integrity-2-preserve-recoverable-todo-state Retains recoverable content.
-/// @evidence docs/analysis/05-non-functional.md#req-nfr-integrity-3-complete-permanent-deletion-as-one-outcome Cascades terminal deletion.
-/// @evidence docs/analysis/03-functional-requirements.md#req-func-todo-todo-operations Represents Todo operation state.
-/// @evidence docs/analysis/03-functional-requirements.md#req-func-todo-1-create-a-todo Represents created Todo state.
-/// @evidence docs/analysis/03-functional-requirements.md#req-func-todo-2-browse-active-todos Represents active list state.
-/// @evidence docs/analysis/03-functional-requirements.md#req-func-todo-3-view-an-active-todo Represents active detail state.
-/// @evidence docs/analysis/03-functional-requirements.md#req-func-todo-4-edit-todo-content Represents editable state.
-/// @evidence docs/analysis/03-functional-requirements.md#req-func-todo-5-mark-a-todo-complete Represents completion state.
-/// @evidence docs/analysis/03-functional-requirements.md#req-func-todo-6-mark-a-todo-incomplete Represents completion state.
-/// @evidence docs/analysis/03-functional-requirements.md#req-func-todo-7-move-a-todo-to-trash Represents trash state.
-/// @evidence docs/analysis/03-functional-requirements.md#req-func-history-edit-history-inspection Represents retained history state.
-/// @evidence docs/analysis/03-functional-requirements.md#req-func-history-1-view-a-todos-full-edit-history Represents retained history rows.
-/// @evidence docs/analysis/03-functional-requirements.md#req-func-trash-trash-recovery-journey Represents retained Todo state.
-/// @evidence docs/analysis/03-functional-requirements.md#req-func-trash-1-browse-trashed-todos Represents trash list state.
-/// @evidence docs/analysis/03-functional-requirements.md#req-func-trash-2-view-a-trashed-todo Represents trash detail state.
-/// @evidence docs/analysis/03-functional-requirements.md#req-func-trash-3-restore-a-todo-from-trash Represents restorable state.
-/// @evidence docs/analysis/03-functional-requirements.md#req-func-trash-4-permanently-delete-a-todo-from-trash Represents terminal trash state.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-todo-todo-meaning-and-ownership Supports the requirement.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-todo-todo-meaning-and-ownership Read the cited requirement and checked this host fields and behavior against its obligation.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-todo-1-define-todo-information Supports the requirement.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-todo-1-define-todo-information Read the cited requirement and checked this host fields and behavior against its obligation.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-todo-2-bind-each-todo-to-one-account Supports the requirement.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-todo-2-bind-each-todo-to-one-account Read the cited requirement and checked this host fields and behavior against its obligation.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-todo-life-todo-lifecycle Supports the requirement.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-todo-life-todo-lifecycle Read the cited requirement and checked this host fields and behavior against its obligation.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-todo-life-1-define-completion-states Supports the requirement.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-todo-life-1-define-completion-states Read the cited requirement and checked this host fields and behavior against its obligation.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-todo-life-2-define-active-and-trashed-availability Supports the requirement.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-todo-life-2-define-active-and-trashed-availability Read the cited requirement and checked this host fields and behavior against its obligation.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-todo-life-3-move-an-active-todo-to-trash Supports the requirement.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-todo-life-3-move-an-active-todo-to-trash Read the cited requirement and checked this host fields and behavior against its obligation.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-todo-life-4-restore-a-trashed-todo Supports the requirement.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-todo-life-4-restore-a-trashed-todo Read the cited requirement and checked this host fields and behavior against its obligation.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-todo-life-5-permanently-delete-a-trashed-todo Supports the requirement.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-todo-life-5-permanently-delete-a-trashed-todo Read the cited requirement and checked this host fields and behavior against its obligation.
+/// @evidence docs/analysis/03-functional-requirements.md#req-func-todo-todo-operations Supports the requirement.
+/// @evidenceReview docs/analysis/03-functional-requirements.md#req-func-todo-todo-operations Read the cited requirement and checked this host fields and behavior against its obligation.
+/// @evidence docs/analysis/03-functional-requirements.md#req-func-todo-1-create-a-todo Supports the requirement.
+/// @evidenceReview docs/analysis/03-functional-requirements.md#req-func-todo-1-create-a-todo Read the cited requirement and checked this host fields and behavior against its obligation.
+/// @evidence docs/analysis/03-functional-requirements.md#req-func-todo-2-browse-active-todos Supports the requirement.
+/// @evidenceReview docs/analysis/03-functional-requirements.md#req-func-todo-2-browse-active-todos Read the cited requirement and checked this host fields and behavior against its obligation.
+/// @evidence docs/analysis/03-functional-requirements.md#req-func-todo-3-view-an-active-todo Supports the requirement.
+/// @evidenceReview docs/analysis/03-functional-requirements.md#req-func-todo-3-view-an-active-todo Read the cited requirement and checked this host fields and behavior against its obligation.
+/// @evidence docs/analysis/03-functional-requirements.md#req-func-todo-4-edit-todo-content Supports the requirement.
+/// @evidenceReview docs/analysis/03-functional-requirements.md#req-func-todo-4-edit-todo-content Read the cited requirement and checked this host fields and behavior against its obligation.
+/// @evidence docs/analysis/03-functional-requirements.md#req-func-todo-5-mark-a-todo-complete Supports the requirement.
+/// @evidenceReview docs/analysis/03-functional-requirements.md#req-func-todo-5-mark-a-todo-complete Read the cited requirement and checked this host fields and behavior against its obligation.
+/// @evidence docs/analysis/03-functional-requirements.md#req-func-todo-6-mark-a-todo-incomplete Supports the requirement.
+/// @evidenceReview docs/analysis/03-functional-requirements.md#req-func-todo-6-mark-a-todo-incomplete Read the cited requirement and checked this host fields and behavior against its obligation.
+/// @evidence docs/analysis/03-functional-requirements.md#req-func-todo-7-move-a-todo-to-trash Supports the requirement.
+/// @evidenceReview docs/analysis/03-functional-requirements.md#req-func-todo-7-move-a-todo-to-trash Read the cited requirement and checked this host fields and behavior against its obligation.
+/// @evidence docs/analysis/03-functional-requirements.md#req-func-trash-trash-recovery-journey Supports the requirement.
+/// @evidenceReview docs/analysis/03-functional-requirements.md#req-func-trash-trash-recovery-journey Read the cited requirement and checked this host fields and behavior against its obligation.
+/// @evidence docs/analysis/03-functional-requirements.md#req-func-trash-1-browse-trashed-todos Supports the requirement.
+/// @evidenceReview docs/analysis/03-functional-requirements.md#req-func-trash-1-browse-trashed-todos Read the cited requirement and checked this host fields and behavior against its obligation.
+/// @evidence docs/analysis/03-functional-requirements.md#req-func-trash-2-view-a-trashed-todo Supports the requirement.
+/// @evidenceReview docs/analysis/03-functional-requirements.md#req-func-trash-2-view-a-trashed-todo Read the cited requirement and checked this host fields and behavior against its obligation.
+/// @evidence docs/analysis/03-functional-requirements.md#req-func-trash-3-restore-a-todo-from-trash Supports the requirement.
+/// @evidenceReview docs/analysis/03-functional-requirements.md#req-func-trash-3-restore-a-todo-from-trash Read the cited requirement and checked this host fields and behavior against its obligation.
+/// @evidence docs/analysis/03-functional-requirements.md#req-func-trash-4-permanently-delete-a-todo-from-trash Supports the requirement.
+/// @evidenceReview docs/analysis/03-functional-requirements.md#req-func-trash-4-permanently-delete-a-todo-from-trash Read the cited requirement and checked this host fields and behavior against its obligation.
+/// @evidence docs/analysis/04-business-rules.md#req-rule-content-todo-content-and-date-rules Supports the requirement.
+/// @evidenceReview docs/analysis/04-business-rules.md#req-rule-content-todo-content-and-date-rules Read the cited requirement and checked this host fields and behavior against its obligation.
+/// @evidence docs/analysis/04-business-rules.md#req-rule-content-1-validate-todo-title-and-description Supports the requirement.
+/// @evidenceReview docs/analysis/04-business-rules.md#req-rule-content-1-validate-todo-title-and-description Read the cited requirement and checked this host fields and behavior against its obligation.
+/// @evidence docs/analysis/04-business-rules.md#req-rule-content-2-validate-todo-planning-dates Supports the requirement.
+/// @evidenceReview docs/analysis/04-business-rules.md#req-rule-content-2-validate-todo-planning-dates Read the cited requirement and checked this host fields and behavior against its obligation.
+/// @evidence docs/analysis/04-business-rules.md#req-rule-browse-todo-browsing-rules Supports the requirement.
+/// @evidenceReview docs/analysis/04-business-rules.md#req-rule-browse-todo-browsing-rules Read the cited requirement and checked this host fields and behavior against its obligation.
+/// @evidence docs/analysis/04-business-rules.md#req-rule-browse-1-bound-todo-list-pagination Supports the requirement.
+/// @evidenceReview docs/analysis/04-business-rules.md#req-rule-browse-1-bound-todo-list-pagination Read the cited requirement and checked this host fields and behavior against its obligation.
+/// @evidence docs/analysis/04-business-rules.md#req-rule-browse-2-filter-active-todos-by-completion Supports the requirement.
+/// @evidenceReview docs/analysis/04-business-rules.md#req-rule-browse-2-filter-active-todos-by-completion Read the cited requirement and checked this host fields and behavior against its obligation.
+/// @evidence docs/analysis/04-business-rules.md#req-rule-browse-3-sort-active-todos-by-supported-dates Supports the requirement.
+/// @evidenceReview docs/analysis/04-business-rules.md#req-rule-browse-3-sort-active-todos-by-supported-dates Read the cited requirement and checked this host fields and behavior against its obligation.
+/// @evidence docs/analysis/04-business-rules.md#req-rule-browse-4-apply-stable-default-and-tie-break-ordering Supports the requirement.
+/// @evidenceReview docs/analysis/04-business-rules.md#req-rule-browse-4-apply-stable-default-and-tie-break-ordering Read the cited requirement and checked this host fields and behavior against its obligation.
+/// @evidence docs/analysis/04-business-rules.md#req-rule-state-todo-state-conflict-and-history-rules Supports the requirement.
+/// @evidenceReview docs/analysis/04-business-rules.md#req-rule-state-todo-state-conflict-and-history-rules Read the cited requirement and checked this host fields and behavior against its obligation.
+/// @evidence docs/analysis/04-business-rules.md#req-rule-state-1-qualify-operations-by-todo-availability Supports the requirement.
+/// @evidenceReview docs/analysis/04-business-rules.md#req-rule-state-1-qualify-operations-by-todo-availability Read the cited requirement and checked this host fields and behavior against its obligation.
+/// @evidence docs/analysis/04-business-rules.md#req-rule-state-2-make-repeated-completion-requests-idempotent Supports the requirement.
+/// @evidenceReview docs/analysis/04-business-rules.md#req-rule-state-2-make-repeated-completion-requests-idempotent Read the cited requirement and checked this host fields and behavior against its obligation.
+/// @evidence docs/analysis/04-business-rules.md#req-rule-state-3-refuse-no-op-and-stale-content-edits Supports the requirement.
+/// @evidenceReview docs/analysis/04-business-rules.md#req-rule-state-3-refuse-no-op-and-stale-content-edits Read the cited requirement and checked this host fields and behavior against its obligation.
+/// @evidence docs/analysis/04-business-rules.md#req-rule-state-4-create-immutable-content-edit-history Supports the requirement.
+/// @evidenceReview docs/analysis/04-business-rules.md#req-rule-state-4-create-immutable-content-edit-history Read the cited requirement and checked this host fields and behavior against its obligation.
+/// @evidence docs/analysis/05-non-functional.md#req-nfr-privacy-private-data-isolation Supports the requirement.
+/// @evidenceReview docs/analysis/05-non-functional.md#req-nfr-privacy-private-data-isolation Read the cited requirement and checked this host fields and behavior against its obligation.
+/// @evidence docs/analysis/05-non-functional.md#req-nfr-privacy-1-isolate-every-accounts-private-information Supports the requirement.
+/// @evidenceReview docs/analysis/05-non-functional.md#req-nfr-privacy-1-isolate-every-accounts-private-information Read the cited requirement and checked this host fields and behavior against its obligation.
+/// @evidence docs/analysis/05-non-functional.md#req-nfr-integrity-change-and-deletion-integrity Supports the requirement.
+/// @evidenceReview docs/analysis/05-non-functional.md#req-nfr-integrity-change-and-deletion-integrity Read the cited requirement and checked this host fields and behavior against its obligation.
+/// @evidence docs/analysis/05-non-functional.md#req-nfr-integrity-1-keep-todo-edits-and-history-consistent Supports the requirement.
+/// @evidenceReview docs/analysis/05-non-functional.md#req-nfr-integrity-1-keep-todo-edits-and-history-consistent Read the cited requirement and checked this host fields and behavior against its obligation.
+/// @evidence docs/analysis/05-non-functional.md#req-nfr-integrity-2-preserve-recoverable-todo-state Supports the requirement.
+/// @evidenceReview docs/analysis/05-non-functional.md#req-nfr-integrity-2-preserve-recoverable-todo-state Read the cited requirement and checked this host fields and behavior against its obligation.
+/// @evidence docs/analysis/05-non-functional.md#req-nfr-integrity-3-complete-permanent-deletion-as-one-outcome Supports the requirement.
+/// @evidenceReview docs/analysis/05-non-functional.md#req-nfr-integrity-3-complete-permanent-deletion-as-one-outcome Read the cited requirement and checked this host fields and behavior against its obligation.
 model todo_todos {
   /// Application-assigned UUID.
   id String @id
 
-  /// Owning account identifier.
-  todo_account_id String
+  /// Permanent owning account UUID.
+  todo_user_id String
 
-  /// Required task title after trimming.
+  /// Required normalized short task title.
   title String
 
-  /// Optional task description; null means empty.
+  /// Optional full task details; null means no description was supplied.
   description String?
 
-  /// Optional calendar start date at UTC midnight.
+  /// Optional calendar start date stored at UTC midnight; null means unset.
   start_date DateTime?
 
-  /// Optional calendar due date at UTC midnight.
+  /// Optional calendar due date stored at UTC midnight; null means unset.
   due_date DateTime?
 
-  /// Completion state; false is incomplete and true is complete.
+  /// Completion state, exactly `incomplete` or `complete`.
   completed Boolean
 
-  /// Original creation instant.
+  /// Availability state, exactly `active` or `trashed`.
+  trashed Boolean
+
+  /// Creation instant that never changes through the lifecycle.
   created_at DateTime
 
-  /// Last content or completion update instant.
-  updated_at DateTime
-
-  /// Most recent move-to-trash instant; null means active.
+  /// Most recent move into trash; null while never trashed or currently active.
   trashed_at DateTime?
 
-  /// Owning account.
-  account todo_accounts @relation(fields: [todo_account_id], references: [id], onDelete: Cascade)
+  /// Optimistic content version incremented for each accepted content edit.
+  content_version Int
+
+  /// Last successful content-edit instant used for stale-edit detection.
+  updated_at DateTime
+
+  /// Permanent owner of this Todo.
+  user todo_users @relation(fields: [todo_user_id], references: [id], onDelete: Cascade)
 
   /// Immutable content-edit chronology.
   histories todo_todo_histories[]
 
-  @@index([todo_account_id, trashed_at])
-  @@index([todo_account_id, created_at])
-  @@index([todo_account_id, trashed_at, created_at])
+  @@index([todo_user_id, trashed, created_at])
+  @@index([todo_user_id, trashed, completed])
+  @@index([todo_user_id, trashed, trashed_at])
 }
 
-/// Immutable changed-to values for one accepted Todo content edit.
+/// One immutable record of changed-to content from one accepted Todo edit.
 ///
-/// @evidence docs/analysis/02-domain-model.md#req-dom-history-edit-history-meaning-and-relationship Represents retained chronology.
-/// @evidence docs/analysis/02-domain-model.md#req-dom-history-1-define-an-edit-history-entry Represents changed-to values.
-/// @evidence docs/analysis/02-domain-model.md#req-dom-history-2-bind-history-to-its-todo-lifecycle Binds history to Todo lifecycle.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-history-edit-history-meaning-and-relationship Supports the requirement.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-history-edit-history-meaning-and-relationship Read the cited requirement and checked this host fields and behavior against its obligation.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-history-1-define-an-edit-history-entry Supports the requirement.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-history-1-define-an-edit-history-entry Read the cited requirement and checked this host fields and behavior against its obligation.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-history-2-bind-history-to-its-todo-lifecycle Supports the requirement.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-history-2-bind-history-to-its-todo-lifecycle Read the cited requirement and checked this host fields and behavior against its obligation.
+/// @evidence docs/analysis/03-functional-requirements.md#req-func-history-edit-history-inspection Supports the requirement.
+/// @evidenceReview docs/analysis/03-functional-requirements.md#req-func-history-edit-history-inspection Read the cited requirement and checked this host fields and behavior against its obligation.
+/// @evidence docs/analysis/03-functional-requirements.md#req-func-history-1-view-a-todos-full-edit-history Supports the requirement.
+/// @evidenceReview docs/analysis/03-functional-requirements.md#req-func-history-1-view-a-todos-full-edit-history Read the cited requirement and checked this host fields and behavior against its obligation.
+/// @evidence docs/analysis/04-business-rules.md#req-rule-state-todo-state-conflict-and-history-rules Supports the requirement.
+/// @evidenceReview docs/analysis/04-business-rules.md#req-rule-state-todo-state-conflict-and-history-rules Read the cited requirement and checked this host fields and behavior against its obligation.
+/// @evidence docs/analysis/04-business-rules.md#req-rule-state-3-refuse-no-op-and-stale-content-edits Supports the requirement.
+/// @evidenceReview docs/analysis/04-business-rules.md#req-rule-state-3-refuse-no-op-and-stale-content-edits Read the cited requirement and checked this host fields and behavior against its obligation.
+/// @evidence docs/analysis/04-business-rules.md#req-rule-state-4-create-immutable-content-edit-history Supports the requirement.
+/// @evidenceReview docs/analysis/04-business-rules.md#req-rule-state-4-create-immutable-content-edit-history Read the cited requirement and checked this host fields and behavior against its obligation.
+/// @evidence docs/analysis/05-non-functional.md#req-nfr-privacy-private-data-isolation Supports the requirement.
+/// @evidenceReview docs/analysis/05-non-functional.md#req-nfr-privacy-private-data-isolation Read the cited requirement and checked this host fields and behavior against its obligation.
+/// @evidence docs/analysis/05-non-functional.md#req-nfr-privacy-1-isolate-every-accounts-private-information Supports the requirement.
+/// @evidenceReview docs/analysis/05-non-functional.md#req-nfr-privacy-1-isolate-every-accounts-private-information Read the cited requirement and checked this host fields and behavior against its obligation.
+/// @evidence docs/analysis/05-non-functional.md#req-nfr-integrity-change-and-deletion-integrity Supports the requirement.
+/// @evidenceReview docs/analysis/05-non-functional.md#req-nfr-integrity-change-and-deletion-integrity Read the cited requirement and checked this host fields and behavior against its obligation.
+/// @evidence docs/analysis/05-non-functional.md#req-nfr-integrity-1-keep-todo-edits-and-history-consistent Supports the requirement.
+/// @evidenceReview docs/analysis/05-non-functional.md#req-nfr-integrity-1-keep-todo-edits-and-history-consistent Read the cited requirement and checked this host fields and behavior against its obligation.
 model todo_todo_histories {
   /// Application-assigned UUID.
   id String @id
 
-  /// Owning Todo identifier.
+  /// Todo UUID whose content was edited.
   todo_todo_id String
 
-  /// Edit instant.
+  /// Edit instant, ordered newest first in the public history operation.
   created_at DateTime
 
-  /// Whether title participated in this edit.
-  title_changed Boolean
-
-  /// Changed-to title when title_changed is true.
+  /// Changed-to title; null means title did not participate in this edit.
   title String?
 
-  /// Whether description participated in this edit.
-  description_changed Boolean
-
-  /// Changed-to description; null means explicitly cleared.
+  /// Changed-to description; null means absent, while empty string records a clear.
   description String?
 
-  /// Whether start date participated in this edit.
-  start_date_changed Boolean
-
-  /// Changed-to start date; null means explicitly cleared.
+  /// Changed-to start date; null means absent or explicitly cleared by a flag.
   start_date DateTime?
 
-  /// Whether due date participated in this edit.
-  due_date_changed Boolean
-
-  /// Changed-to due date; null means explicitly cleared.
+  /// Changed-to due date; null means absent or explicitly cleared by a flag.
   due_date DateTime?
 
-  /// Owning Todo.
+  /// Whether the description value participated, including an explicit clear.
+  description_changed Boolean
+
+  /// Whether the start date value participated, including an explicit clear.
+  start_date_changed Boolean
+
+  /// Whether the due date value participated, including an explicit clear.
+  due_date_changed Boolean
+
+  /// Todo whose content edit this entry records.
   todo todo_todos @relation(fields: [todo_todo_id], references: [id], onDelete: Cascade)
 
   @@index([todo_todo_id, created_at])

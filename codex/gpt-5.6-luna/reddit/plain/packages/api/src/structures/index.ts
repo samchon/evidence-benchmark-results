@@ -1,1 +1,1 @@
-export * from "./IModels";
+export * from "./IReddit";

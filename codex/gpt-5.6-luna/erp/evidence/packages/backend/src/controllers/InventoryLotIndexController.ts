@@ -1,2 +1,0 @@
-import * as core from "@nestia/core"; import { Controller } from "@nestjs/common"; import type { IAuth, IInventoryLot, IPage } from "@benchmark/erp-api"; import { TraceabilityProvider } from "../providers/TraceabilityProvider";
-/** Lists inventory lots. */ @Controller("inventory-lot-search") export class InventoryLotIndexController { @core.TypedRoute.Patch() public async index(@core.TypedHeaders() h: IAuth.IHeaders, @core.TypedBody() input: IInventoryLot.IRequest): Promise<IPage<IInventoryLot>> { return TraceabilityProvider.lotIndex(h, input); } }

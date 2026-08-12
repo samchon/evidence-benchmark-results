@@ -46,7 +46,7 @@ jobs:
         run: pnpm test:backend
 
       - name: Install Chromium
-        run: pnpm --filter @benchmark/reddit2-frontend exec playwright install --with-deps chromium
+        run: pnpm --filter @benchmark/reddit-frontend exec playwright install --with-deps chromium
 
       - name: Test frontend
         run: pnpm test:frontend

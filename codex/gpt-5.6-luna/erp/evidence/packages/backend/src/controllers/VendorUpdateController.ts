@@ -1,2 +1,0 @@
-import * as core from "@nestia/core"; import { Controller } from "@nestjs/common"; import type { IAuth, IVendor } from "@benchmark/erp-api"; import { PartyProvider } from "../providers/PartyProvider";
-/** Updates an external vendor. */ @Controller("vendor-update") export class VendorUpdateController { @core.TypedRoute.Put(":id") public async update(@core.TypedHeaders() headers: IAuth.IHeaders, @core.TypedParam("id") id: string, @core.TypedBody() input: IVendor.IUpdate): Promise<IVendor> { return PartyProvider.vendorUpdate(headers, id, input); } }

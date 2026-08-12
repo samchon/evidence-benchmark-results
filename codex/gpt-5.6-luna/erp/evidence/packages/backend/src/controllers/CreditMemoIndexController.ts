@@ -1,2 +1,0 @@
-import * as core from "@nestia/core"; import { Controller } from "@nestjs/common"; import type { IAuth, ICreditMemo, IPage } from "@benchmark/erp-api"; import { SalesSettlementProvider } from "../providers/SalesSettlementProvider";
-/** Lists credit memos. */ @Controller("credit-memo-search") export class CreditMemoIndexController { @core.TypedRoute.Patch() public async index(@core.TypedHeaders() h: IAuth.IHeaders, @core.TypedBody() input: ICreditMemo.IRequest): Promise<IPage<ICreditMemo>> { return SalesSettlementProvider.creditIndex(h, input); } }

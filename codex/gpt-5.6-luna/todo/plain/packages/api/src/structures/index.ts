@@ -1,7 +1,3 @@
-// Export every requirement-derived DTO from this flat directory.
-export {};
-export * from "./IAuth";
-export * from "./IProfile";
-export * from "./ITodo";
-export * from "./ITodoHistory";
-export * from "./IResult";
+export type * from "./IUser";
+export type * from "./ITodo";
+export type * from "./ITodoHistory";

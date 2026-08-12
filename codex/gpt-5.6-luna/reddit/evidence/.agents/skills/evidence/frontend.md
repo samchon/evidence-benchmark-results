@@ -16,7 +16,7 @@ A hook cites the operations it calls, a screen cites the hooks it uses, and a jo
 
 A hook may cite as many operations as it calls; the obligation is consuming the published surface, not one call per hook.
 
-The operation and hook references refuse `@evidenceExclude` — an unconsumed operation or unused hook is missing work, so write the missing hook or screen instead of excluding it. The requirement and screen references accept a reviewed exclusion.
+The operation and hook references refuse `@evidenceExclude` — an unconsumed operation or unused hook is missing work, so write the missing hook or screen instead of excluding it. The requirement and screen references accept an exclusion.
 
 A journey cites each page it walks as `{@link ThatPage}` resolved through its own type-only import.
 
@@ -32,6 +32,8 @@ Those two carriers are the only place a frontend `@evidenceExclude` may be writt
 
 - `packages/frontend/src/components/SCREEN_EVIDENCE_EXCLUDE.ts`
 - `packages/frontend/tests/journeys/JOURNEY_EVIDENCE_EXCLUDE.ts`
+
+Frontend Review turns `evidence/review` on and writes the reviews; `SKILL.md` owns their shape and placement.
 
 Each claim declares its carrier through `evidenceExcludeCarriers`, so an exclusion written anywhere else is a build error naming the file it belongs in. Each carrier ships with a JSDoc block stating what it accepts; read it before adding an entry. `frontend-hooks` declares no carrier at all, and the hook reference of `frontend-screens` refuses one too: an operation no hook calls and a hook no screen renders are missing work, so write the hook or the screen.
 
@@ -62,4 +64,4 @@ rg --hidden -n -F '@todo' packages/frontend --glob '*.ts' --glob '*.tsx'
 
 Ensure `pnpm dev` is running from `packages/backend`, and keep both processes running through Overall Final.
 
-Run `pnpm test:e2e` with `VITE_API_SIMULATE=false` against the live backend and fix every failure. After the last fix, require a frontend reload without diagnostics and an E2E exit code of 0.
+Run `pnpm test:e2e`, which builds live against the live backend and fix every failure. After the last fix, require a frontend reload without diagnostics and an E2E exit code of 0.

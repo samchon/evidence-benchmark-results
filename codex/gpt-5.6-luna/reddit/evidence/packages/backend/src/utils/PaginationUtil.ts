@@ -1,4 +1,4 @@
-import type { IPage } from "@benchmark/reddit2-api";
+import type { IPage } from "@benchmark/reddit-api";
 
 /** Builds paginated Prisma queries with stable response metadata. */
 export namespace PaginationUtil {
@@ -43,8 +43,9 @@ export namespace PaginationUtil {
     ) =>
     (spec: { where: Where; orderBy: OrderBy[] }) =>
     async (input: IPage.IRequest): Promise<IPage<Output>> => {
-      const limit = input.limit ?? 100;
+      const limit = input.limit ?? 25;
       const current = input.page ?? 1;
+      const cursor = input.cursor ?? null;
       const records = await props.schema.count({ where: spec.where });
       const data = await props.schema.findMany({
         ...props.payload,
@@ -62,9 +63,12 @@ export namespace PaginationUtil {
           limit,
           records,
           pages: limit === 0 ? 1 : Math.ceil(records / limit),
-          continuation: null,
-          reset: false,
         },
+        next:
+          current * limit < records
+            ? `${current + 1}:${cursor ?? ""}`
+            : null,
+        reset: cursor !== null && current === 1,
       };
     };
 }

@@ -6,7 +6,6 @@
  * this file and an unused hook stays a build failure.
  *
  * Keep real ownership evidence on the screen that delivers it. Add only
- * reviewed non-applicability decisions here.
- * @evidenceExclude docs/analysis/04-business-rules.md#req-rule-media-uploaded-image-rules Media decoding, storage, and the shared avatar/community-icon/upload boundary are owned by the backend/API contract; reject this exclusion if the frontend receives a multipart media accessor.
+ * settled non-applicability decisions here.
  */
 export const SCREEN_EVIDENCE_EXCLUDE = true;

@@ -26,4 +26,5 @@ export async function test_api_health(
 
   // Step 3: Validate the response against its generated type
   typia.assert(value);
+  if (value !== "OK") throw new Error("The health marker is incorrect.");
 }

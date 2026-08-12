@@ -1,2 +1,0 @@
-export interface IDepartment { id: string; code: string; name: string; manager_employee_id?: string | null; active: boolean; created_at: string; updated_at: string; }
-export namespace IDepartment { export interface ICreate { code: string; name: string; manager_employee_id?: string; } export interface IUpdate { code?: string; name?: string; manager_employee_id?: string; active?: boolean; } export interface IRequest { page?: number; limit?: number; search?: string | null; active?: boolean | null; } }

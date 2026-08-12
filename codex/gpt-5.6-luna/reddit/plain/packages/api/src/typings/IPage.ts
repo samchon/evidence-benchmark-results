@@ -30,13 +30,13 @@ export namespace IPage {
     page?: null | (number & tags.Type<"uint32"> & tags.Minimum<1>);
 
     /**
-     * Maximum number of records returned per page. The default is 25.
+     * Maximum number of records returned per page. Omitted values select 25.
      *
      * @default 25
      */
     limit?: null | (number & tags.Type<"uint32"> & tags.Minimum<1> & tags.Maximum<100>);
 
-    /** Opaque continuation token for the unchanged traversal. */
+    /** Opaque continuation returned by the preceding page. */
     continuation?: null | string;
   }
 
@@ -52,7 +52,7 @@ export namespace IPage {
     /**
      * Maximum records requested for this page.
      */
-    limit: number & tags.Type<"uint32">;
+    limit: number & tags.Type<"uint32"> & tags.Minimum<1> & tags.Maximum<100>;
 
     /**
      * Total records matching the request.
@@ -64,8 +64,8 @@ export namespace IPage {
      */
     pages: number & tags.Type<"uint32">;
 
-    /** Opaque token for the next page, or null on the final page. */
-    next?: null | string;
+    /** Opaque continuation for the next page, or null at the end. */
+    continuation?: null | string;
 
     /** True when an invalid continuation caused a fresh first page. */
     reset?: boolean;

@@ -6,6 +6,5 @@
 //================================================================
 export * as list from "./list/index";
 export * as detail from "./detail/index";
-export * as item from "./item/index";
 export * as cancel from "./cancel/index";
 export * as refund from "./refund/index";

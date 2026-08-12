@@ -1,0 +1,226 @@
+/// A post with exactly one type-specific payload and immutable identity links.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-post-post-model Represents post identity, payload, and lifecycle state.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-post-post-model Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-post-001-define-post-identity-and-relationships Stores author, community, title, and creation identity.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-post-001-define-post-identity-and-relationships Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-post-002-define-post-types-and-payloads Represents the exclusive type payload columns.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-post-002-define-post-types-and-payloads Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-post-003-define-post-participation-measures Stores score and available comment count.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-post-003-define-post-participation-measures Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-post-004-define-full-and-feed-post-presentation Stores the full and preview payload sources.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-post-004-define-full-and-feed-post-presentation Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-post-life-post-lifecycle Represents active and deleted post state.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-post-life-post-lifecycle Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-post-life-001-preserve-post-identity-during-editing Preserves immutable post identity fields.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-post-life-001-preserve-post-identity-during-editing Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-post-life-002-delete-a-post-and-dependent-participation Stores deletion state for dependent cleanup.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-post-life-002-delete-a-post-and-dependent-participation Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-community-004-relate-communities-to-content-and-moderation Keeps each post in one community.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-community-004-relate-communities-to-content-and-moderation Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/04-business-rules.md#req-rule-post-post-content-rules Represents type-specific post validation state.
+/// @evidenceReview docs/analysis/04-business-rules.md#req-rule-post-post-content-rules Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/04-business-rules.md#req-rule-post-001-validate-required-title-and-exact-post-payload Stores exactly one selected payload representation.
+/// @evidenceReview docs/analysis/04-business-rules.md#req-rule-post-001-validate-required-title-and-exact-post-payload Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/04-business-rules.md#req-rule-post-002-validate-link-and-image-payloads Stores link, image, and thumbnail payloads.
+/// @evidenceReview docs/analysis/04-business-rules.md#req-rule-post-002-validate-link-and-image-payloads Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/04-business-rules.md#req-rule-post-003-restrict-post-editing-to-title-and-same-type-content Preserves immutable author, community, type, and creation fields.
+/// @evidenceReview docs/analysis/04-business-rules.md#req-rule-post-003-restrict-post-editing-to-title-and-same-type-content Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/04-business-rules.md#req-rule-participation-001-require-subscription-for-post-creation Provides the post target for membership checks.
+/// @evidenceReview docs/analysis/04-business-rules.md#req-rule-participation-001-require-subscription-for-post-creation Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/04-business-rules.md#req-rule-feed-feed-ranking-and-pagination-rules Stores creation and score values used by ranking.
+/// @evidenceReview docs/analysis/04-business-rules.md#req-rule-feed-feed-ranking-and-pagination-rules Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/04-business-rules.md#req-rule-feed-001-order-feeds-by-new Stores immutable creation ordering.
+/// @evidenceReview docs/analysis/04-business-rules.md#req-rule-feed-001-order-feeds-by-new Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/04-business-rules.md#req-rule-feed-002-order-feeds-by-top-and-selected-time-range Stores score and age inputs for Top.
+/// @evidenceReview docs/analysis/04-business-rules.md#req-rule-feed-002-order-feeds-by-top-and-selected-time-range Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/04-business-rules.md#req-rule-feed-003-order-feeds-by-hot Stores score and creation inputs for Hot.
+/// @evidenceReview docs/analysis/04-business-rules.md#req-rule-feed-003-order-feeds-by-hot Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/04-business-rules.md#req-rule-feed-004-order-feeds-by-controversial Stores vote score inputs for Controversial.
+/// @evidenceReview docs/analysis/04-business-rules.md#req-rule-feed-004-order-feeds-by-controversial Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/05-non-functional.md#req-nfr-integrity-visible-aggregate-integrity Stores score and count aggregates.
+/// @evidenceReview docs/analysis/05-non-functional.md#req-nfr-integrity-visible-aggregate-integrity Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/05-non-functional.md#req-nfr-integrity-001-keep-vote-score-and-karma-mutually-consistent Stores the post score updated with votes.
+/// @evidenceReview docs/analysis/05-non-functional.md#req-nfr-integrity-001-keep-vote-score-and-karma-mutually-consistent Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/05-non-functional.md#req-nfr-integrity-003-keep-comment-count-consistent-with-comment-availability Stores the comment count material.
+/// @evidenceReview docs/analysis/05-non-functional.md#req-nfr-integrity-003-keep-comment-count-consistent-with-comment-availability Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/05-non-functional.md#req-nfr-integrity-004-keep-deletion-effects-consistent-across-public-views Stores deletion state for consistent reads.
+/// @evidenceReview docs/analysis/05-non-functional.md#req-nfr-integrity-004-keep-deletion-effects-consistent-across-public-views Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/05-non-functional.md#req-nfr-privacy-003-preserve-public-profiles-and-community-content Represents public post content.
+/// @evidenceReview docs/analysis/05-non-functional.md#req-nfr-privacy-003-preserve-public-profiles-and-community-content Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/04-business-rules.md#req-rule-media-uploaded-image-rules Carries image-post media state.
+/// @evidenceReview docs/analysis/04-business-rules.md#req-rule-media-uploaded-image-rules Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/04-business-rules.md#req-rule-media-001-validate-uploaded-image-format-and-size Retains accepted full image and thumbnail payloads.
+/// @evidenceReview docs/analysis/04-business-rules.md#req-rule-media-001-validate-uploaded-image-format-and-size Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/04-business-rules.md#req-rule-media-002-present-uploaded-images-and-post-thumbnails Stores both full and bounded image presentations.
+/// @evidenceReview docs/analysis/04-business-rules.md#req-rule-media-002-present-uploaded-images-and-post-thumbnails Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+model reddit_posts {
+  /// Application-assigned UUID.
+  id String @id
+  /// Owning author identifier.
+  author_id String
+  /// Containing community identifier.
+  community_id String
+  /// Reader-facing title.
+  title String
+  /// Text, link, or image discriminator.
+  type String
+  /// Text payload for text posts.
+  text String?
+  /// URL payload for link posts.
+  url String?
+  /// Full image payload for image posts.
+  image String?
+  /// Bounded image preview payload.
+  thumbnail String?
+  /// Materialized active vote score.
+  score Int
+  /// Materialized count of available comments.
+  comment_count Int
+  /// Original creation instant used by all rankings and age displays.
+  created_at DateTime
+  /// Last content edit instant.
+  updated_at DateTime
+  /// Permanent deletion marker used before dependent cleanup.
+  deleted_at DateTime?
+  /// Author account.
+  author reddit_users @relation(fields: [author_id], references: [id], onDelete: Cascade)
+  /// Containing community.
+  community reddit_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  /// Comments under the post.
+  comments reddit_comments[]
+  /// Votes received by the post.
+  votes reddit_votes[]
+  /// Reports targeting the post.
+  reports reddit_reports[]
+
+  @@index([community_id, deleted_at, created_at])
+  @@index([author_id, deleted_at, created_at])
+}
+
+/// A recursive comment node whose deleted row may preserve descendant position.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-comment-comment-model Represents recursive comment identity and display state.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-comment-comment-model Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-comment-001-define-comment-identity-and-display Stores author, text, score, and creation time.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-comment-001-define-comment-identity-and-display Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-comment-002-relate-comments-through-unbounded-nesting Stores immediate parent and reply relations.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-comment-002-relate-comments-through-unbounded-nesting Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-comment-life-comment-lifecycle Represents available and deleted comment content.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-comment-life-comment-lifecycle Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-comment-life-001-preserve-comment-identity-during-editing Retains immutable thread identity during edits.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-comment-life-001-preserve-comment-identity-during-editing Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-comment-life-002-delete-comment-content-and-preserve-replies Stores the neutral marker and deletion state.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-comment-life-002-delete-comment-content-and-preserve-replies Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-community-004-relate-communities-to-content-and-moderation Reaches the comment's community through its post.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-community-004-relate-communities-to-content-and-moderation Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/04-business-rules.md#req-rule-comment-comment-tree-and-sorting-rules Represents the recursive comment tree.
+/// @evidenceReview docs/analysis/04-business-rules.md#req-rule-comment-comment-tree-and-sorting-rules Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/04-business-rules.md#req-rule-comment-001-validate-same-post-acyclic-reply-relationships Stores same-post parent links.
+/// @evidenceReview docs/analysis/04-business-rules.md#req-rule-comment-001-validate-same-post-acyclic-reply-relationships Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/04-business-rules.md#req-rule-comment-002-allow-unlimited-reply-depth Represents unbounded recursive depth.
+/// @evidenceReview docs/analysis/04-business-rules.md#req-rule-comment-002-allow-unlimited-reply-depth Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/04-business-rules.md#req-rule-comment-003-order-comments-by-best Stores score and creation inputs for Best.
+/// @evidenceReview docs/analysis/04-business-rules.md#req-rule-comment-003-order-comments-by-best Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/04-business-rules.md#req-rule-comment-004-order-comments-by-new Stores immutable creation inputs for New.
+/// @evidenceReview docs/analysis/04-business-rules.md#req-rule-comment-004-order-comments-by-new Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/04-business-rules.md#req-rule-comment-005-order-comments-by-controversial Stores vote volume and score inputs.
+/// @evidenceReview docs/analysis/04-business-rules.md#req-rule-comment-005-order-comments-by-controversial Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/05-non-functional.md#req-nfr-integrity-003-keep-comment-count-consistent-with-comment-availability Stores comment availability and score state.
+/// @evidenceReview docs/analysis/05-non-functional.md#req-nfr-integrity-003-keep-comment-count-consistent-with-comment-availability Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/05-non-functional.md#req-nfr-integrity-004-keep-deletion-effects-consistent-across-public-views Stores deleted content state.
+/// @evidenceReview docs/analysis/05-non-functional.md#req-nfr-integrity-004-keep-deletion-effects-consistent-across-public-views Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+model reddit_comments {
+  /// Application-assigned UUID.
+  id String @id
+  /// Owning author identifier, null after de-identifying deletion.
+  author_id String?
+  /// Containing post identifier.
+  post_id String
+  /// Immediate parent comment, or null for a top-level comment.
+  parent_id String?
+  /// Comment text, null after content deletion.
+  text String?
+  /// Materialized active vote score.
+  score Int
+  /// Whether the row is a neutral deleted marker.
+  deleted Boolean
+  /// Original creation instant.
+  created_at DateTime
+  /// Last content edit instant.
+  updated_at DateTime
+  /// Content deletion instant, or null while available.
+  deleted_at DateTime?
+  /// Author account while identity is retained.
+  author reddit_users? @relation(fields: [author_id], references: [id], onDelete: SetNull)
+  /// Containing post.
+  post reddit_posts @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  /// Immediate parent.
+  parent reddit_comments? @relation("commentTree", fields: [parent_id], references: [id], onDelete: Cascade)
+  /// Direct replies.
+  replies reddit_comments[] @relation("commentTree")
+  /// Votes received by the comment.
+  votes reddit_votes[]
+  /// Reports targeting the comment.
+  reports reddit_reports[]
+
+  @@index([post_id, parent_id, deleted_at, created_at])
+  @@index([author_id, deleted_at, created_at])
+}
+
+/// One signed vote on exactly one post or comment.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-vote-vote-model Represents signed votes and their targets.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-vote-vote-model Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-vote-001-define-vote-identity-target-and-values Stores one user-target direction.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-vote-001-define-vote-identity-target-and-values Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-vote-002-relate-active-votes-to-content-score Provides active values for target score.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-vote-002-relate-active-votes-to-content-score Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-vote-003-relate-active-votes-to-author-karma Provides active values for author karma.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-vote-003-relate-active-votes-to-author-karma Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-vote-life-vote-lifecycle Represents vote state transitions.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-vote-life-vote-lifecycle Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-vote-life-001-enter-upvote-state Stores an active upvote value.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-vote-life-001-enter-upvote-state Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-vote-life-002-enter-downvote-state Stores an active downvote value.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-vote-life-002-enter-downvote-state Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-vote-life-003-change-active-vote-direction Retains one replaceable vote row.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-vote-life-003-change-active-vote-direction Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-vote-life-004-remove-an-active-vote Allows the row to be removed for no-vote state.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-vote-life-004-remove-an-active-vote Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/04-business-rules.md#req-rule-vote-voting-and-aggregate-rules Stores the signed aggregate input.
+/// @evidenceReview docs/analysis/04-business-rules.md#req-rule-vote-voting-and-aggregate-rules Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/04-business-rules.md#req-rule-vote-001-enforce-one-active-vote-per-user-and-target Uniquely relates a voter and target.
+/// @evidenceReview docs/analysis/04-business-rules.md#req-rule-vote-001-enforce-one-active-vote-per-user-and-target Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/04-business-rules.md#req-rule-vote-002-calculate-content-vote-score Stores signed vote values.
+/// @evidenceReview docs/analysis/04-business-rules.md#req-rule-vote-002-calculate-content-vote-score Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/04-business-rules.md#req-rule-vote-003-adjust-author-karma-for-vote-transitions Stores the transition source.
+/// @evidenceReview docs/analysis/04-business-rules.md#req-rule-vote-003-adjust-author-karma-for-vote-transitions Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/04-business-rules.md#req-rule-vote-004-reverse-vote-aggregates-when-content-is-deleted Cascades target deletion to vote rows.
+/// @evidenceReview docs/analysis/04-business-rules.md#req-rule-vote-004-reverse-vote-aggregates-when-content-is-deleted Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/05-non-functional.md#req-nfr-integrity-001-keep-vote-score-and-karma-mutually-consistent Stores one active source for both aggregates.
+/// @evidenceReview docs/analysis/05-non-functional.md#req-nfr-integrity-001-keep-vote-score-and-karma-mutually-consistent Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/05-non-functional.md#req-nfr-integrity-004-keep-deletion-effects-consistent-across-public-views Retains target-bound participation for cleanup.
+/// @evidenceReview docs/analysis/05-non-functional.md#req-nfr-integrity-004-keep-deletion-effects-consistent-across-public-views Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+model reddit_votes {
+  /// Application-assigned UUID.
+  id String @id
+  /// Voter account identifier.
+  user_id String
+  /// Post target, when this is a post vote.
+  post_id String?
+  /// Comment target, when this is a comment vote.
+  comment_id String?
+  /// Signed direction, +1 or -1.
+  value Int
+  /// Vote creation or latest transition instant.
+  created_at DateTime
+  /// Voter account.
+  user reddit_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  /// Post target.
+  post reddit_posts? @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  /// Comment target.
+  comment reddit_comments? @relation(fields: [comment_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, post_id])
+  @@unique([user_id, comment_id])
+  @@index([post_id, value])
+  @@index([comment_id, value])
+}

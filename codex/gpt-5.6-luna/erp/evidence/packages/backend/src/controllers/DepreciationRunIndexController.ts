@@ -1,2 +1,0 @@
-import * as core from "@nestia/core"; import { Controller } from "@nestjs/common"; import type { IAuth, IDepreciationRun, IPage } from "@benchmark/erp-api"; import { AssetProvider } from "../providers/AssetProvider";
-/** Lists depreciation runs. */ @Controller("depreciation-run-search") export class DepreciationRunIndexController { @core.TypedRoute.Patch() public async index(@core.TypedHeaders() h: IAuth.IHeaders, @core.TypedBody() input: IDepreciationRun.IRequest): Promise<IPage<IDepreciationRun>> { return AssetProvider.runIndex(h, input); } }

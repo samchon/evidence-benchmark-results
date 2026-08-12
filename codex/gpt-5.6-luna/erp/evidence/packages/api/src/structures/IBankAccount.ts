@@ -1,29 +1,73 @@
-import type { tags } from "typia";
-import type { IPage } from "../typings";
-/** Organization bank account. */
+import { tags } from "typia";
+
+import type { IErpRecord } from "./IErpRecord";
+
 /**
- * @evidence prisma:bank_accounts Exposes the persisted bank_accounts record.
+ * BankAccount public representation.
+ * @evidence docs/analysis/02-domain-model.md#req-dom-bank-account-bank-accounts Exposes the aggregate contract represented by this DTO.
+ * @evidenceReview docs/analysis/02-domain-model.md#req-dom-bank-account-bank-accounts Read the DTO declaration and checked its public and inherited fields against the cited requirement.
+ * @evidence prisma:bank_accounts Represents the persisted bank_accounts model.
+ * @evidenceReview prisma:bank_accounts Read the DTO declaration and compared its concrete record shape with the cited Prisma model.
  */
-export interface IBankAccount {
-  /** @evidence prisma:bank_accounts.id Carries the persisted id value. */
+export interface IBankAccount extends IErpRecord {
+  /** id.
+   * @evidence prisma:bank_accounts.id Carries the persisted id value.
+   * @evidenceReview prisma:bank_accounts.id Read the DTO property and compared its type with the cited Prisma column.
+   */
   id: string & tags.Format<"uuid">;
-/** @evidence prisma:bank_accounts.institution_name Carries the persisted institutionName value. */
-  institutionName: string;
-/** @evidence prisma:bank_accounts.account_reference Carries the persisted accountReference value. */
-  accountReference: string;
-/** @evidence prisma:bank_accounts.currency_code Carries the persisted currencyCode value. */
-  currencyCode: string;
-/** @evidence prisma:bank_accounts.opening_balance Carries the persisted openingBalance value. */
-  openingBalance: number;
-/** @evidence prisma:bank_accounts.ledger_account_id Carries the persisted ledgerAccountId value. */
-  ledgerAccountId: string & tags.Format<"uuid">;
-/** @evidence prisma:bank_accounts.reconciliation_state Carries the persisted reconciliationState value. */
-  reconciliationState: string;
-/** @evidence prisma:bank_accounts.active Carries the persisted active value. */
-  active: boolean;
-/** @evidence prisma:bank_accounts.created_at Carries the persisted createdAt value. */
+  /** organizationId.
+   * @evidence prisma:bank_accounts.organization_id Carries the persisted organization_id value.
+   * @evidenceReview prisma:bank_accounts.organization_id Read the DTO property and compared its type with the cited Prisma column.
+   */
+  organizationId: string & tags.Format<"uuid">;
+  /** name.
+   * @evidence prisma:bank_accounts.name Carries the persisted name value.
+   * @evidenceReview prisma:bank_accounts.name Read the DTO property and compared its type with the cited Prisma column.
+   */
+  name: null | string;
+  /** status.
+   * @evidence prisma:bank_accounts.status Carries the persisted status value.
+   * @evidenceReview prisma:bank_accounts.status Read the DTO property and compared its type with the cited Prisma column.
+   */
+  status: null | string;
+  /** description.
+   * @evidence prisma:bank_accounts.description Carries the persisted description value.
+   * @evidenceReview prisma:bank_accounts.description Read the DTO property and compared its type with the cited Prisma column.
+   */
+  description: null | string;
+  /** referenceId.
+   * @evidence prisma:bank_accounts.reference_id Carries the persisted reference_id value.
+   * @evidenceReview prisma:bank_accounts.reference_id Read the DTO property and compared its type with the cited Prisma column.
+   */
+  referenceId: null | string & tags.Format<"uuid">;
+  /** quantity.
+   * @evidence prisma:bank_accounts.quantity Carries the persisted quantity value.
+   * @evidenceReview prisma:bank_accounts.quantity Read the DTO property and compared its type with the cited Prisma column.
+   */
+  quantity: null | number;
+  /** amount.
+   * @evidence prisma:bank_accounts.amount Carries the persisted amount value.
+   * @evidenceReview prisma:bank_accounts.amount Read the DTO property and compared its type with the cited Prisma column.
+   */
+  amount: null | number;
+  /** createdAt.
+   * @evidence prisma:bank_accounts.created_at Carries the persisted created_at value.
+   * @evidenceReview prisma:bank_accounts.created_at Read the DTO property and compared its type with the cited Prisma column.
+   */
   createdAt: string & tags.Format<"date-time">;
-/** @evidence prisma:bank_accounts.updated_at Carries the persisted updatedAt value. */
-  updatedAt: string & tags.Format<"date-time">;
+  /** updatedAt.
+   * @evidence prisma:bank_accounts.updated_at Carries the persisted updated_at value.
+   * @evidenceReview prisma:bank_accounts.updated_at Read the DTO property and compared its type with the cited Prisma column.
+   */
+  updatedAt: null | string & tags.Format<"date-time">;
+  /** deletedAt.
+   * @evidence prisma:bank_accounts.deleted_at Carries the persisted deleted_at value.
+   * @evidenceReview prisma:bank_accounts.deleted_at Read the DTO property and compared its type with the cited Prisma column.
+   */
+  deletedAt: null | string & tags.Format<"date-time">;
+  /** attributes.
+   * @evidence prisma:bank_accounts.attributes Carries aggregate-specific persisted fields.
+   * @evidenceReview prisma:bank_accounts.attributes Read the DTO property and compared its type with the cited Prisma column.
+   */
+  attributes: null | Record<string, unknown>;
 }
-export namespace IBankAccount { export interface ICreate { institutionName: string & tags.MinLength<1>; accountReference: string & tags.MinLength<1>; currencyCode: string & tags.MinLength<3>; openingBalance: number; ledgerAccountId: string & tags.Format<"uuid">; } export interface IUpdate { institutionName?: string; openingBalance?: number; ledgerAccountId?: string; } export interface IRequest extends IPage.IRequest { search?: string; includeInactive?: boolean; } }

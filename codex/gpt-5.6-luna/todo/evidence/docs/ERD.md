@@ -8,126 +8,151 @@
 
 ```mermaid
 erDiagram
-"todo_accounts" {
+"todo_users" {
   String id PK
   String email UK
   String password_hash
   DateTime created_at
+  DateTime updated_at
 }
 "todo_profiles" {
   String id PK
-  String todo_account_id FK,UK
+  String todo_user_id FK,UK
   String display_name
   DateTime created_at
   DateTime updated_at
 }
 "todo_sessions" {
   String id PK
-  String todo_account_id FK
+  String todo_user_id FK
   String refresh_token_hash UK
   DateTime created_at
   DateTime expires_at
   DateTime revoked_at "nullable"
 }
+"todo_recovery_tokens" {
+  String id PK
+  String todo_user_id FK
+  String token_hash UK
+  DateTime created_at
+  DateTime expires_at
+  DateTime consumed_at "nullable"
+}
 "todo_todos" {
   String id PK
-  String todo_account_id FK
+  String todo_user_id FK
   String title
   String description "nullable"
   DateTime start_date "nullable"
   DateTime due_date "nullable"
   Boolean completed
+  Boolean trashed
   DateTime created_at
-  DateTime updated_at
   DateTime trashed_at "nullable"
+  Int content_version
+  DateTime updated_at
 }
 "todo_todo_histories" {
   String id PK
   String todo_todo_id FK
   DateTime created_at
-  Boolean title_changed
   String title "nullable"
-  Boolean description_changed
   String description "nullable"
-  Boolean start_date_changed
   DateTime start_date "nullable"
-  Boolean due_date_changed
   DateTime due_date "nullable"
+  Boolean description_changed
+  Boolean start_date_changed
+  Boolean due_date_changed
 }
-"todo_profiles" |o--|| "todo_accounts" : account
-"todo_sessions" }o--|| "todo_accounts" : account
-"todo_todos" }o--|| "todo_accounts" : account
+"todo_profiles" |o--|| "todo_users" : user
+"todo_sessions" }o--|| "todo_users" : user
+"todo_recovery_tokens" }o--|| "todo_users" : user
+"todo_todos" }o--|| "todo_users" : user
 "todo_todo_histories" }o--|| "todo_todos" : todo
 ```
 
-### `todo_accounts`
+### `todo_users`
 
-Credentialed account identity used by the private Todo product.
+Credentialed user account and its private ownership boundary.
 
 Properties as follows:
 
 - `id`: Application-assigned UUID.
-- `email`: Canonical lower-case, trimmed login email.
-- `password_hash`: Password hash; plaintext credentials never persist.
+- `email`: Canonical lower-case, trimmed email used as the stable login identity.
+- `password_hash`: Scrypt-derived password verifier; plaintext passwords are never stored.
 - `created_at`: Account creation instant.
+- `updated_at`: Last credential or account metadata update instant.
 
 ### `todo_profiles`
 
-Private display profile paired one-to-one with an account.
+One private display profile attached to exactly one account.
 
 Properties as follows:
 
 - `id`: Application-assigned UUID.
-- `todo_account_id`: Owning account identifier.
-- `display_name`: Current private display name.
+- `todo_user_id`: Owning account UUID.
+- `display_name`: Current normalized display name.
 - `created_at`: Profile creation instant.
-- `updated_at`: Last display-name change instant.
+- `updated_at`: Last display-name update instant.
 
 ### `todo_sessions`
 
-One authenticated connection for an account.
+One authenticated device/session for an account.
 
 Properties as follows:
 
 - `id`: Application-assigned UUID.
-- `todo_account_id`: Owning account identifier.
+- `todo_user_id`: Owning account UUID.
 - `refresh_token_hash`: Hash of the issued refresh proof.
 - `created_at`: Session creation instant.
-- `expires_at`: Refresh proof expiry instant.
-- `revoked_at`: Revocation instant; null means currently valid.
+- `expires_at`: Expiry instant after which the session cannot refresh.
+- `revoked_at`: Set when this session is ended; null means currently valid.
+
+### `todo_recovery_tokens`
+
+A one-time email recovery proof recorded at the delivery boundary.
+
+Properties as follows:
+
+- `id`: Application-assigned UUID.
+- `todo_user_id`: Account UUID receiving the proof.
+- `token_hash`: Hash of the one-time proof held by the delivery boundary.
+- `created_at`: Time the proof was created.
+- `expires_at`: Time after which the proof is invalid.
+- `consumed_at`: Set when the proof is consumed; null means unused.
 
 ### `todo_todos`
 
-Private Todo owned by one account with independent completion and trash
-availability dimensions.
+A privately owned Todo with independent completion and availability state.
 
 Properties as follows:
 
 - `id`: Application-assigned UUID.
-- `todo_account_id`: Owning account identifier.
-- `title`: Required task title after trimming.
-- `description`: Optional task description; null means empty.
-- `start_date`: Optional calendar start date at UTC midnight.
-- `due_date`: Optional calendar due date at UTC midnight.
-- `completed`: Completion state; false is incomplete and true is complete.
-- `created_at`: Original creation instant.
-- `updated_at`: Last content or completion update instant.
-- `trashed_at`: Most recent move-to-trash instant; null means active.
+- `todo_user_id`: Permanent owning account UUID.
+- `title`: Required normalized short task title.
+- `description`: Optional full task details; null means no description was supplied.
+- `start_date`: Optional calendar start date stored at UTC midnight; null means unset.
+- `due_date`: Optional calendar due date stored at UTC midnight; null means unset.
+- `completed`: Completion state, exactly `incomplete` or `complete`.
+- `trashed`: Availability state, exactly `active` or `trashed`.
+- `created_at`: Creation instant that never changes through the lifecycle.
+- `trashed_at`: Most recent move into trash; null while never trashed or currently active.
+- `content_version`: Optimistic content version incremented for each accepted content edit.
+- `updated_at`: Last successful content-edit instant used for stale-edit detection.
 
 ### `todo_todo_histories`
 
-Immutable changed-to values for one accepted Todo content edit.
+One immutable record of changed-to content from one accepted Todo edit.
 
 Properties as follows:
 
 - `id`: Application-assigned UUID.
-- `todo_todo_id`: Owning Todo identifier.
-- `created_at`: Edit instant.
-- `title_changed`: Whether title participated in this edit.
-- `title`: Changed-to title when title_changed is true.
-- `description_changed`: Whether description participated in this edit.
-- `description`: Changed-to description; null means explicitly cleared.
-- `start_date_changed`: Whether start date participated in this edit.
-- `start_date`: Changed-to start date; null means explicitly cleared.
-- `due_date_changed`: Whether due date participated in this edit.
-- `due_date`: Changed-to due date; null means explicitly cleared.
+- `todo_todo_id`: Todo UUID whose content was edited.
+- `created_at`: Edit instant, ordered newest first in the public history operation.
+- `title`: Changed-to title; null means title did not participate in this edit.
+- `description`: Changed-to description; null means absent, while empty string records a clear.
+- `start_date`: Changed-to start date; null means absent or explicitly cleared by a flag.
+- `due_date`: Changed-to due date; null means absent or explicitly cleared by a flag.
+- `description_changed`: Whether the description value participated, including an explicit clear.
+- `start_date_changed`: Whether the start date value participated, including an explicit clear.
+- `due_date_changed`: Whether the due date value participated, including an explicit clear.

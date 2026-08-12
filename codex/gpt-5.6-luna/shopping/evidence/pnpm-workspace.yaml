@@ -11,6 +11,10 @@ modulesCacheMaxAge: 0
 # on every install. Pinning both consumers to the catalog version keeps the
 # workspace installable on any Node the operator happens to run.
 overrides:
+  "ttsc": "file:.benchmark-deps/ttsc.tgz"
+  "@ttsc/lint": "file:.benchmark-deps/lint.tgz"
+  "@ttsc/unplugin": "file:.benchmark-deps/unplugin.tgz"
+  "@ttsc/win32-x64": "file:.benchmark-deps/ttsc-win32-x64.tgz"
   better-sqlite3: 12.11.1
 
 onlyBuiltDependencies:
@@ -23,16 +27,16 @@ catalogs:
   samchon:
     nestia: "^12.1.0"
     "@nestia/core": "^12.1.0"
-    "@nestia/e2e": "^12.1.0"
+    "@nestia/e2e": "^12.0.0"
     "@nestia/fetcher": "^12.1.0"
     "@nestia/sdk": "^12.1.0"
-    typia: "^13.2.0"
+    typia: "13.2.0"
 
   typescript:
     typescript: "^7.0.2"
-    ttsc: "^0.24.0"
-    "@ttsc/lint": "^0.24.0"
-    "@ttsc/unplugin": "^0.24.0"
+    ttsc: "^0.26.0"
+    "@ttsc/lint": "^0.26.0"
+    "@ttsc/unplugin": "^0.26.0"
 
   utils:
     "@types/node": "^25.3.0"

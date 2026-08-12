@@ -10,46 +10,67 @@
 erDiagram
 "users" {
   String id PK
-  String email UK
-  String normalized_email UK
-  String username UK
-  String normalized_username UK
-  String password
-  String display_name
-  String bio
-  Int karma
-  String avatar "nullable"
+  String email_normalized UK
+  String username
+  String username_normalized UK
+  String password_hash
   DateTime deleted_at "nullable"
   DateTime created_at
-}
-"sessions" {
-  String id PK
-  String user_id FK
-  String token UK
-  String refresh_token UK
-  DateTime created_at
-  DateTime access_expires_at
-  DateTime refresh_expires_at
+  DateTime updated_at
 }
 "profiles" {
   String id PK
   String user_id FK,UK
+  String display_name
+  String bio
+  String avatar_media_id FK,UK "nullable"
+  DateTime created_at
+  DateTime updated_at
+}
+"sessions" {
+  String id PK
+  String user_id FK
+  DateTime created_at
+  DateTime last_used_at
+  DateTime revoked_at "nullable"
+}
+"recovery_proofs" {
+  String id PK
+  String user_id FK
+  String proof_hash
+  String proof_payload
+  DateTime created_at
+  DateTime expires_at
+  DateTime used_at "nullable"
+  String recipient_email
+}
+"media" {
+  String id PK
+  String mime_type
+  String data
+  String thumbnail_data "nullable"
+  Int width
+  Int height
+  DateTime created_at
 }
 "communities" {
   String id PK
-  String name UK
-  String normalized_name UK
+  String name
+  String name_normalized UK
   String description
-  String icon "nullable"
+  String icon_media_id FK,UK
   String status
   String owner_id FK "nullable"
   DateTime created_at
+  DateTime updated_at
 }
 "subscriptions" {
   String id PK
   String user_id FK
   String community_id FK
   DateTime created_at
+  DateTime activated_at
+  DateTime ended_at "nullable"
 }
 "moderators" {
   String id PK
@@ -61,10 +82,9 @@ erDiagram
   String id PK
   String user_id FK
   String community_id FK
-  String moderator_id FK
-  DateTime ended_at "nullable"
-  String unbanned_by FK "nullable"
+  String actor_id FK "nullable"
   DateTime created_at
+  DateTime ended_at "nullable"
 }
 "posts" {
   String id PK
@@ -72,17 +92,16 @@ erDiagram
   String type
   String text "nullable"
   String url "nullable"
-  String image "nullable"
-  String thumbnail "nullable"
-  String author_id FK
+  String image_media_id FK,UK "nullable"
+  String author_id FK "nullable"
   String community_id FK
   DateTime created_at
   DateTime deleted_at "nullable"
 }
 "comments" {
   String id PK
-  String text
-  String author_id FK
+  String text "nullable"
+  String author_id FK "nullable"
   String post_id FK
   String parent_id FK "nullable"
   DateTime created_at
@@ -90,274 +109,265 @@ erDiagram
 }
 "votes" {
   String id PK
-  String value
+  String user_id FK
+  String post_id FK "nullable"
+  String comment_id FK "nullable"
+  Int value
   DateTime created_at
-}
-"post_votes" {
-  String vote_id PK,FK
-  String user_id FK
-  String post_id FK
-}
-"comment_votes" {
-  String vote_id PK,FK
-  String user_id FK
-  String comment_id FK
 }
 "reports" {
   String id PK
-  String reporter_id FK
+  String reporter_id FK "nullable"
   String community_id FK
+  String post_id FK "nullable"
+  String comment_id FK "nullable"
   String reason
   String status
   DateTime created_at
-  String moderator_id FK "nullable"
-  DateTime resolved_at "nullable"
+  DateTime decided_at "nullable"
+  String decided_by_id FK "nullable"
 }
-"report_posts" {
-  String report_id PK,FK
-  String post_id FK
-}
-"report_comments" {
-  String report_id PK,FK
-  String comment_id FK
-}
-"recovery_proofs" {
+"moderation_histories" {
   String id PK
-  String email
-  String user_id FK
-  String proof UK
-  DateTime expires_at
-  DateTime used_at "nullable"
+  String community_id FK
+  String kind
+  String target_description "nullable"
+  String target_post_id "nullable"
+  String target_comment_id "nullable"
+  String reason "nullable"
+  String subject_id FK "nullable"
+  String actor_id FK "nullable"
+  DateTime created_at
 }
-"sessions" }o--|| "users" : user
 "profiles" |o--|| "users" : user
+"profiles" |o--o| "media" : avatar
+"sessions" }o--|| "users" : user
+"recovery_proofs" }o--|| "users" : user
 "communities" }o--o| "users" : owner
+"communities" |o--|| "media" : icon
 "subscriptions" }o--|| "users" : user
 "subscriptions" }o--|| "communities" : community
 "moderators" }o--|| "users" : user
 "moderators" }o--|| "communities" : community
 "bans" }o--|| "users" : user
-"bans" }o--|| "users" : moderator
-"bans" }o--o| "users" : unbanned_by_user
 "bans" }o--|| "communities" : community
-"posts" }o--|| "users" : author
+"bans" }o--o| "users" : actor
+"posts" }o--o| "users" : author
 "posts" }o--|| "communities" : community
-"comments" }o--|| "users" : author
+"posts" |o--o| "media" : image_media
+"comments" }o--o| "users" : author
 "comments" }o--|| "posts" : post
 "comments" }o--o| "comments" : parent
-"post_votes" |o--|| "votes" : vote
-"post_votes" }o--|| "users" : user
-"post_votes" }o--|| "posts" : post
-"comment_votes" |o--|| "votes" : vote
-"comment_votes" }o--|| "users" : user
-"comment_votes" }o--|| "comments" : comment
-"reports" }o--|| "users" : reporter
-"reports" }o--o| "users" : moderator
+"votes" }o--|| "users" : user
+"votes" }o--o| "posts" : post
+"votes" }o--o| "comments" : comment
+"reports" }o--o| "users" : reporter
 "reports" }o--|| "communities" : community
-"report_posts" |o--|| "reports" : report
-"report_posts" }o--|| "posts" : post
-"report_comments" |o--|| "reports" : report
-"report_comments" }o--|| "comments" : comment
-"recovery_proofs" }o--|| "users" : user
+"reports" }o--o| "posts" : post
+"reports" }o--o| "comments" : comment
+"reports" }o--o| "users" : decided_by
+"moderation_histories" }o--|| "communities" : community
+"moderation_histories" }o--o| "users" : subject
+"moderation_histories" }o--o| "users" : actor
 ```
 
 ### `users`
 
-Account identity and profile.
+A platform account and its private credentials.
 
 Properties as follows:
 
-- `id`: Primary key.
-- `email`: Private sign-in email.
-- `normalized_email`: Case-folded email used for identity uniqueness.
-- `username`: Public unique username.
-- `normalized_username`: Case-folded username used for identity uniqueness.
-- `password`: Password hash.
-- `display_name`: Public display name.
-- `bio`: Public biography.
-- `karma`: Signed karma total derived from active received votes.
-- `avatar`: Optional avatar payload.
-- `deleted_at`: Permanent deletion marker.
-- `created_at`: Creation instant.
-
-### `sessions`
-
-Authenticated session.
-
-Properties as follows:
-
-- `id`: Primary key.
-- `user_id`: Owning user identifier.
-- `token`: Access token digest.
-- `refresh_token`: Refresh token digest.
-- `created_at`: Creation instant.
-- `access_expires_at`: Access-token expiry instant.
-- `refresh_expires_at`: Refresh-token expiry instant.
+- `id`: Primary identifier.
+- `email_normalized`: Case-normalized sign-in address, retained after deletion.
+- `username`: Public username in its selected casing.
+- `username_normalized`: Case-normalized public identifier.
+- `password_hash`: Password hash; never exposed by the API.
+- `deleted_at`: Permanent deletion instant, or null while active.
+- `created_at`: Account creation instant.
+- `updated_at`: Last account mutation instant.
 
 ### `profiles`
 
-Public profile projection.
+Public attributes belonging one-to-one to an account.
 
 Properties as follows:
 
-- `id`: Primary key and user identifier.
-- `user_id`: Owning user identifier.
+- `id`: Primary identifier, equal to the user identifier.
+- `user_id`: Owning account.
+- `display_name`: Public display name.
+- `bio`: Public biography, possibly empty.
+- `avatar_media_id`: Optional avatar media identifier.
+- `created_at`: Profile creation instant.
+- `updated_at`: Last public edit instant.
 
-### `communities`
+### `sessions`
 
-Public discussion community.
-
-Properties as follows:
-
-- `id`: Primary key.
-- `name`: Stable public name.
-- `normalized_name`: Normalized lookup name.
-- `description`: Public description.
-- `icon`: Optional icon payload.
-- `status`: Active or archived state.
-- `owner_id`: Current owner identifier.
-- `created_at`: Creation instant.
-
-### `subscriptions`
-
-Active user-community subscription.
+One independently revocable authenticated connection.
 
 Properties as follows:
 
-- `id`: Primary key.
-- `user_id`: User identifier.
-- `community_id`: Community identifier.
-- `created_at`: Activation instant.
-
-### `moderators`
-
-Community-scoped moderator assignment.
-
-Properties as follows:
-
-- `id`: Primary key.
-- `user_id`: User identifier.
-- `community_id`: Community identifier.
-- `created_at`: Assignment instant.
-
-### `bans`
-
-Community participation ban.
-
-Properties as follows:
-
-- `id`: Primary key.
-- `user_id`: Banned user identifier.
-- `community_id`: Community identifier.
-- `moderator_id`: Moderator identifier.
-- `ended_at`: Ending instant for resolved ban history.
-- `unbanned_by`: User who ended the ban.
-- `created_at`: Activation instant.
-
-### `posts`
-
-Community post.
-
-Properties as follows:
-
-- `id`: Primary key.
-- `title`: Post title.
-- `type`: Payload kind.
-- `text`: Text payload.
-- `url`: Link payload.
-- `image`: Image payload.
-- `thumbnail`: Aspect-preserving image thumbnail.
-- `author_id`: Author identifier.
-- `community_id`: Community identifier.
-- `created_at`: Immutable creation instant.
-- `deleted_at`: Deletion instant.
-
-### `comments`
-
-Nested post comment.
-
-Properties as follows:
-
-- `id`: Primary key.
-- `text`: Comment text.
-- `author_id`: Author identifier.
-- `post_id`: Post identifier.
-- `parent_id`: Optional parent identifier.
-- `created_at`: Immutable creation instant.
-- `deleted_at`: Deletion instant.
-
-### `votes`
-
-Shared vote value and lifecycle row; exactly one subtype owns its target.
-
-Properties as follows:
-
-- `id`: Primary key.
-- `value`: Up or down.
-- `created_at`: Creation instant.
-
-### `post_votes`
-
-User vote targeting one post; the unique pair prevents duplicate active votes.
-
-Properties as follows:
-
-- `vote_id`: Shared vote identifier and primary key.
-- `user_id`: Voter identifier.
-- `post_id`: Target post identifier.
-
-### `comment_votes`
-
-User vote targeting one comment; the unique pair prevents duplicate active votes.
-
-Properties as follows:
-
-- `vote_id`: Shared vote identifier and primary key.
-- `user_id`: Voter identifier.
-- `comment_id`: Target comment identifier.
-
-### `reports`
-
-Content report and its terminal moderation outcome.
-
-Properties as follows:
-
-- `id`: Primary key.
-- `reporter_id`: Reporter identifier.
-- `community_id`: Community identifier.
-- `reason`: Reason text.
-- `status`: Pending, approved, or dismissed.
-- `created_at`: Submission instant.
-- `moderator_id`: Moderator who resolved the report.
-- `resolved_at`: Resolution instant.
-
-### `report_posts`
-
-Post target for one report, enforcing exactly one report target subtype.
-
-Properties as follows:
-
-- `report_id`: Report identifier and primary key.
-- `post_id`: Target post identifier.
-
-### `report_comments`
-
-Comment target for one report, enforcing exactly one report target subtype.
-
-Properties as follows:
-
-- `report_id`: Report identifier and primary key.
-- `comment_id`: Target comment identifier.
+- `id`: Primary identifier.
+- `user_id`: Owning account identifier.
+- `created_at`: Session creation instant.
+- `last_used_at`: Last continuation instant.
+- `revoked_at`: Revocation instant, or null while active.
 
 ### `recovery_proofs`
 
-One-time password recovery proof.
+A one-time password-recovery proof delivery record.
 
 Properties as follows:
 
-- `id`: Primary key.
-- `email`: Normalized email requested for recovery.
-- `user_id`: Owning user.
-- `proof`: Hashed or opaque proof value.
-- `expires_at`: Expiry instant.
-- `used_at`: Consumption instant, if used.
+- `id`: Primary identifier.
+- `user_id`: Account receiving the proof.
+- `proof_hash`: Hash of the secret delivered out of band.
+- `proof_payload`: Secret payload carried by the recorded delivery boundary.
+- `created_at`: Creation instant.
+- `expires_at`: Expiration instant.
+- `used_at`: Consumption instant, or null while unused.
+- `recipient_email`: Registered recipient address.
+
+### `media`
+
+An uploaded public image and its presentation metadata.
+
+Properties as follows:
+
+- `id`: Primary identifier.
+- `mime_type`: Accepted MIME type.
+- `data`: Original encoded image bytes represented as base64.
+- `thumbnail_data`: Bounded thumbnail bytes for image posts, or null for other media.
+- `width`: Original pixel width.
+- `height`: Original pixel height.
+- `created_at`: Creation instant.
+
+### `communities`
+
+A public community and its scoped authority.
+
+Properties as follows:
+
+- `id`: Primary identifier.
+- `name`: Public name in selected casing.
+- `name_normalized`: Case-normalized name used for uniqueness and search.
+- `description`: Public description.
+- `icon_media_id`: Required public icon media.
+- `status`: Active or permanently archived status.
+- `owner_id`: Current owner identifier, or null for an archived community.
+- `created_at`: Creation instant.
+- `updated_at`: Last public mutation instant.
+
+### `subscriptions`
+
+One user's current or historical relationship with a community.
+
+Properties as follows:
+
+- `id`: Primary identifier.
+- `user_id`: User identifier.
+- `community_id`: Community identifier.
+- `created_at`: First activation instant.
+- `activated_at`: Most recent activation instant.
+- `ended_at`: End instant, or null while active.
+
+### `moderators`
+
+A community-scoped moderator assignment.
+
+Properties as follows:
+
+- `id`: Primary identifier.
+- `user_id`: Assigned user.
+- `community_id`: Community.
+- `created_at`: Assignment instant used for succession tenure.
+
+### `bans`
+
+A current or historical community participation ban.
+
+Properties as follows:
+
+- `id`: Primary identifier.
+- `user_id`: Banned user identifier.
+- `community_id`: Community identifier.
+- `actor_id`: Acting moderator identifier, nullable after account deletion.
+- `created_at`: Activation instant.
+- `ended_at`: End instant, or null while active.
+
+### `posts`
+
+A post with exactly one type-specific payload.
+
+Properties as follows:
+
+- `id`: Primary identifier.
+- `title`: Required title.
+- `type`: Text, link, or image discriminator.
+- `text`: Text payload for text posts.
+- `url`: URL payload for link posts.
+- `image_media_id`: Image payload identifier for image posts.
+- `author_id`: Author identifier, nullable only after account deletion.
+- `community_id`: Community identifier.
+- `created_at`: Immutable creation instant.
+- `deleted_at`: Permanent deletion instant, or null while available.
+
+### `comments`
+
+A recursive comment tree node.
+
+Properties as follows:
+
+- `id`: Primary identifier.
+- `text`: Comment text, null after content deletion.
+- `author_id`: Author, null when a deleted marker de-identifies the account.
+- `post_id`: Post identifier.
+- `parent_id`: Immediate parent, or null for a top-level comment.
+- `created_at`: Immutable creation instant.
+- `deleted_at`: Content deletion instant, or null while available.
+
+### `votes`
+
+One active signed vote on one post or comment.
+
+Properties as follows:
+
+- `id`: Primary identifier.
+- `user_id`: Voter identifier.
+- `post_id`: Post target, mutually exclusive with comment_id.
+- `comment_id`: Comment target, mutually exclusive with post_id.
+- `value`: Signed value, +1 or -1.
+- `created_at`: Creation or last direction-change instant.
+
+### `reports`
+
+A pending or resolved private content report.
+
+Properties as follows:
+
+- `id`: Primary identifier.
+- `reporter_id`: Reporter, nullable after account deletion.
+- `community_id`: Community owning the target.
+- `post_id`: Post target, mutually exclusive with comment_id.
+- `comment_id`: Comment target, mutually exclusive with post_id.
+- `reason`: Nonblank reason supplied by the reporter.
+- `status`: unresolved, approved, or dismissed.
+- `created_at`: Submission instant.
+- `decided_at`: Decision instant, or null while unresolved.
+- `decided_by_id`: Acting moderator, nullable after deletion.
+
+### `moderation_histories`
+
+Private immutable record of a moderation decision.
+
+Properties as follows:
+
+- `id`: Primary identifier.
+- `community_id`: Community identifier.
+- `kind`: approved, dismissed, deleted, banned, or unbanned.
+- `target_description`: Target description retained only while target exists.
+- `target_post_id`: Target post identifier while the target remains available.
+- `target_comment_id`: Target comment identifier while the target remains available.
+- `reason`: Reason when this record came from a report.
+- `subject_id`: Subject account, nullable after de-identification.
+- `actor_id`: Acting account, nullable after de-identification.
+- `created_at`: Event instant.

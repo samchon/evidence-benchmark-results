@@ -1,37 +1,71 @@
-import type { tags } from "typia";
-import type { IPage } from "../typings";
-/** Immutable inventory quantity movement. */
+import { tags } from "typia";
+
+import type { IErpRecord } from "./IErpRecord";
+
 /**
- * @evidence prisma:stock_movements Exposes the persisted stock_movements record.
+ * StockMovement public representation.
+ * @evidence prisma:stock_movements Represents the persisted stock_movements model.
+ * @evidenceReview prisma:stock_movements Read the DTO declaration and compared its concrete record shape with the cited Prisma model.
  */
-export interface IStockMovement {
-  /** @evidence prisma:stock_movements.id Carries the persisted id value. */
+export interface IStockMovement extends IErpRecord {
+  /** id.
+   * @evidence prisma:stock_movements.id Carries the persisted id value.
+   * @evidenceReview prisma:stock_movements.id Read the DTO property and compared its type with the cited Prisma column.
+   */
   id: string & tags.Format<"uuid">;
-  /** @evidence prisma:stock_movements.item_id Carries the persisted itemId value. */
-  itemId: string & tags.Format<"uuid">;
-  /** @evidence prisma:stock_movements.warehouse_id Carries the persisted warehouseId value. */
-  warehouseId: string & tags.Format<"uuid">;
-  /** @evidence prisma:stock_movements.location_id Carries the persisted locationId value. */
-  locationId: null | (string & tags.Format<"uuid">);
-  /** @evidence prisma:stock_movements.movement_type Carries the persisted movementType value. */
-  movementType: string;
-  /** @evidence prisma:stock_movements.quantity Carries the persisted quantity value. */
-  quantity: number;
-  /** @evidence prisma:stock_movements.unit_cost Carries the persisted unitCost value. */
-  unitCost: null | number;
-  /** @evidence prisma:stock_movements.currency_code Carries the persisted currencyCode value. */
-  currencyCode: null | string;
-  /** @evidence prisma:stock_movements.source_type Carries the persisted sourceType value. */
-  sourceType: string;
-  /** @evidence prisma:stock_movements.source_id Carries the persisted sourceId value. */
-  sourceId: string;
-  /** @evidence prisma:stock_movements.lot_id Carries the persisted lotId value. */
-  lotId: null | string;
-  /** @evidence prisma:stock_movements.serial_id Carries the persisted serialId value. */
-  serialId: null | string;
-  /** @evidence prisma:stock_movements.occurred_at Carries the persisted occurredAt value. */
-  occurredAt: string & tags.Format<"date-time">;
-  /** @evidence prisma:stock_movements.created_at Carries the persisted createdAt value. */
+  /** organizationId.
+   * @evidence prisma:stock_movements.organization_id Carries the persisted organization_id value.
+   * @evidenceReview prisma:stock_movements.organization_id Read the DTO property and compared its type with the cited Prisma column.
+   */
+  organizationId: string & tags.Format<"uuid">;
+  /** name.
+   * @evidence prisma:stock_movements.name Carries the persisted name value.
+   * @evidenceReview prisma:stock_movements.name Read the DTO property and compared its type with the cited Prisma column.
+   */
+  name: null | string;
+  /** status.
+   * @evidence prisma:stock_movements.status Carries the persisted status value.
+   * @evidenceReview prisma:stock_movements.status Read the DTO property and compared its type with the cited Prisma column.
+   */
+  status: null | string;
+  /** description.
+   * @evidence prisma:stock_movements.description Carries the persisted description value.
+   * @evidenceReview prisma:stock_movements.description Read the DTO property and compared its type with the cited Prisma column.
+   */
+  description: null | string;
+  /** referenceId.
+   * @evidence prisma:stock_movements.reference_id Carries the persisted reference_id value.
+   * @evidenceReview prisma:stock_movements.reference_id Read the DTO property and compared its type with the cited Prisma column.
+   */
+  referenceId: null | string & tags.Format<"uuid">;
+  /** quantity.
+   * @evidence prisma:stock_movements.quantity Carries the persisted quantity value.
+   * @evidenceReview prisma:stock_movements.quantity Read the DTO property and compared its type with the cited Prisma column.
+   */
+  quantity: null | number;
+  /** amount.
+   * @evidence prisma:stock_movements.amount Carries the persisted amount value.
+   * @evidenceReview prisma:stock_movements.amount Read the DTO property and compared its type with the cited Prisma column.
+   */
+  amount: null | number;
+  /** createdAt.
+   * @evidence prisma:stock_movements.created_at Carries the persisted created_at value.
+   * @evidenceReview prisma:stock_movements.created_at Read the DTO property and compared its type with the cited Prisma column.
+   */
   createdAt: string & tags.Format<"date-time">;
+  /** updatedAt.
+   * @evidence prisma:stock_movements.updated_at Carries the persisted updated_at value.
+   * @evidenceReview prisma:stock_movements.updated_at Read the DTO property and compared its type with the cited Prisma column.
+   */
+  updatedAt: null | string & tags.Format<"date-time">;
+  /** deletedAt.
+   * @evidence prisma:stock_movements.deleted_at Carries the persisted deleted_at value.
+   * @evidenceReview prisma:stock_movements.deleted_at Read the DTO property and compared its type with the cited Prisma column.
+   */
+  deletedAt: null | string & tags.Format<"date-time">;
+  /** attributes.
+   * @evidence prisma:stock_movements.attributes Carries aggregate-specific persisted fields.
+   * @evidenceReview prisma:stock_movements.attributes Read the DTO property and compared its type with the cited Prisma column.
+   */
+  attributes: null | Record<string, unknown>;
 }
-export namespace IStockMovement { export interface ICreate { itemId: string & tags.Format<"uuid">; warehouseId: string & tags.Format<"uuid">; locationId?: null | string; movementType: string & tags.MinLength<1>; quantity: number; unitCost?: null | number; currencyCode?: null | string; sourceType: string & tags.MinLength<1>; sourceId: string & tags.Format<"uuid">; lotId?: null | string; serialId?: null | string; occurredAt: string & tags.Format<"date-time">; } export interface IRequest extends IPage.IRequest { itemId?: string; warehouseId?: string; movementType?: string; } export interface IQuantity { itemId: string; warehouseId: string; quantity: number; } }

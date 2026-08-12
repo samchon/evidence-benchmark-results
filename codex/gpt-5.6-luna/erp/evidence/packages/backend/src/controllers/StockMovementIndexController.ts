@@ -1,2 +1,0 @@
-import * as core from "@nestia/core"; import { Controller } from "@nestjs/common"; import type { IAuth, IPage, IStockMovement } from "@benchmark/erp-api"; import { StockMovementProvider } from "../providers/StockMovementProvider";
-/** Lists immutable stock movements. */ @Controller("stock-movement-search") export class StockMovementIndexController { @core.TypedRoute.Patch() public async index(@core.TypedHeaders() headers: IAuth.IHeaders, @core.TypedBody() input: IStockMovement.IRequest): Promise<IPage<IStockMovement>> { return StockMovementProvider.index(headers, input); } }

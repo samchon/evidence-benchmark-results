@@ -1,2 +1,0 @@
-import * as core from "@nestia/core"; import { Controller } from "@nestjs/common"; import type { IAuth, IDepartment, IPage } from "@benchmark/erp-api"; import { HRMasterProvider } from "../providers/HRMasterProvider";
-/** Searches departments. */ @Controller("department-search") export class DepartmentIndexController { @core.TypedRoute.Patch() public async index(@core.TypedHeaders() headers: IAuth.IHeaders, @core.TypedBody() input: IDepartment.IRequest): Promise<IPage<IDepartment>> { return HRMasterProvider.departmentIndex(headers, input); } }

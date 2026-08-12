@@ -1,2 +1,0 @@
-import * as core from "@nestia/core"; import { Controller } from "@nestjs/common"; import type { IAuth, INotification, IPage } from "@benchmark/erp-api"; import { ApprovalProvider } from "../providers/ApprovalProvider";
-/** Lists user notifications. */ @Controller("notification-search") export class NotificationIndexController { @core.TypedRoute.Patch() public async index(@core.TypedHeaders() h: IAuth.IHeaders, @core.TypedBody() input: INotification.IRequest): Promise<IPage<INotification>> { return ApprovalProvider.notificationIndex(h, input); } }

@@ -1,0 +1,163 @@
+/// Credentialed private Todo account.
+model todo_users {
+  /// Primary identifier.
+  id String @id
+  /// Canonical lower-case, trimmed login email.
+  email String @unique
+  /// Password hash; never exposed through the API.
+  password_hash String
+  /// Account creation instant.
+  created_at DateTime
+  /// Private profile owned by this account.
+  profile todo_profiles?
+  /// Authenticated sessions owned by this account.
+  sessions todo_sessions[]
+  /// Todos owned by this account.
+  todos todo_todos[]
+  /// Recovery requests addressed to this account.
+  recovery_requests todo_recovery_requests[]
+  /// Recorded outbound recovery effects.
+  delivery_effects todo_delivery_effects[]
+}
+
+/// The one private display profile belonging to an account.
+model todo_profiles {
+  /// Primary identifier.
+  id String @id
+  /// Owning account identifier.
+  todo_user_id String @unique
+  /// Current trimmed display name.
+  display_name String
+  /// Profile creation instant.
+  created_at DateTime
+  /// Owning account.
+  user todo_users @relation(fields: [todo_user_id], references: [id], onDelete: Cascade)
+}
+
+/// One authenticated device/session for an account.
+model todo_sessions {
+  /// Primary identifier embedded in signed tokens.
+  id String @id
+  /// Owning account identifier.
+  todo_user_id String
+  /// Hash of the current refresh secret.
+  refresh_hash String
+  /// Session creation instant.
+  created_at DateTime
+  /// Refresh expiry instant.
+  expires_at DateTime
+  /// Session invalidation instant, or null while valid.
+  revoked_at DateTime?
+  /// Owning account.
+  user todo_users @relation(fields: [todo_user_id], references: [id], onDelete: Cascade)
+
+  @@index([todo_user_id])
+}
+
+/// A privately owned Todo with independent content and availability state.
+model todo_todos {
+  /// Primary identifier.
+  id String @id
+  /// Owning account identifier.
+  todo_user_id String
+  /// Required trimmed task title.
+  title String
+  /// Optional task details; null means empty.
+  description String?
+  /// Optional date-only planning start.
+  start_date DateTime?
+  /// Optional date-only planning due date.
+  due_date DateTime?
+  /// Completion flag: false is `incomplete`, true is `complete`.
+  completion Boolean
+  /// Availability flag: true is `active`, false is `trashed`.
+  availability Boolean
+  /// Original creation instant.
+  created_at DateTime
+  /// Last content mutation instant.
+  updated_at DateTime
+  /// Incremented for each accepted content edit.
+  content_version Int
+  /// Most recent move into trash, or null while never trashed.
+  trashed_at DateTime?
+  /// Owning account.
+  user todo_users @relation(fields: [todo_user_id], references: [id], onDelete: Cascade)
+  /// Immutable content-edit history.
+  histories todo_todo_histories[]
+
+  @@index([todo_user_id, availability])
+  @@index([todo_user_id, created_at])
+  @@index([todo_user_id, trashed_at])
+}
+
+/// Immutable record of one accepted Todo content edit.
+model todo_todo_histories {
+  /// Primary identifier.
+  id String @id
+  /// Todo whose content was edited.
+  todo_todo_id String
+  /// Edit instant.
+  created_at DateTime
+  /// True when title participated in this edit.
+  title_changed Boolean
+  /// New title when title_changed is true.
+  title String?
+  /// True when description participated in this edit.
+  description_changed Boolean
+  /// New description, including null when explicitly cleared.
+  description String?
+  /// True when start date participated in this edit.
+  start_date_changed Boolean
+  /// New start date, including null when explicitly cleared.
+  start_date DateTime?
+  /// True when due date participated in this edit.
+  due_date_changed Boolean
+  /// New due date, including null when explicitly cleared.
+  due_date DateTime?
+  /// Parent Todo.
+  todo todo_todos @relation(fields: [todo_todo_id], references: [id], onDelete: Cascade)
+
+  @@index([todo_todo_id, created_at, id])
+}
+
+/// One email recovery proof stored behind the delivery boundary.
+model todo_recovery_requests {
+  /// Primary identifier.
+  id String @id
+  /// Account receiving the proof.
+  todo_user_id String
+  /// Canonical email submitted for recovery.
+  email String
+  /// Hash of the one-time proof.
+  proof_hash String
+  /// Proof expiry instant.
+  expires_at DateTime
+  /// Consumption instant, or null while unused.
+  consumed_at DateTime?
+  /// Request creation instant.
+  created_at DateTime
+  /// Account owning the request.
+  user todo_users @relation(fields: [todo_user_id], references: [id], onDelete: Cascade)
+
+  @@index([email, created_at])
+}
+
+/// Durable record for an outbound effect the local workspace cannot deliver.
+model todo_delivery_effects {
+  /// Primary identifier.
+  id String @id
+  /// Optional account recipient; null for a non-account effect.
+  todo_user_id String?
+  /// Recipient address.
+  recipient String
+  /// Effect kind.
+  kind String
+  /// Effect payload, including any secret held by the delivery boundary.
+  payload String
+  /// Recording instant.
+  created_at DateTime
+  /// Account recipient when one exists.
+  user todo_users? @relation(fields: [todo_user_id], references: [id], onDelete: Cascade)
+
+  @@index([todo_user_id, created_at])
+}

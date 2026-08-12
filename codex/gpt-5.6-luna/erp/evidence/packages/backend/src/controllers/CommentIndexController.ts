@@ -1,2 +1,0 @@
-import * as core from "@nestia/core"; import { Controller } from "@nestjs/common"; import type { IAuth, IComment, IPage } from "@benchmark/erp-api"; import { CollaborationProvider } from "../providers/CollaborationProvider";
-/** Lists comments on a visible target chronologically. */ @Controller("comment-search") export class CommentIndexController { @core.TypedRoute.Patch() public async index(@core.TypedHeaders() headers: IAuth.IHeaders, @core.TypedBody() input: IComment.IRequest): Promise<IPage<IComment>> { return CollaborationProvider.commentIndex(headers, input); } }

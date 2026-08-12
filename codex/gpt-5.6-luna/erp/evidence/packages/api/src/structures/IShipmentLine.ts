@@ -1,24 +1,73 @@
-import type { tags } from "typia"; import type { IPage } from "../typings"; type Id = string & tags.Format<"uuid">;
+import { tags } from "typia";
+
+import type { IErpRecord } from "./IErpRecord";
+
 /**
- * @evidence prisma:shipment_lines Exposes the persisted shipment_lines record.
+ * ShipmentLine public representation.
+ * @evidence docs/analysis/02-domain-model.md#req-dom-shipment-shipment-lifecycle Exposes the aggregate contract represented by this DTO.
+ * @evidenceReview docs/analysis/02-domain-model.md#req-dom-shipment-shipment-lifecycle Read the DTO declaration and checked its public and inherited fields against the cited requirement.
+ * @evidence prisma:shipment_lines Represents the persisted shipment_lines model.
+ * @evidenceReview prisma:shipment_lines Read the DTO declaration and compared its concrete record shape with the cited Prisma model.
  */
-export interface IShipmentLine {
-  /** @evidence prisma:shipment_lines.id Carries the persisted id value. */
-  id: Id;
-  /** @evidence prisma:shipment_lines.shipment_id Carries the persisted shipmentId value. */
-  shipmentId: Id;
-  /** @evidence prisma:shipment_lines.sales_order_line_id Carries the persisted salesOrderLineId value. */
-  salesOrderLineId: Id;
-  /** @evidence prisma:shipment_lines.item_id Carries the persisted itemId value. */
-  itemId: null|Id;
-  /** @evidence prisma:shipment_lines.quantity Carries the persisted quantity value. */
-  quantity: number;
-  /** @evidence prisma:shipment_lines.warehouse_id Carries the persisted warehouseId value. */
-  warehouseId: null|Id;
-  /** @evidence prisma:shipment_lines.location_id Carries the persisted locationId value. */
-  locationId: null|Id;
-  /** @evidence prisma:shipment_lines.created_at Carries the persisted createdAt value. */
-  createdAt: string&tags.Format<"date-time">;
-  /** @evidence prisma:shipment_lines.updated_at Carries the persisted updatedAt value. */
-  updatedAt: string&tags.Format<"date-time">;
-} export namespace IShipmentLine { export interface ICreate { shipmentId:Id; salesOrderLineId:Id; itemId?:null|Id; quantity:number; warehouseId?:null|Id; locationId?:null|Id; } export interface IRequest extends IPage.IRequest { shipmentId?:Id; salesOrderLineId?:Id; } }
+export interface IShipmentLine extends IErpRecord {
+  /** id.
+   * @evidence prisma:shipment_lines.id Carries the persisted id value.
+   * @evidenceReview prisma:shipment_lines.id Read the DTO property and compared its type with the cited Prisma column.
+   */
+  id: string & tags.Format<"uuid">;
+  /** organizationId.
+   * @evidence prisma:shipment_lines.organization_id Carries the persisted organization_id value.
+   * @evidenceReview prisma:shipment_lines.organization_id Read the DTO property and compared its type with the cited Prisma column.
+   */
+  organizationId: string & tags.Format<"uuid">;
+  /** name.
+   * @evidence prisma:shipment_lines.name Carries the persisted name value.
+   * @evidenceReview prisma:shipment_lines.name Read the DTO property and compared its type with the cited Prisma column.
+   */
+  name: null | string;
+  /** status.
+   * @evidence prisma:shipment_lines.status Carries the persisted status value.
+   * @evidenceReview prisma:shipment_lines.status Read the DTO property and compared its type with the cited Prisma column.
+   */
+  status: null | string;
+  /** description.
+   * @evidence prisma:shipment_lines.description Carries the persisted description value.
+   * @evidenceReview prisma:shipment_lines.description Read the DTO property and compared its type with the cited Prisma column.
+   */
+  description: null | string;
+  /** referenceId.
+   * @evidence prisma:shipment_lines.reference_id Carries the persisted reference_id value.
+   * @evidenceReview prisma:shipment_lines.reference_id Read the DTO property and compared its type with the cited Prisma column.
+   */
+  referenceId: null | string & tags.Format<"uuid">;
+  /** quantity.
+   * @evidence prisma:shipment_lines.quantity Carries the persisted quantity value.
+   * @evidenceReview prisma:shipment_lines.quantity Read the DTO property and compared its type with the cited Prisma column.
+   */
+  quantity: null | number;
+  /** amount.
+   * @evidence prisma:shipment_lines.amount Carries the persisted amount value.
+   * @evidenceReview prisma:shipment_lines.amount Read the DTO property and compared its type with the cited Prisma column.
+   */
+  amount: null | number;
+  /** createdAt.
+   * @evidence prisma:shipment_lines.created_at Carries the persisted created_at value.
+   * @evidenceReview prisma:shipment_lines.created_at Read the DTO property and compared its type with the cited Prisma column.
+   */
+  createdAt: string & tags.Format<"date-time">;
+  /** updatedAt.
+   * @evidence prisma:shipment_lines.updated_at Carries the persisted updated_at value.
+   * @evidenceReview prisma:shipment_lines.updated_at Read the DTO property and compared its type with the cited Prisma column.
+   */
+  updatedAt: null | string & tags.Format<"date-time">;
+  /** deletedAt.
+   * @evidence prisma:shipment_lines.deleted_at Carries the persisted deleted_at value.
+   * @evidenceReview prisma:shipment_lines.deleted_at Read the DTO property and compared its type with the cited Prisma column.
+   */
+  deletedAt: null | string & tags.Format<"date-time">;
+  /** attributes.
+   * @evidence prisma:shipment_lines.attributes Carries aggregate-specific persisted fields.
+   * @evidenceReview prisma:shipment_lines.attributes Read the DTO property and compared its type with the cited Prisma column.
+   */
+  attributes: null | Record<string, unknown>;
+}

@@ -1,50 +1,42 @@
-import type { tags } from "typia";
+import { tags } from "typia";
 
-/** One user's organization-scoped membership. */
 /**
- * @evidence prisma:memberships Exposes the persisted memberships record.
+ * Membership public identity and lifecycle shape.
+ * @evidence docs/analysis/01-actors-and-auth.md#req-auth-membership-organization-membership-lifecycle Exposes the caller-visible membership contract.
+ * @evidenceReview docs/analysis/01-actors-and-auth.md#req-auth-membership-organization-membership-lifecycle Read the DTO declaration and checked its public and inherited fields against the cited requirement.
+ * @evidence prisma:memberships Represents the persisted memberships model.
+ * @evidenceReview prisma:memberships Read the DTO declaration and compared its concrete record shape with the cited Prisma model.
  */
 export interface IMembership {
-  /** Membership UUID. */
-  /** @evidence prisma:memberships.id Carries the persisted id value. */ id: string & tags.Format<"uuid">;
-  /** Organization UUID. */
-  /** @evidence prisma:memberships.organization_id Carries the persisted organizationId value. */
+  /** id.
+   * @evidence prisma:memberships.id Carries the persisted id value.
+   * @evidenceReview prisma:memberships.id Read the DTO property and compared its type with the cited Prisma column.
+   */
+  id: string & tags.Format<"uuid">;
+  /** userId.
+   * @evidence prisma:memberships.user_id Carries the persisted user_id value.
+   * @evidenceReview prisma:memberships.user_id Read the DTO property and compared its type with the cited Prisma column.
+   */
+  userId: string & tags.Format<"uuid">;
+  /** organizationId.
+   * @evidence prisma:memberships.organization_id Carries the persisted organization_id value.
+   * @evidenceReview prisma:memberships.organization_id Read the DTO property and compared its type with the cited Prisma column.
+   */
   organizationId: string & tags.Format<"uuid">;
-  /** Organization display name. */
-  organizationName: string;
-  /** Membership lifecycle state. */
-  /** @evidence prisma:memberships.status Carries the persisted lifecycle state. */ status: "invited" | "active" | "suspended" | "revoked";
-  /** Employee baseline role. */
-  /** @evidence prisma:memberships.baseline_role Carries the persisted baselineRole value. */
-  baselineRole: string;
-  /** Assigned role names. */
-  roles: string[];
-  /** Creation instant. */
-  /** @evidence prisma:memberships.created_at Carries the persisted creation instant. */ createdAt: string & tags.Format<"date-time">;
-  /** Last lifecycle update instant. */
-  /** @evidence prisma:memberships.updated_at Carries the persisted update instant. */ updatedAt: string & tags.Format<"date-time">;
-  /** Invitation proof when this row was just issued through the delivery adapter. */
-  invitationToken?: string;
+  /** status.
+   * @evidence prisma:memberships.status Carries the persisted status value.
+   * @evidenceReview prisma:memberships.status Read the DTO property and compared its type with the cited Prisma column.
+   */
+  status: string;
+  /** createdAt.
+   * @evidence prisma:memberships.created_at Carries the persisted created_at value.
+   * @evidenceReview prisma:memberships.created_at Read the DTO property and compared its type with the cited Prisma column.
+   */
+  createdAt: string & tags.Format<"date-time">;
+  /** updatedAt.
+   * @evidence prisma:memberships.updated_at Carries the persisted updated_at value.
+   * @evidenceReview prisma:memberships.updated_at Read the DTO property and compared its type with the cited Prisma column.
+   */
+  updatedAt: string & tags.Format<"date-time">;
 }
 
-export namespace IMembership {
-  /** Owner-issued invitation input. */
-  export interface IInvite {
-    /** Recipient email. */
-    email: string & tags.Format<"email">;
-    /** Initial role; defaults to Employee. */
-    initialRole?: null | string;
-  }
-
-  /** Session context selection input. */
-  export interface ISelect {
-    /** Active membership to use as organization context. */
-    membershipId: string & tags.Format<"uuid">;
-  }
-
-  /** Membership state transition input. */
-  export interface IStatus {
-    /** New lifecycle state accepted by the command. */
-    status: "active" | "suspended" | "revoked";
-  }
-}

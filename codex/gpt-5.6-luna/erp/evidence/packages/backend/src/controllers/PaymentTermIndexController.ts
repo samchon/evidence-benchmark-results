@@ -1,2 +1,0 @@
-import * as core from "@nestia/core"; import { Controller } from "@nestjs/common"; import type { IAuth, IPaymentTerm, IPage } from "@benchmark/erp-api"; import { ReferenceDataProvider } from "../providers/ReferenceDataProvider";
-/** Lists payment terms. */ @Controller("payment-term-search") export class PaymentTermIndexController { @core.TypedRoute.Patch() public async index(@core.TypedHeaders() headers: IAuth.IHeaders, @core.TypedBody() input: IPaymentTerm.IRequest): Promise<IPage<IPaymentTerm>> { return ReferenceDataProvider.termIndex({ headers, input }); } }

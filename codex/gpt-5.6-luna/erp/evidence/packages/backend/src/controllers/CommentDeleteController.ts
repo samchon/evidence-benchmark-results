@@ -1,2 +1,0 @@
-import * as core from "@nestia/core"; import { Controller } from "@nestjs/common"; import type { IAuth } from "@benchmark/erp-api"; import { CollaborationProvider } from "../providers/CollaborationProvider";
-/** Removes the authenticated author's comment as retained history. */ @Controller("comment-delete") export class CommentDeleteController { @core.TypedRoute.Delete(":id") public async remove(@core.TypedHeaders() headers: IAuth.IHeaders, @core.TypedParam("id") id: string): Promise<{ success: true }> { return CollaborationProvider.commentDelete(headers, id); } }

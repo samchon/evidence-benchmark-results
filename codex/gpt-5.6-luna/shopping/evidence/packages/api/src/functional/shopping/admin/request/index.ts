@@ -5,7 +5,7 @@
  */
 //================================================================
 export * as create from "./create/index";
-export * as mine from "./mine/index";
+export * as list from "./list/index";
 export * as pending from "./pending/index";
 export * as approve from "./approve/index";
 export * as reject from "./reject/index";

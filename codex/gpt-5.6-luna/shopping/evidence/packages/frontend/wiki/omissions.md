@@ -1,0 +1,79 @@
+# Frontend omissions
+
+No requirement family is omitted at the screen-plan stage. Server-owned persistence, authorization, and delivery details remain visible through their owning UI states and live SDK responses; a later journey or review may narrow that decision only with a concrete ownership reason.
+
+The following family entries record that individual policy statements are enforced by the live API while the named page presents the observable boundary. They are deliberately paired with the screen-plan rows so the plan remains one decision per requirement family.
+
+- REQ-NFR-AUDIT-INTEGRITY — The backend records immutable audit evidence; this page exposes the moderation result and its refusal state.
+- REQ-NFR-PURCHASE-CONSISTENCY — The checkout service owns atomic consistency; this page exposes successful and failed purchase outcomes.
+- REQ-NFR-HISTORY-CONTINUITY — The order service owns retained history; this page exposes the stable customer-facing record.
+- REQ-CUSTOMER-IDENTITY — The authentication service owns credential lifecycle; this page exposes registration, login, session refusal, and sign out.
+- REQ-SELLER-IDENTITY — The authentication service owns seller credentials; this page exposes registration, login, recovery, and sign out.
+- REQ-ADMIN-AUTHORITY — The API owns grade authorization; this page exposes the allowed administration surface and refusal redirect.
+- REQ-ACCESS-BOUNDARIES — The API owns actor guards; this page exposes public access and protected-route refusal.
+- REQ-CUSTOMER-PROFILE-DOMAIN — The customer service owns profile persistence; this page exposes profile read and update results.
+- REQ-SHIPPING-ADDRESS-DOMAIN — The customer service owns address persistence; this page exposes address ownership and default state.
+- REQ-SELLER-PROFILE-DOMAIN — The seller service owns profile persistence; this page exposes profile editing and saved results.
+- REQ-SELLER-ACCOUNT-LIFECYCLE — The seller service owns account transitions; this page exposes approval state and restriction responses.
+- REQ-CATEGORY-DOMAIN — The catalog service owns taxonomy integrity; this page exposes category records and curation results.
+- REQ-PRODUCT-DOMAIN — The catalog service owns product persistence; this page exposes product discovery and detail state.
+- REQ-PRODUCT-LIFECYCLE — The catalog service owns availability transitions; this page exposes live and retired product results.
+- REQ-PRODUCT-VARIANT-DOMAIN — The seller service owns variant persistence; this page exposes variation creation and stock state.
+- REQ-VARIANT-LIFECYCLE — The seller service owns variant lifecycle; this page exposes purchasable and unavailable variation state.
+- REQ-INVENTORY-DOMAIN — The inventory service owns movement history; this page exposes recorded stock and current availability.
+- REQ-SNAPSHOT-DOMAIN — The API owns immutable snapshots; this page exposes the administrative record boundary.
+- REQ-WISHLIST-DOMAIN — The wishlist service owns membership; this page exposes saved products and removal results.
+- REQ-CART-DOMAIN — The cart service owns line identity and totals; this page exposes quantity and availability state.
+- REQ-ORDER-DOMAIN — The order service owns purchase records; this page exposes order history and item state.
+- REQ-ORDER-ITEM-LIFECYCLE — The order service owns item transitions; this page exposes cancellation and refund affordances.
+- REQ-ORDER-LIFECYCLE — The order service derives aggregate status; this page exposes the returned status.
+- REQ-SHIPMENT-DOMAIN — The seller service owns package records; this page exposes fulfillment items and shipment state.
+- REQ-CANCELLATION-DOMAIN — The cancellation service owns decisions; this page exposes customer requests and seller decisions.
+- REQ-REFUND-DOMAIN — The refund service owns decisions; this page exposes customer requests and seller decisions.
+- REQ-REVIEW-DOMAIN — The review service owns eligibility and persistence; this page reserves the customer-facing review boundary.
+- REQ-REVIEW-LIFECYCLE — The review service owns publication lifecycle; this page reserves the customer-facing review boundary.
+- REQ-ADMIN-REQUEST-DOMAIN — The administration service owns request history; this page exposes applications and decisions.
+- REQ-CREDENTIAL-POLICIES — The authentication service owns credential policy; this page exposes validation and refusal feedback.
+- REQ-ADDRESS-POLICIES — The address service owns address policy; this page exposes complete forms and current default selection.
+- REQ-SELLER-ACCOUNT-POLICIES — The seller service owns approval policy; this page exposes pending and restricted states.
+- REQ-CATEGORY-POLICIES — The catalog service owns category policy; this page exposes administrator curation controls.
+- REQ-PRODUCT-POLICIES — The catalog service owns product policy; this page exposes validation and retirement feedback.
+- REQ-VARIANT-POLICIES — The seller service owns variant policy; this page exposes SKU and availability inputs.
+- REQ-INVENTORY-POLICIES — The inventory service owns stock policy; this page exposes attributable movement inputs.
+- REQ-SNAPSHOT-POLICIES — The API owns snapshot policy; this page exposes only the permitted administrative record boundary.
+- REQ-SEARCH-POLICIES — The catalog service owns search policy; this page exposes deterministic search and filter state.
+- REQ-WISHLIST-POLICIES — The wishlist service owns membership policy; this page exposes saved and removed state.
+- REQ-CART-POLICIES — The cart service owns quantity policy; this page exposes positive quantities and unavailable lines.
+- REQ-CHECKOUT-POLICIES — The checkout service owns payment policy; this page exposes address, retry, and order outcomes.
+- REQ-ORDER-POLICIES — The order service owns pricing policy; this page exposes returned totals and item status.
+- REQ-SHIPMENT-POLICIES — The shipment service owns delivery policy; this page exposes fulfillment and delivery results.
+- REQ-CANCELLATION-POLICIES — The cancellation service owns eligibility policy; this page exposes request and decision states.
+- REQ-REFUND-POLICIES — The refund service owns eligibility policy; this page exposes request and decision states.
+- REQ-REVIEW-POLICIES — The review service owns review policy; this page reserves the customer-facing review boundary.
+- REQ-CUSTOMER-ACCOUNT-POLICIES — The customer service owns closure policy; this page reserves the account-management boundary.
+- REQ-ADMIN-GOVERNANCE-POLICIES — The administration service owns grade policy; this page exposes application and decision controls.
+- REQ-ADMIN-OVERSIGHT-POLICIES — The administration service owns force-action policy; this page exposes moderation and resolution controls.
+- REQ-SELLER-DASHBOARD-POLICIES — The seller service owns dashboard calculations; this page exposes returned summary metrics.
+- REQ-CUSTOMER-PROFILE-FUNCTIONS — The customer profile service owns operations; this page exposes profile view and update controls.
+- REQ-SHIPPING-ADDRESS-FUNCTIONS — The address service owns operations; this page exposes list, create, default, and delete controls.
+- REQ-SELLER-PROFILE-FUNCTIONS — The seller profile service owns operations; this page exposes profile view and update controls.
+- REQ-SELLER-ACCOUNT-FUNCTIONS — The seller account service owns operations; this page exposes approval and restriction responses.
+- REQ-CATEGORY-FUNCTIONS — The category service owns operations; this page exposes category browsing and curation results.
+- REQ-PRODUCT-FUNCTIONS — The product service owns operations; this page exposes product create, discovery, and retirement results.
+- REQ-PRODUCT-IMAGE-FUNCTIONS — The product service owns image operations; this page reserves the seller image boundary.
+- REQ-VARIANT-FUNCTIONS — The variant service owns operations; this page exposes variation creation and stock inputs.
+- REQ-INVENTORY-FUNCTIONS — The inventory service owns operations; this page exposes stock movement and current quantity.
+- REQ-PRODUCT-DISCOVERY — The catalog service owns discovery operations; this page exposes search, cards, and detail state.
+- REQ-WISHLIST-FUNCTIONS — The wishlist service owns operations; this page exposes save, list, and remove controls.
+- REQ-CART-FUNCTIONS — The cart service owns operations; this page exposes add, update, remove, and total state.
+- REQ-CHECKOUT-JOURNEY — The checkout service owns purchase operations; this page exposes checkout review, failure, and success.
+- REQ-ORDER-HISTORY-FUNCTIONS — The order service owns history operations; this page exposes orders and item actions.
+- REQ-SHIPPING-FUNCTIONS — The shipment service owns operations; this page reserves package creation and delivery actions.
+- REQ-CANCELLATION-FUNCTIONS — The cancellation service owns operations; this page exposes customer requests and seller decisions.
+- REQ-REVIEW-FUNCTIONS — The review service owns operations; this page reserves review creation and mutation controls.
+- REQ-REFUND-FUNCTIONS — The refund service owns operations; this page exposes customer requests and seller decisions.
+- REQ-SELLER-DASHBOARD — The seller dashboard service owns reports; this page exposes summary and order-item results.
+- REQ-ADMIN-REQUEST-FUNCTIONS — The request service owns operations; this page exposes submission, history, and decisions.
+- REQ-ADMIN-GRADE-FUNCTIONS — The grade service owns operations; this page exposes promotion and demotion controls.
+- REQ-USER-OVERSIGHT — The administration service owns account oversight; this page exposes user lists and moderation controls.
+- REQ-ORDER-OVERSIGHT — The administration service owns order oversight; this page exposes inspection and force-resolution controls.

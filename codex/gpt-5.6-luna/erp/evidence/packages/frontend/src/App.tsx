@@ -1,16 +1,16 @@
-import { AppProviders } from "./components/providers/app-providers";
-import { OperationsPage } from "./components/operations/operations-page";
-import { GalleryPage } from "./components/dev/gallery-page";
+import { Navigate, Route, Routes } from "react-router-dom";
 
-/** Renders the benchmark workspace entry screen. */
+import { OperationsPage } from "./components/operations/operations-page";
+import { AppProviders } from "./components/providers/app-providers";
+
+/** Renders the routed ERP workspace. */
 export function App() {
   return (
     <AppProviders>
-      {import.meta.env.DEV && window.location.pathname === "/__gallery" ? (
-        <GalleryPage />
-      ) : (
-        <OperationsPage />
-      )}
+      <Routes>
+        <Route path="/" element={<OperationsPage />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
     </AppProviders>
   );
 }

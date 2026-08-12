@@ -1,23 +1,73 @@
-import type { tags } from "typia"; import type { IPage } from "../typings";
+import { tags } from "typia";
+
+import type { IErpRecord } from "./IErpRecord";
+
 /**
- * @evidence prisma:maintenance_plans Exposes the persisted maintenance_plans record.
+ * MaintenancePlan public representation.
+ * @evidence docs/analysis/02-domain-model.md#req-dom-maintenance-plan-maintenance-plans Exposes the aggregate contract represented by this DTO.
+ * @evidenceReview docs/analysis/02-domain-model.md#req-dom-maintenance-plan-maintenance-plans Read the DTO declaration and checked its public and inherited fields against the cited requirement.
+ * @evidence prisma:maintenance_plans Represents the persisted maintenance_plans model.
+ * @evidenceReview prisma:maintenance_plans Read the DTO declaration and compared its concrete record shape with the cited Prisma model.
  */
-export interface IMaintenancePlan {
-  /** @evidence prisma:maintenance_plans.id Carries the persisted id value. */
+export interface IMaintenancePlan extends IErpRecord {
+  /** id.
+   * @evidence prisma:maintenance_plans.id Carries the persisted id value.
+   * @evidenceReview prisma:maintenance_plans.id Read the DTO property and compared its type with the cited Prisma column.
+   */
   id: string & tags.Format<"uuid">;
-  /** @evidence prisma:maintenance_plans.equipment_id Carries the persisted equipmentId value. */
-  equipmentId: string & tags.Format<"uuid">;
-  /** @evidence prisma:maintenance_plans.name Carries the persisted name value. */
-  name: string;
-  /** @evidence prisma:maintenance_plans.status Carries the persisted status value. */
-  status: string;
-  /** @evidence prisma:maintenance_plans.interval_days Carries the persisted intervalDays value. */
-  intervalDays: null | number;
-  /** @evidence prisma:maintenance_plans.next_due_at Carries the persisted nextDueAt value. */
-  nextDueAt: null | (string & tags.Format<"date-time">);
-  /** @evidence prisma:maintenance_plans.created_at Carries the persisted createdAt value. */
+  /** organizationId.
+   * @evidence prisma:maintenance_plans.organization_id Carries the persisted organization_id value.
+   * @evidenceReview prisma:maintenance_plans.organization_id Read the DTO property and compared its type with the cited Prisma column.
+   */
+  organizationId: string & tags.Format<"uuid">;
+  /** name.
+   * @evidence prisma:maintenance_plans.name Carries the persisted name value.
+   * @evidenceReview prisma:maintenance_plans.name Read the DTO property and compared its type with the cited Prisma column.
+   */
+  name: null | string;
+  /** status.
+   * @evidence prisma:maintenance_plans.status Carries the persisted status value.
+   * @evidenceReview prisma:maintenance_plans.status Read the DTO property and compared its type with the cited Prisma column.
+   */
+  status: null | string;
+  /** description.
+   * @evidence prisma:maintenance_plans.description Carries the persisted description value.
+   * @evidenceReview prisma:maintenance_plans.description Read the DTO property and compared its type with the cited Prisma column.
+   */
+  description: null | string;
+  /** referenceId.
+   * @evidence prisma:maintenance_plans.reference_id Carries the persisted reference_id value.
+   * @evidenceReview prisma:maintenance_plans.reference_id Read the DTO property and compared its type with the cited Prisma column.
+   */
+  referenceId: null | string & tags.Format<"uuid">;
+  /** quantity.
+   * @evidence prisma:maintenance_plans.quantity Carries the persisted quantity value.
+   * @evidenceReview prisma:maintenance_plans.quantity Read the DTO property and compared its type with the cited Prisma column.
+   */
+  quantity: null | number;
+  /** amount.
+   * @evidence prisma:maintenance_plans.amount Carries the persisted amount value.
+   * @evidenceReview prisma:maintenance_plans.amount Read the DTO property and compared its type with the cited Prisma column.
+   */
+  amount: null | number;
+  /** createdAt.
+   * @evidence prisma:maintenance_plans.created_at Carries the persisted created_at value.
+   * @evidenceReview prisma:maintenance_plans.created_at Read the DTO property and compared its type with the cited Prisma column.
+   */
   createdAt: string & tags.Format<"date-time">;
-  /** @evidence prisma:maintenance_plans.updated_at Carries the persisted updatedAt value. */
-  updatedAt: string & tags.Format<"date-time">;
+  /** updatedAt.
+   * @evidence prisma:maintenance_plans.updated_at Carries the persisted updated_at value.
+   * @evidenceReview prisma:maintenance_plans.updated_at Read the DTO property and compared its type with the cited Prisma column.
+   */
+  updatedAt: null | string & tags.Format<"date-time">;
+  /** deletedAt.
+   * @evidence prisma:maintenance_plans.deleted_at Carries the persisted deleted_at value.
+   * @evidenceReview prisma:maintenance_plans.deleted_at Read the DTO property and compared its type with the cited Prisma column.
+   */
+  deletedAt: null | string & tags.Format<"date-time">;
+  /** attributes.
+   * @evidence prisma:maintenance_plans.attributes Carries aggregate-specific persisted fields.
+   * @evidenceReview prisma:maintenance_plans.attributes Read the DTO property and compared its type with the cited Prisma column.
+   */
+  attributes: null | Record<string, unknown>;
 }
-export namespace IMaintenancePlan { export interface ICreate { equipmentId: string & tags.Format<"uuid">; name: string; intervalDays?: null | number; nextDueAt?: null | (string & tags.Format<"date-time">); } export interface IRequest extends IPage.IRequest { equipmentId?: string; status?: string; } export interface IStatus { status: "draft" | "active" | "inactive"; } }

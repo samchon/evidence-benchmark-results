@@ -1,2 +1,0 @@
-import * as core from "@nestia/core"; import { Controller } from "@nestjs/common"; import type { IAuth, IJournal, IPage } from "@benchmark/erp-api"; import { JournalProvider } from "../providers/JournalProvider";
-/** Searches journal entries by source and lifecycle status. */ @Controller("journal-search") export class JournalIndexController { @core.TypedRoute.Patch() public async index(@core.TypedHeaders() headers: IAuth.IHeaders, @core.TypedBody() input: IJournal.IRequest): Promise<IPage<IJournal>> { return JournalProvider.index(headers, input); } }

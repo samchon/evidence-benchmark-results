@@ -1,45 +1,30 @@
-import type { IEntity } from "@benchmark/todo-api";
-import type { Prisma } from "@prisma/sdk";
+import type { ITodo } from "@benchmark/todo-api";
+import { Prisma } from "@prisma/sdk";
 import { randomUUID } from "node:crypto";
 
-/** Owns request-to-Prisma write payloads for todo content. */
+import { TodoProvider } from "../providers/TodoProvider";
+
+/** Builds persisted Todo creation values from the public creation DTO. */
 export namespace TodoCollector {
-  export function create(props: {
-    owner: IEntity;
-    title: string;
-    description: string | null;
-    startDate: Date | null;
-    dueDate: Date | null;
-    now: Date;
-  }) {
+  /** Collects one active, incomplete Todo owned by the authenticated user. */
+  export function collect(props: { body: ITodo.ICreate; userId: string }): Prisma.todo_todosCreateInput {
+    const title = props.body.title.trim();
+    const description = props.body.description === undefined || props.body.description === null || props.body.description.length === 0 ? null : props.body.description;
+    const startDate = props.body.startDate === undefined || props.body.startDate === null ? null : TodoProvider.dateValue(props.body.startDate);
+    const dueDate = props.body.dueDate === undefined || props.body.dueDate === null ? null : TodoProvider.dateValue(props.body.dueDate);
+    TodoProvider.validateContent({ title, description, startDate, dueDate });
     return {
       id: randomUUID(),
-      title: props.title,
-      description: props.description,
-      start_date: props.startDate,
-      due_date: props.dueDate,
-      completed: false,
-      trashed: false,
-      trashed_at: null,
-      created_at: props.now,
-      updated_at: props.now,
-      account: { connect: { id: props.owner.id } },
-    } satisfies Prisma.user_todosCreateInput;
-  }
-
-  export function edit(props: {
-    title: string;
-    description: string | null;
-    startDate: Date | null;
-    dueDate: Date | null;
-    updatedAt: Date;
-  }) {
-    return {
-      title: props.title,
-      description: props.description,
-      start_date: props.startDate,
-      due_date: props.dueDate,
-      updated_at: props.updatedAt,
+      title,
+      description,
+      start_date: startDate,
+      due_date: dueDate,
+      completion: false,
+      availability: true,
+      created_at: new Date(),
+      updated_at: new Date(),
+      content_version: 0,
+      user: { connect: { id: props.userId } },
     };
   }
 }

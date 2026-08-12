@@ -1,4 +1,4 @@
-import { evidence } from "@samchon/lint-plugin-evidence";
+import { evidence } from "@ttsc/evidence";
 import type { ITtscLintConfig } from "@ttsc/lint";
 
 /**
@@ -43,6 +43,12 @@ export default {
   },
   rules: {
     "evidence/singular": "error",
+    // A review states what was checked, which the reason does not. It ships
+    // "off" because a review is a record of a check, and the checks happen in
+    // Backend Review, which owns the schema, operation, and test claims declared here. Set this to
+    // "error" there, and every acknowledgement reports itself as unreviewed
+    // until that Review reaches it.
+    "evidence/review": "error",
     "evidence/todo": "error",
     "evidence/graph": [
       "error",
@@ -90,6 +96,8 @@ export default {
                 symbol: ["model"],
               },
             ],
+            // Remove after every controller contract is complete and build:sdk
+            // passes.
           },
           // A test answers for the one published operation it proves. Its
           // operation population is the generated SDK accessor surface alone,

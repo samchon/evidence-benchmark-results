@@ -1,135 +1,154 @@
-import type { IPage, ITodo, ITodoHistory, IResult } from "@benchmark/todo-api";
+import type { ITodo, ITodoHistory, IPage } from "@benchmark/todo-api";
+import { Prisma } from "@prisma/sdk";
+import { randomUUID } from "node:crypto";
+
+import { TodoCollector } from "../collectors/TodoCollector";
+import { UserPayload } from "./AuthProvider";
 import { MyGlobal } from "../MyGlobal";
 import { ErrorUtil } from "../utils/ErrorUtil";
-import type { UserPayload } from "../auth/AuthProvider";
-import { randomUUID } from "node:crypto";
-import { TodoTransformer } from "../transformers/TodoTransformer";
-import { TodoCollector } from "../collectors/TodoCollector";
-import { PaginationUtil } from "../utils/PaginationUtil";
 
-function dateOnly(value: string | null | undefined): Date | null {
-  if (value === null || value === undefined) return null;
-  const [year = Number.NaN, month = Number.NaN, day = Number.NaN] = value.split("-").map(Number);
-  const result = new Date(Date.UTC(year, month - 1, day));
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value) || result.getUTCFullYear() !== year || result.getUTCMonth() !== month - 1 || result.getUTCDate() !== day)
-    throw ErrorUtil.unprocessable("Dates must be valid calendar dates.");
-  return result;
-}
-function validateContent(title: string, description: string | null, start: string | null, due: string | null): void {
-  const trimmed = title.trim();
-  if (trimmed.length < 1 || trimmed.length > 200) throw ErrorUtil.unprocessable("Title must contain 1 through 200 characters after trimming.");
-  if (description !== null && description.length > 10_000) throw ErrorUtil.unprocessable("Description must contain at most 10000 characters.");
-  if ((start !== null && !/^\d{4}-\d{2}-\d{2}$/.test(start)) || (due !== null && !/^\d{4}-\d{2}-\d{2}$/.test(due))) throw ErrorUtil.unprocessable("Dates must use the YYYY-MM-DD calendar format.");
-  if (start !== null) dateOnly(start);
-  if (due !== null) dateOnly(due);
-  if (start !== null && due !== null && due < start) throw ErrorUtil.unprocessable("Due date must be on or after the start date.");
-}
-async function owned(actor: UserPayload, id: string, trashed: boolean | null = null) {
-  const row = await MyGlobal.prisma.user_todos.findFirst({ where: { id, user_account_id: actor.id, ...(trashed === null ? {} : { trashed }) } });
-  if (row === null) throw ErrorUtil.notFound("Todo not found.");
-  return row;
-}
+type TodoRow = Prisma.todo_todosGetPayload<ReturnType<typeof todoSelect>>;
+type HistoryRow = Prisma.todo_todo_historiesGetPayload<ReturnType<typeof historySelect>>;
 
-/** Todo content, state, browsing, and history behavior. */
+function todoSelect() { return { select: { id: true, title: true, description: true, start_date: true, due_date: true, completion: true, availability: true, created_at: true, updated_at: true, content_version: true, trashed_at: true } } satisfies Prisma.todo_todosFindManyArgs; }
+function historySelect() { return { select: { id: true, created_at: true, title_changed: true, title: true, description_changed: true, description: true, start_date_changed: true, start_date: true, due_date_changed: true, due_date: true } } satisfies Prisma.todo_todo_historiesFindManyArgs; }
+
+/** Todo content, lifecycle, pagination, ownership, and history rules. */
 export namespace TodoProvider {
-  export async function create(actor: UserPayload, input: ITodo.ICreate): Promise<ITodo> {
-    const title = input.title.trim();
-    const description = input.description === undefined ? null : input.description;
-    const startDate = input.startDate === undefined ? null : input.startDate;
-    const dueDate = input.dueDate === undefined ? null : input.dueDate;
-    validateContent(title, description, startDate, dueDate);
-    const now = new Date();
-    const row = await MyGlobal.prisma.user_todos.create({ data: TodoCollector.create({ owner: { id: actor.id }, title, description, startDate: dateOnly(startDate), dueDate: dateOnly(dueDate), now }) });
-    return TodoTransformer.detail(row);
+  /** Lists owned active todos with completion and stable date ordering. */
+  export async function index(props: { user: UserPayload; input: ITodo.IRequest }): Promise<IPage<ITodo.ISummary>> {
+    const completion = props.input.completion ?? "all";
+    if (!["all", "complete-only", "incomplete-only"].includes(completion)) throw ErrorUtil.unprocessable("Unsupported completion filter.");
+    const sort = props.input.sort ?? "created-desc";
+    if (!["created-desc", "created-asc", "start-asc", "start-desc", "due-asc", "due-desc"].includes(sort)) throw ErrorUtil.unprocessable("Unsupported Todo sort.");
+    const where = { todo_user_id: props.user.id, availability: true, ...(completion === "all" ? {} : { completion: completion === "complete-only" }) };
+    const [records, rows] = await Promise.all([
+      MyGlobal.prisma.todo_todos.count({ where }),
+      MyGlobal.prisma.todo_todos.findMany({ where, ...todoSelect(), skip: offset(props.input), take: limit(props.input), orderBy: ordering(sort) }),
+    ]);
+    return page(rows.map(summary), records, props.input);
   }
-  export async function index(actor: UserPayload, input: ITodo.IRequest): Promise<IPage<ITodo.ISummary>> {
-    const page = input.page ?? 1;
-    const limit = input.limit ?? 20;
-    if (page < 1 || limit < 1 || limit > 100) throw ErrorUtil.unprocessable("Page must be at least 1 and limit must be from 1 through 100.");
-    const filter = input.filter ?? "all";
-    if (!["all", "complete-only", "incomplete-only"].includes(filter)) throw ErrorUtil.unprocessable("Unsupported completion filter.");
-    const sort = input.sort ?? "createdAt";
-    const direction = input.direction ?? (sort === "createdAt" ? "desc" : "asc");
-    if (!["createdAt", "startDate", "dueDate"].includes(sort) || !["asc", "desc"].includes(direction)) throw ErrorUtil.unprocessable("Unsupported sort selection.");
-    const rows = await MyGlobal.prisma.user_todos.findMany({ where: { user_account_id: actor.id, trashed: false } });
-    const candidates = rows.filter((row) => filter === "all" || (filter === "complete-only" ? row.completed : !row.completed));
-    candidates.sort((a, b) => {
-      const av = sort === "createdAt" ? a.created_at.getTime() : sort === "startDate" ? a.start_date?.getTime() : a.due_date?.getTime();
-      const bv = sort === "createdAt" ? b.created_at.getTime() : sort === "startDate" ? b.start_date?.getTime() : b.due_date?.getTime();
-      let compared: number;
-      if (av === undefined && bv === undefined) compared = 0; else if (av === undefined) compared = 1; else if (bv === undefined) compared = -1; else compared = av - bv;
-      if (direction === "desc" && av !== undefined && bv !== undefined) compared = -compared;
-      if (compared !== 0) return compared;
-      const created = b.created_at.getTime() - a.created_at.getTime();
-      return created !== 0 ? created : a.id.localeCompare(b.id);
-    });
-    const start = (page - 1) * limit;
-    return { data: candidates.slice(start, start + limit).map((row) => TodoTransformer.summary(row)), pagination: { current: page, limit, records: candidates.length, pages: Math.ceil(candidates.length / limit) } };
+
+  /** Creates one active incomplete Todo and returns its persisted detail. */
+  export async function create(props: { user: UserPayload; body: ITodo.ICreate }): Promise<ITodo> {
+    const row = await MyGlobal.prisma.todo_todos.create({ data: TodoCollector.collect({ body: props.body, userId: props.user.id }), ...todoSelect() });
+    return detail(row);
   }
-  export async function trashIndex(actor: UserPayload, input: IPage.IRequest): Promise<IPage<ITodo.ITrashSummary>> {
-    return PaginationUtil.paginate({
-      schema: MyGlobal.prisma.user_todos,
-      payload: {},
-      transform: (row) => {
-        if (row.trashed_at === null)
-          throw ErrorUtil.internal("Trashed todo is missing its trash timestamp.");
-        return TodoTransformer.summary(row, true) as ITodo.ITrashSummary;
-      },
-    })({
-      where: { user_account_id: actor.id, trashed: true },
-      orderBy: [{ trashed_at: "desc" }, { created_at: "desc" }, { id: "asc" }],
-    })(input);
+
+  /** Reads one owned active Todo. */
+  export async function at(props: { user: UserPayload; id: string }): Promise<ITodo> {
+    const row = await MyGlobal.prisma.todo_todos.findFirst({ where: { id: props.id, todo_user_id: props.user.id, availability: true }, ...todoSelect() });
+    if (row === null) throw ErrorUtil.notFound("The active Todo is unavailable.");
+    return detail(row);
   }
-  export async function at(actor: UserPayload, id: string, state: "active" | "trashed"): Promise<ITodo> { return TodoTransformer.detail(await owned(actor, id, state === "trashed")); }
-  export async function update(actor: UserPayload, id: string, input: ITodo.IUpdate): Promise<ITodo> {
-    const current = await owned(actor, id, false);
-    if (input.updatedAt !== current.updated_at.toISOString()) throw ErrorUtil.conflict("Todo changed after editing began.");
-    const title = input.title === undefined ? current.title : input.title.trim();
-    const description = input.description === undefined ? current.description : input.description;
-    const start = input.startDate === undefined ? TodoTransformer.isoDate(current.start_date) : input.startDate;
-    const due = input.dueDate === undefined ? TodoTransformer.isoDate(current.due_date) : input.dueDate;
-    validateContent(title, description, start, due);
-    const changedTitle = input.title !== undefined && title !== current.title;
-    const changedDescription = input.description !== undefined && description !== current.description;
-    const changedStart = input.startDate !== undefined && start !== TodoTransformer.isoDate(current.start_date);
-    const changedDue = input.dueDate !== undefined && due !== TodoTransformer.isoDate(current.due_date);
-    if (!changedTitle && !changedDescription && !changedStart && !changedDue) throw ErrorUtil.unprocessable("Content edit must change at least one field.");
+
+  /** Applies an optimistic content edit and appends exactly one history row. */
+  export async function update(props: { user: UserPayload; id: string; body: ITodo.IUpdate }): Promise<ITodo> {
+    const row = await owned(props.user, props.id, "active");
+    if (row.content_version !== props.body.version) throw ErrorUtil.conflict("The Todo changed after this edit began.");
+    const title = props.body.title === undefined ? row.title : props.body.title.trim();
+    const description = props.body.description === undefined ? row.description : props.body.description === null || props.body.description.length === 0 ? null : props.body.description;
+    const startDate = props.body.startDate === undefined ? row.start_date : props.body.startDate === null ? null : dateValue(props.body.startDate);
+    const dueDate = props.body.dueDate === undefined ? row.due_date : props.body.dueDate === null ? null : dateValue(props.body.dueDate);
+    validateContent({ title, description, startDate, dueDate });
+    const titleChanged = props.body.title !== undefined && title !== row.title;
+    const descriptionChanged = props.body.description !== undefined && description !== row.description;
+    const startChanged = props.body.startDate !== undefined && !sameDate(startDate, row.start_date);
+    const dueChanged = props.body.dueDate !== undefined && !sameDate(dueDate, row.due_date);
+    if (!titleChanged && !descriptionChanged && !startChanged && !dueChanged) throw ErrorUtil.unprocessable("At least one Todo content value must change.");
     const now = new Date();
     await MyGlobal.prisma.$transaction(async (tx) => {
-      const changed = await tx.user_todos.updateMany({ where: { id: current.id, updated_at: current.updated_at }, data: TodoCollector.edit({ title, description, startDate: dateOnly(start), dueDate: dateOnly(due), updatedAt: now }) });
-      if (changed.count !== 1) throw ErrorUtil.conflict("Todo changed after editing began.");
-      await tx.user_todo_histories.create({ data: { id: randomUUID(), user_todo_id: current.id, edited_at: now, title: changedTitle ? title : null, description: changedDescription ? description : null, start_date: changedStart ? dateOnly(start) : null, due_date: changedDue ? dateOnly(due) : null, description_changed: changedDescription, start_date_changed: changedStart, due_date_changed: changedDue } });
+      const changed = await tx.todo_todos.updateMany({ where: { id: row.id, todo_user_id: props.user.id, availability: true, content_version: row.content_version }, data: { title, description, start_date: startDate, due_date: dueDate, updated_at: now, content_version: { increment: 1 } } });
+      if (changed.count !== 1) throw ErrorUtil.conflict("The Todo changed after this edit began.");
+      await tx.todo_todo_histories.create({ data: { id: randomUUID(), todo_todo_id: row.id, created_at: now, title_changed: titleChanged, title: titleChanged ? title : null, description_changed: descriptionChanged, description: descriptionChanged ? description : null, start_date_changed: startChanged, start_date: startChanged ? startDate : null, due_date_changed: dueChanged, due_date: dueChanged ? dueDate : null } });
     });
-    return TodoTransformer.detail(await owned(actor, id, false));
+    return at(props);
   }
-  export async function complete(actor: UserPayload, id: string, completed: boolean): Promise<ITodo> {
-    const current = await owned(actor, id, false);
-    if (current.completed === completed) return TodoTransformer.detail(current);
-    await MyGlobal.prisma.user_todos.updateMany({ where: { id, user_account_id: actor.id, trashed: false, completed: !completed }, data: { completed } });
-    return TodoTransformer.detail(await owned(actor, id, false));
+
+  /** Idempotently marks one owned active Todo complete or incomplete. */
+  export async function completion(props: { user: UserPayload; id: string; value: "complete" | "incomplete" }): Promise<ITodo> {
+    const row = await owned(props.user, props.id, "active");
+    if (completionState(row.completion) !== props.value) {
+      const changed = await MyGlobal.prisma.todo_todos.updateMany({ where: { id: row.id, todo_user_id: props.user.id, availability: true }, data: { completion: props.value === "complete", updated_at: new Date() } });
+      if (changed.count !== 1) throw ErrorUtil.notFound("The active Todo is unavailable.");
+    }
+    return at(props);
   }
-  export async function trash(actor: UserPayload, id: string): Promise<ITodo> {
-    await owned(actor, id, false);
+
+  /** Moves one active Todo into trash without changing content or history. */
+  export async function trash(props: { user: UserPayload; id: string }): Promise<ITodo> {
+    const row = await owned(props.user, props.id, "active");
     const now = new Date();
-    const changed = await MyGlobal.prisma.user_todos.updateMany({ where: { id, user_account_id: actor.id, trashed: false }, data: { trashed: true, trashed_at: now } });
-    if (changed.count !== 1) throw ErrorUtil.notFound("Todo not found.");
-    return TodoTransformer.detail(await owned(actor, id, true));
+    const changed = await MyGlobal.prisma.todo_todos.updateMany({ where: { id: row.id, todo_user_id: props.user.id, availability: true }, data: { availability: false, trashed_at: now, updated_at: now } });
+    if (changed.count !== 1) throw ErrorUtil.notFound("The active Todo is unavailable.");
+    return trashAt(props);
   }
-  export async function restore(actor: UserPayload, id: string): Promise<ITodo> {
-    await owned(actor, id, true);
-    const changed = await MyGlobal.prisma.user_todos.updateMany({ where: { id, user_account_id: actor.id, trashed: true }, data: { trashed: false, trashed_at: null } });
-    if (changed.count !== 1) throw ErrorUtil.notFound("Todo not found.");
-    return TodoTransformer.detail(await owned(actor, id, false));
+
+  /** Lists owned trashed Todos in newest-trash-entry order. */
+  export async function trashIndex(props: { user: UserPayload; input: IPage.IRequest }): Promise<IPage<ITodo.ITrashSummary>> {
+    const where = { todo_user_id: props.user.id, availability: false };
+    const [records, rows] = await Promise.all([
+      MyGlobal.prisma.todo_todos.count({ where }),
+      MyGlobal.prisma.todo_todos.findMany({ where, ...todoSelect(), skip: offset(props.input), take: limit(props.input), orderBy: ordering("trash-desc") }),
+    ]);
+    return page(rows.map(trashSummary), records, props.input);
   }
-  export async function permanentDelete(actor: UserPayload, id: string): Promise<IResult> {
-    await owned(actor, id, true);
-    const changed = await MyGlobal.prisma.user_todos.deleteMany({ where: { id, user_account_id: actor.id, trashed: true } });
-    if (changed.count !== 1) throw ErrorUtil.notFound("Todo not found.");
+
+  /** Reads one owned Todo retained in trash. */
+  export async function trashAt(props: { user: UserPayload; id: string }): Promise<ITodo> {
+    const row = await MyGlobal.prisma.todo_todos.findFirst({ where: { id: props.id, todo_user_id: props.user.id, availability: false }, ...todoSelect() });
+    if (row === null) throw ErrorUtil.notFound("The trashed Todo is unavailable.");
+    return detail(row);
+  }
+
+  /** Restores the same Todo identity to active work. */
+  export async function restore(props: { user: UserPayload; id: string }): Promise<ITodo> {
+    const row = await owned(props.user, props.id, "trashed");
+    const changed = await MyGlobal.prisma.todo_todos.updateMany({ where: { id: row.id, todo_user_id: props.user.id, availability: false }, data: { availability: true, updated_at: new Date() } });
+    if (changed.count !== 1) throw ErrorUtil.notFound("The trashed Todo is unavailable.");
+    return at(props);
+  }
+
+  /** Permanently deletes one trashed Todo and its histories by cascade. */
+  export async function erase(props: { user: UserPayload; id: string }): Promise<{ success: true }> {
+    const row = await owned(props.user, props.id, "trashed");
+    const deleted = await MyGlobal.prisma.todo_todos.deleteMany({ where: { id: row.id, todo_user_id: props.user.id, availability: false } });
+    if (deleted.count !== 1) throw ErrorUtil.notFound("The trashed Todo is unavailable.");
     return { success: true };
   }
-  export async function history(actor: UserPayload, id: string): Promise<ITodoHistory[]> {
-    await owned(actor, id, null);
-    const rows = await MyGlobal.prisma.user_todo_histories.findMany({ where: { user_todo_id: id }, orderBy: [{ edited_at: "desc" }, { id: "desc" }] });
-    return rows.map(TodoTransformer.history);
+
+  /** Reads complete owned history in newest-first order for active or trashed state. */
+  export async function history(props: { user: UserPayload; id: string }): Promise<ITodoHistory[]> {
+    const row = await MyGlobal.prisma.todo_todos.findFirst({ where: { id: props.id, todo_user_id: props.user.id }, select: { id: true } });
+    if (row === null) throw ErrorUtil.notFound("The Todo is unavailable.");
+    const rows = await MyGlobal.prisma.todo_todo_histories.findMany({ where: { todo_todo_id: row.id }, ...historySelect(), orderBy: [{ created_at: "desc" }, { id: "asc" }] });
+    return rows.map(historyDetail);
+  }
+
+  /** Converts a date-only wire value to a UTC-midnight database value. */
+  export function dateValue(value: string): Date { const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value); if (match === null) throw ErrorUtil.unprocessable("Dates must use YYYY-MM-DD."); const year = Number(match[1]); const month = Number(match[2]); const day = Number(match[3]); const result = new Date(0); result.setUTCHours(0, 0, 0, 0); result.setUTCFullYear(year, month - 1, day); if (result.getUTCFullYear() !== year || result.getUTCMonth() !== month - 1 || result.getUTCDate() !== day) throw ErrorUtil.unprocessable("Dates must be real calendar dates."); return result; }
+  /** Validates the resulting Todo content and date interval. */
+  export function validateContent(props: { title: string; description: string | null; startDate: Date | null; dueDate: Date | null }): void { if (props.title.length < 1 || props.title.length > 200) throw ErrorUtil.unprocessable("title must contain 1 to 200 characters after trimming."); if (props.description !== null && props.description.length > 10_000) throw ErrorUtil.unprocessable("description must contain at most 10000 characters."); if (props.startDate !== null && props.dueDate !== null && props.dueDate < props.startDate) throw ErrorUtil.unprocessable("dueDate must not precede startDate."); }
+
+  async function owned(user: UserPayload, id: string, availability: "active" | "trashed"): Promise<TodoRow> { const row = await MyGlobal.prisma.todo_todos.findFirst({ where: { id, todo_user_id: user.id, availability: availability === "active" }, ...todoSelect() }); if (row === null) throw ErrorUtil.notFound("The Todo is unavailable."); return row; }
+  function detail(row: TodoRow): ITodo { return { ...summary(row), description: row.description, availability: state(row.availability), trashedAt: row.trashed_at?.toISOString() ?? null, version: row.content_version }; }
+  function summary(row: TodoRow): ITodo.ISummary { return { id: row.id, title: row.title, completion: completionState(row.completion), startDate: dateText(row.start_date), dueDate: dateText(row.due_date), createdAt: row.created_at.toISOString() }; }
+  function trashSummary(row: TodoRow): ITodo.ITrashSummary { return { ...summary(row), trashedAt: row.trashed_at?.toISOString() ?? null }; }
+  function historyDetail(row: HistoryRow): ITodoHistory { return { id: row.id, createdAt: row.created_at.toISOString(), ...(row.title_changed ? { title: row.title ?? "" } : {}), ...(row.description_changed ? { description: row.description } : {}), ...(row.start_date_changed ? { startDate: dateText(row.start_date) } : {}), ...(row.due_date_changed ? { dueDate: dateText(row.due_date) } : {}) }; }
+  function state(value: boolean): "active" | "trashed" { return value ? "active" : "trashed"; }
+  function completionState(value: boolean): "incomplete" | "complete" { return value ? "complete" : "incomplete"; }
+  function dateText(value: Date | null): string | null { return value === null ? null : value.toISOString().slice(0, 10); }
+  function sameDate(left: Date | null, right: Date | null): boolean { return left?.getTime() === right?.getTime(); }
+  function limit(input: IPage.IRequest): number { return input.limit ?? 20; }
+  function offset(input: IPage.IRequest): number { return ((input.page ?? 1) - 1) * limit(input); }
+  function page<T extends object>(data: T[], records: number, input: IPage.IRequest): IPage<T> { const current = input.page ?? 1; const size = limit(input); return { data, pagination: { current, limit: size, records, pages: Math.ceil(records / size) } }; }
+  function ordering(sort: string): Prisma.todo_todosOrderByWithRelationInput[] {
+    if (sort === "start-asc" || sort === "start-desc")
+      return [{ start_date: { sort: sort.endsWith("asc") ? "asc" : "desc", nulls: "last" } }, { created_at: "desc" }, { id: "asc" }];
+    if (sort === "due-asc" || sort === "due-desc")
+      return [{ due_date: { sort: sort.endsWith("asc") ? "asc" : "desc", nulls: "last" } }, { created_at: "desc" }, { id: "asc" }];
+    if (sort === "trash-desc")
+      return [{ trashed_at: { sort: "desc", nulls: "last" } }, { created_at: "desc" }, { id: "asc" }];
+    return [{ created_at: sort === "created-asc" ? "asc" : "desc" }, { id: "asc" }];
   }
 }

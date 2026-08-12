@@ -1,4 +1,4 @@
-import type { IPage } from "@benchmark/shopping2-api";
+import type { IPage } from "@benchmark/shopping-api";
 
 /** Builds paginated Prisma queries with stable response metadata. */
 export namespace PaginationUtil {

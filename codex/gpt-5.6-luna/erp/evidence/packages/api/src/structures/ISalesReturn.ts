@@ -1,31 +1,73 @@
-import type { tags } from "typia"; import type { IPage } from "../typings";
-/** Sales return lifecycle and retained refund source.
- */
+import { tags } from "typia";
+
+import type { IErpRecord } from "./IErpRecord";
+
 /**
- * @evidence prisma:sales_returns Exposes the persisted sales_returns record.
+ * SalesReturn public representation.
+ * @evidence docs/analysis/02-domain-model.md#req-dom-sales-return-sales-return-lifecycle Exposes the aggregate contract represented by this DTO.
+ * @evidenceReview docs/analysis/02-domain-model.md#req-dom-sales-return-sales-return-lifecycle Read the DTO declaration and checked its public and inherited fields against the cited requirement.
+ * @evidence prisma:sales_returns Represents the persisted sales_returns model.
+ * @evidenceReview prisma:sales_returns Read the DTO declaration and compared its concrete record shape with the cited Prisma model.
  */
-export interface ISalesReturn {
-  /** @evidence prisma:sales_returns.id Carries the persisted id value. */
+export interface ISalesReturn extends IErpRecord {
+  /** id.
+   * @evidence prisma:sales_returns.id Carries the persisted id value.
+   * @evidenceReview prisma:sales_returns.id Read the DTO property and compared its type with the cited Prisma column.
+   */
   id: string & tags.Format<"uuid">;
-/** @evidence prisma:sales_returns.sales_order_id Carries the persisted salesOrderId value. */
-  salesOrderId: null | string;
-/** @evidence prisma:sales_returns.number Carries the persisted number value. */
-  number: string;
-/** @evidence prisma:sales_returns.status Carries the persisted status value. */
-  status: string;
-/** @evidence prisma:sales_returns.return_date Carries the persisted returnDate value. */
-  returnDate: string & tags.Format<"date-time">;
-/** @evidence prisma:sales_returns.reason Carries the persisted reason value. */
-  reason: null | string;
-/** @evidence prisma:sales_returns.refund_credit_memo_id Carries the persisted refundCreditMemoId value. */
-  refundCreditMemoId: string | null;
-/** @evidence prisma:sales_returns.refund_customer_payment_id Carries the persisted refundCustomerPaymentId value. */
-  refundCustomerPaymentId: string | null;
-/** @evidence prisma:sales_returns.refunded_at Carries the persisted refundedAt value. */
-  refundedAt: (string & tags.Format<"date-time">) | null;
-/** @evidence prisma:sales_returns.created_at Carries the persisted createdAt value. */
+  /** organizationId.
+   * @evidence prisma:sales_returns.organization_id Carries the persisted organization_id value.
+   * @evidenceReview prisma:sales_returns.organization_id Read the DTO property and compared its type with the cited Prisma column.
+   */
+  organizationId: string & tags.Format<"uuid">;
+  /** name.
+   * @evidence prisma:sales_returns.name Carries the persisted name value.
+   * @evidenceReview prisma:sales_returns.name Read the DTO property and compared its type with the cited Prisma column.
+   */
+  name: null | string;
+  /** status.
+   * @evidence prisma:sales_returns.status Carries the persisted status value.
+   * @evidenceReview prisma:sales_returns.status Read the DTO property and compared its type with the cited Prisma column.
+   */
+  status: null | string;
+  /** description.
+   * @evidence prisma:sales_returns.description Carries the persisted description value.
+   * @evidenceReview prisma:sales_returns.description Read the DTO property and compared its type with the cited Prisma column.
+   */
+  description: null | string;
+  /** referenceId.
+   * @evidence prisma:sales_returns.reference_id Carries the persisted reference_id value.
+   * @evidenceReview prisma:sales_returns.reference_id Read the DTO property and compared its type with the cited Prisma column.
+   */
+  referenceId: null | string & tags.Format<"uuid">;
+  /** quantity.
+   * @evidence prisma:sales_returns.quantity Carries the persisted quantity value.
+   * @evidenceReview prisma:sales_returns.quantity Read the DTO property and compared its type with the cited Prisma column.
+   */
+  quantity: null | number;
+  /** amount.
+   * @evidence prisma:sales_returns.amount Carries the persisted amount value.
+   * @evidenceReview prisma:sales_returns.amount Read the DTO property and compared its type with the cited Prisma column.
+   */
+  amount: null | number;
+  /** createdAt.
+   * @evidence prisma:sales_returns.created_at Carries the persisted created_at value.
+   * @evidenceReview prisma:sales_returns.created_at Read the DTO property and compared its type with the cited Prisma column.
+   */
   createdAt: string & tags.Format<"date-time">;
-/** @evidence prisma:sales_returns.updated_at Carries the persisted updatedAt value. */
-  updatedAt: string & tags.Format<"date-time">;
+  /** updatedAt.
+   * @evidence prisma:sales_returns.updated_at Carries the persisted updated_at value.
+   * @evidenceReview prisma:sales_returns.updated_at Read the DTO property and compared its type with the cited Prisma column.
+   */
+  updatedAt: null | string & tags.Format<"date-time">;
+  /** deletedAt.
+   * @evidence prisma:sales_returns.deleted_at Carries the persisted deleted_at value.
+   * @evidenceReview prisma:sales_returns.deleted_at Read the DTO property and compared its type with the cited Prisma column.
+   */
+  deletedAt: null | string & tags.Format<"date-time">;
+  /** attributes.
+   * @evidence prisma:sales_returns.attributes Carries aggregate-specific persisted fields.
+   * @evidenceReview prisma:sales_returns.attributes Read the DTO property and compared its type with the cited Prisma column.
+   */
+  attributes: null | Record<string, unknown>;
 }
-export namespace ISalesReturn { export interface ICreate { salesOrderId?: null | string; returnDate: string & tags.Format<"date-time">; reason?: null | string; } export interface IRequest extends IPage.IRequest { salesOrderId?: string; status?: string; } export interface IStatus { status: "draft" | "approved" | "posted" | "rejected" | "refunded" | "void"; refundCreditMemoId?: string; refundCustomerPaymentId?: string; } }

@@ -1,0 +1,105 @@
+/// A pending or resolved report on one available content target.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-report-content-report-model Represents report identity and lifecycle.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-report-content-report-model Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-report-001-define-report-target-reporter-and-reason Stores target, reporter, and reason.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-report-001-define-report-target-reporter-and-reason Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-report-002-relate-unresolved-reports-to-a-community-queue Stores the community queue boundary.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-report-002-relate-unresolved-reports-to-a-community-queue Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-report-003-prevent-duplicate-unresolved-reports Provides report state for duplicate checks.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-report-003-prevent-duplicate-unresolved-reports Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-report-life-content-report-lifecycle Represents unresolved and terminal outcomes.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-report-life-content-report-lifecycle Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-report-life-001-enter-unresolved-report-state Stores pending report state.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-report-life-001-enter-unresolved-report-state Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-report-life-002-approve-a-report-and-delete-its-target Stores approval outcome and target relation.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-report-life-002-approve-a-report-and-delete-its-target Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-report-life-003-dismiss-a-report-and-retain-its-target Stores dismissal outcome.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-report-life-003-dismiss-a-report-and-retain-its-target Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-report-life-004-retain-resolved-moderation-history Retains resolved report fields.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-report-life-004-retain-resolved-moderation-history Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-community-004-relate-communities-to-content-and-moderation Keeps reports in the target community.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-community-004-relate-communities-to-content-and-moderation Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/04-business-rules.md#req-rule-report-reporting-rules Represents report constraints and terminal state.
+/// @evidenceReview docs/analysis/04-business-rules.md#req-rule-report-reporting-rules Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/04-business-rules.md#req-rule-report-001-require-a-valid-report-target-and-reason Stores the bounded reason and target links.
+/// @evidenceReview docs/analysis/04-business-rules.md#req-rule-report-001-require-a-valid-report-target-and-reason Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/04-business-rules.md#req-rule-report-002-refuse-duplicate-unresolved-reports Indexes reporter, target, and unresolved state.
+/// @evidenceReview docs/analysis/04-business-rules.md#req-rule-report-002-refuse-duplicate-unresolved-reports Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/04-business-rules.md#req-rule-report-003-restrict-report-queue-visibility-and-resolution Stores the exact community scope.
+/// @evidenceReview docs/analysis/04-business-rules.md#req-rule-report-003-restrict-report-queue-visibility-and-resolution Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/04-business-rules.md#req-rule-report-004-refuse-repeat-report-resolution Stores one terminal outcome.
+/// @evidenceReview docs/analysis/04-business-rules.md#req-rule-report-004-refuse-repeat-report-resolution Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/05-non-functional.md#req-nfr-privacy-002-keep-moderation-records-community-private Keeps reporter and reason under a private community relation.
+/// @evidenceReview docs/analysis/05-non-functional.md#req-nfr-privacy-002-keep-moderation-records-community-private Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+model reddit_reports {
+  /// Application-assigned UUID.
+  id String @id
+  /// Reporting account identifier, nullable after de-identification.
+  reporter_id String?
+  /// Community containing the target.
+  community_id String
+  /// Post target, when this is a post report.
+  post_id String?
+  /// Comment target, when this is a comment report.
+  comment_id String?
+  /// Trimmed report reason.
+  reason String
+  /// Null while unresolved; otherwise approved or dismissed.
+  outcome String?
+  /// Decision actor, nullable after de-identification.
+  moderator_id String?
+  /// Decision instant, or null while unresolved.
+  decided_at DateTime?
+  /// Report submission instant.
+  created_at DateTime
+  /// Reporting account.
+  reporter reddit_users? @relation(fields: [reporter_id], references: [id], onDelete: SetNull)
+  /// Community queue containing this report.
+  community reddit_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  /// Post target.
+  post reddit_posts? @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  /// Comment target.
+  comment reddit_comments? @relation(fields: [comment_id], references: [id], onDelete: Cascade)
+
+  @@index([community_id, outcome, created_at])
+  @@index([reporter_id, post_id, outcome])
+  @@index([reporter_id, comment_id, outcome])
+}
+
+/// Private resolved moderation action with only requirement-prescribed details.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-report-life-004-retain-resolved-moderation-history Represents private resolved moderation history.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-report-life-004-retain-resolved-moderation-history Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/02-domain-model.md#req-dom-ban-003-retain-resolved-ban-history Retains private moderation outcome context.
+/// @evidenceReview docs/analysis/02-domain-model.md#req-dom-ban-003-retain-resolved-ban-history Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+/// @evidence docs/analysis/05-non-functional.md#req-nfr-privacy-002-keep-moderation-records-community-private Stores history behind the community scope.
+/// @evidenceReview docs/analysis/05-non-functional.md#req-nfr-privacy-002-keep-moderation-records-community-private Read the cited requirement and compared this model or column with its relations, nullability, provider persistence mapping, and backend journey; verified the persisted state.
+model reddit_moderation_actions {
+  /// Application-assigned UUID.
+  id String @id
+  /// Community where the action occurred.
+  community_id String
+  /// Acting moderator, nullable after account deletion.
+  moderator_id String?
+  /// Former reporter, nullable after account deletion.
+  reporter_id String?
+  /// Approved or dismissed outcome.
+  outcome String
+  /// Target kind.
+  target_type String
+  /// Target identifier retained only as a non-public correlation.
+  target_id String
+  /// Target description when it still exists.
+  target_description String?
+  /// Original report reason.
+  reason String
+  /// Decision instant.
+  decided_at DateTime
+  /// History creation instant.
+  created_at DateTime
+  /// Community containing the history.
+  community reddit_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  /// Acting moderator account.
+  moderator reddit_users? @relation("moderationActor", fields: [moderator_id], references: [id], onDelete: SetNull)
+
+  @@index([community_id, decided_at])
+}

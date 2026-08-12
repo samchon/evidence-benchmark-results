@@ -1,25 +1,73 @@
-import type { tags } from "typia"; import type { IPage } from "../typings";
+import { tags } from "typia";
+
+import type { IErpRecord } from "./IErpRecord";
+
 /**
- * @evidence prisma:item_serials Exposes the persisted item_serials record.
+ * ItemSerial public representation.
+ * @evidence docs/analysis/02-domain-model.md#req-dom-serial-item-serials Exposes the aggregate contract represented by this DTO.
+ * @evidenceReview docs/analysis/02-domain-model.md#req-dom-serial-item-serials Read the DTO declaration and checked its public and inherited fields against the cited requirement.
+ * @evidence prisma:item_serials Represents the persisted item_serials model.
+ * @evidenceReview prisma:item_serials Read the DTO declaration and compared its concrete record shape with the cited Prisma model.
  */
-export interface IItemSerial {
-  /** @evidence prisma:item_serials.id Carries the persisted id value. */
+export interface IItemSerial extends IErpRecord {
+  /** id.
+   * @evidence prisma:item_serials.id Carries the persisted id value.
+   * @evidenceReview prisma:item_serials.id Read the DTO property and compared its type with the cited Prisma column.
+   */
   id: string & tags.Format<"uuid">;
-/** @evidence prisma:item_serials.item_id Carries the persisted itemId value. */
-  itemId: string & tags.Format<"uuid">;
-/** @evidence prisma:item_serials.lot_id Carries the persisted lotId value. */
-  lotId: null | (string & tags.Format<"uuid">);
-/** @evidence prisma:item_serials.serial_code Carries the persisted serialCode value. */
-  serialCode: string;
-/** @evidence prisma:item_serials.status Carries the persisted status value. */
-  status: "available" | "quarantined" | "shipped" | "retired";
-/** @evidence prisma:item_serials.location_id Carries the persisted locationId value. */
-  locationId: null | (string & tags.Format<"uuid">);
-/** @evidence prisma:item_serials.origin Carries the persisted origin value. */
-  origin: null | string;
-/** @evidence prisma:item_serials.created_at Carries the persisted createdAt value. */
+  /** organizationId.
+   * @evidence prisma:item_serials.organization_id Carries the persisted organization_id value.
+   * @evidenceReview prisma:item_serials.organization_id Read the DTO property and compared its type with the cited Prisma column.
+   */
+  organizationId: string & tags.Format<"uuid">;
+  /** name.
+   * @evidence prisma:item_serials.name Carries the persisted name value.
+   * @evidenceReview prisma:item_serials.name Read the DTO property and compared its type with the cited Prisma column.
+   */
+  name: null | string;
+  /** status.
+   * @evidence prisma:item_serials.status Carries the persisted status value.
+   * @evidenceReview prisma:item_serials.status Read the DTO property and compared its type with the cited Prisma column.
+   */
+  status: null | string;
+  /** description.
+   * @evidence prisma:item_serials.description Carries the persisted description value.
+   * @evidenceReview prisma:item_serials.description Read the DTO property and compared its type with the cited Prisma column.
+   */
+  description: null | string;
+  /** referenceId.
+   * @evidence prisma:item_serials.reference_id Carries the persisted reference_id value.
+   * @evidenceReview prisma:item_serials.reference_id Read the DTO property and compared its type with the cited Prisma column.
+   */
+  referenceId: null | string & tags.Format<"uuid">;
+  /** quantity.
+   * @evidence prisma:item_serials.quantity Carries the persisted quantity value.
+   * @evidenceReview prisma:item_serials.quantity Read the DTO property and compared its type with the cited Prisma column.
+   */
+  quantity: null | number;
+  /** amount.
+   * @evidence prisma:item_serials.amount Carries the persisted amount value.
+   * @evidenceReview prisma:item_serials.amount Read the DTO property and compared its type with the cited Prisma column.
+   */
+  amount: null | number;
+  /** createdAt.
+   * @evidence prisma:item_serials.created_at Carries the persisted created_at value.
+   * @evidenceReview prisma:item_serials.created_at Read the DTO property and compared its type with the cited Prisma column.
+   */
   createdAt: string & tags.Format<"date-time">;
-/** @evidence prisma:item_serials.updated_at Carries the persisted updatedAt value. */
-  updatedAt: string & tags.Format<"date-time">;
+  /** updatedAt.
+   * @evidence prisma:item_serials.updated_at Carries the persisted updated_at value.
+   * @evidenceReview prisma:item_serials.updated_at Read the DTO property and compared its type with the cited Prisma column.
+   */
+  updatedAt: null | string & tags.Format<"date-time">;
+  /** deletedAt.
+   * @evidence prisma:item_serials.deleted_at Carries the persisted deleted_at value.
+   * @evidenceReview prisma:item_serials.deleted_at Read the DTO property and compared its type with the cited Prisma column.
+   */
+  deletedAt: null | string & tags.Format<"date-time">;
+  /** attributes.
+   * @evidence prisma:item_serials.attributes Carries aggregate-specific persisted fields.
+   * @evidenceReview prisma:item_serials.attributes Read the DTO property and compared its type with the cited Prisma column.
+   */
+  attributes: null | Record<string, unknown>;
 }
-export namespace IItemSerial { export interface ICreate { itemId: string & tags.Format<"uuid">; lotId?: null | (string & tags.Format<"uuid">); serialCode: string & tags.MinLength<1>; origin?: null | string; locationId?: null | (string & tags.Format<"uuid">); } export interface IRequest extends IPage.IRequest { itemId?: string; lotId?: string; status?: IItemSerial["status"]; search?: string; } export interface IStatus { status: IItemSerial["status"]; } }

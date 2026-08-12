@@ -12,20 +12,117 @@
     "description": "NestJS, Nestia, and Prisma backend for benchmark-todo"
   },
   "paths": {
-    "/auth/user/join": {
+    "/todo/user/logout": {
       "post": {
-        "summary": "Register a private account and issue its first session",
-        "description": "Register a private account and issue its first session.",
+        "summary": "End only the current authenticated session; other account sessions remain valid",
+        "description": "End only the current authenticated session; other account sessions remain valid.",
         "tags": [
-          "Auth"
+          "Authentication"
+        ],
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "A successful acknowledgement",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IOperationResult"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "todo",
+          "user",
+          "logout"
+        ],
+        "x-samchon-controller": "AccountController"
+      }
+    },
+    "/todo/user/logout-all": {
+      "post": {
+        "summary": "End every session belonging to the current account",
+        "description": "End every session belonging to the current account.",
+        "tags": [
+          "Authentication"
+        ],
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "A successful acknowledgement",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IOperationResult"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "todo",
+          "user",
+          "logout_all",
+          "logoutAll"
+        ],
+        "x-samchon-controller": "AccountController"
+      }
+    },
+    "/todo/user/password": {
+      "put": {
+        "summary": "Replace the password after proving the current password; all sessions end",
+        "description": "Replace the password after proving the current password; all sessions end.\nRefuses an incorrect, reused, or invalid password.",
+        "tags": [
+          "Authentication"
         ],
         "parameters": [],
         "requestBody": {
-          "description": "Email, password, and initial display name.",
+          "description": "Current and replacement passwords",
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/IAuth"
+                "$ref": "#/components/schemas/IUser.IChangePassword"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "A successful acknowledgement",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IOperationResult"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "todo",
+          "user",
+          "password",
+          "changePassword"
+        ],
+        "x-samchon-controller": "AccountController"
+      }
+    },
+    "/todo/user/account/delete": {
+      "post": {
+        "summary": "Permanently delete the account, profile, sessions, Todos, trash, and history",
+        "description": "Permanently delete the account, profile, sessions, Todos, trash, and history.\nRefuses an incorrect current password.",
+        "tags": [
+          "Authentication"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "description": "Current password confirmation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IUser.IDeleteAccount"
               }
             }
           },
@@ -33,25 +130,59 @@
         },
         "responses": {
           "201": {
-            "description": "The new private session and profile display name.",
+            "description": "A successful acknowledgement",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/IAuth.IAuthorized"
+                  "$ref": "#/components/schemas/IOperationResult"
                 }
-              }
-            }
-          },
-          "409": {
-            "description": "for a duplicate canonical email; 422 for invalid input.",
-            "content": {
-              "application/json": {
-                "schema": {}
               }
             }
           }
         },
         "x-samchon-accessor": [
+          "todo",
+          "user",
+          "account",
+          "_delete",
+          "deleteAccount"
+        ],
+        "x-samchon-controller": "AccountController"
+      }
+    },
+    "/todo/auth/user/join": {
+      "post": {
+        "summary": "Register a private account and issue its first session",
+        "description": "Register a private account and issue its first session.\n\nDuplicate canonical email, credential, and display-name violations are\nrefused without creating any account state.",
+        "tags": [
+          "Authentication"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "description": "Registration credentials and initial profile name",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IUser.IJoin"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "The new authenticated session and private profile",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IUser.IAuthorized"
+                }
+              }
+            }
+          }
+        },
+        "x-samchon-accessor": [
+          "todo",
           "auth",
           "user",
           "join"
@@ -59,20 +190,20 @@
         "x-samchon-controller": "AuthController"
       }
     },
-    "/auth/user/login": {
+    "/todo/auth/user/login": {
       "post": {
-        "summary": "Authenticate an existing account without revealing credential failure details",
-        "description": "Authenticate an existing account without revealing credential failure details.",
+        "summary": "Log in with an existing email and password",
+        "description": "Log in with an existing email and password.\n\nUnknown emails and wrong passwords have the same generic refusal.",
         "tags": [
-          "Auth"
+          "Authentication"
         ],
         "parameters": [],
         "requestBody": {
-          "description": "Existing email and password.",
+          "description": "Login credentials",
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/IAuth.ILogin"
+                "$ref": "#/components/schemas/IUser.ILogin"
               }
             }
           },
@@ -80,25 +211,18 @@
         },
         "responses": {
           "201": {
-            "description": "A new session for the authenticated account.",
+            "description": "A new independent authenticated session",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/IAuth.IAuthorized"
+                  "$ref": "#/components/schemas/IUser.IAuthorized"
                 }
-              }
-            }
-          },
-          "401": {
-            "description": "for either an unknown email or an incorrect password.",
-            "content": {
-              "application/json": {
-                "schema": {}
               }
             }
           }
         },
         "x-samchon-accessor": [
+          "todo",
           "auth",
           "user",
           "login"
@@ -106,20 +230,19 @@
         "x-samchon-controller": "AuthController"
       }
     },
-    "/auth/user/refresh": {
+    "/todo/auth/user/refresh": {
       "post": {
-        "summary": "Continue a valid session by exchanging its refresh token",
-        "description": "Continue a valid session by exchanging its refresh token.",
+        "summary": "Continue one valid session with its refresh token",
+        "description": "Continue one valid session with its refresh token.",
         "tags": [
-          "Auth"
+          "Authentication"
         ],
         "parameters": [],
         "requestBody": {
-          "description": "Previously issued refresh token.",
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/IAuth.IRefresh"
+                "$ref": "#/components/schemas/IUser.IRefresh"
               }
             }
           },
@@ -127,25 +250,18 @@
         },
         "responses": {
           "201": {
-            "description": "Refreshed tokens for the same account and session.",
+            "description": "",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/IAuth.IAuthorized"
+                  "$ref": "#/components/schemas/IUser.IAuthorized"
                 }
-              }
-            }
-          },
-          "401": {
-            "description": "when the token is missing, expired, invalid, or revoked.",
-            "content": {
-              "application/json": {
-                "schema": {}
               }
             }
           }
         },
         "x-samchon-accessor": [
+          "todo",
           "auth",
           "user",
           "refresh"
@@ -153,174 +269,20 @@
         "x-samchon-controller": "AuthController"
       }
     },
-    "/auth/user/logout": {
+    "/todo/auth/user/recovery/request": {
       "post": {
-        "summary": "End only the current authenticated session",
-        "description": "End only the current authenticated session.",
+        "summary": "Start forgotten-password recovery without disclosing account existence",
+        "description": "Start forgotten-password recovery without disclosing account existence.\n\nAn existing account receives a recorded email effect; the response is\nidentical when no account matches.",
         "tags": [
-          "Auth"
-        ],
-        "parameters": [],
-        "responses": {
-          "201": {
-            "description": "A success marker after the current session is revoked.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "additionalProperties": false,
-                  "properties": {
-                    "success": {
-                      "const": true,
-                      "description": null,
-                      "title": null
-                    }
-                  },
-                  "required": [
-                    "success"
-                  ],
-                  "type": "object"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "when no valid caller session is present.",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          }
-        },
-        "x-samchon-accessor": [
-          "auth",
-          "user",
-          "logout"
-        ],
-        "x-samchon-controller": "AuthController"
-      }
-    },
-    "/auth/user/logout-all": {
-      "post": {
-        "summary": "End every session belonging to the current account",
-        "description": "End every session belonging to the current account.",
-        "tags": [
-          "Auth"
-        ],
-        "parameters": [],
-        "responses": {
-          "201": {
-            "description": "A success marker after all account sessions are revoked.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "additionalProperties": false,
-                  "properties": {
-                    "success": {
-                      "const": true,
-                      "description": null,
-                      "title": null
-                    }
-                  },
-                  "required": [
-                    "success"
-                  ],
-                  "type": "object"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "when no valid caller session is present.",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          }
-        },
-        "x-samchon-accessor": [
-          "auth",
-          "user",
-          "logout_all",
-          "logoutAll"
-        ],
-        "x-samchon-controller": "AuthController"
-      }
-    },
-    "/auth/user/password": {
-      "put": {
-        "summary": "Replace the current password and invalidate all old sessions",
-        "description": "Replace the current password and invalidate all old sessions.",
-        "tags": [
-          "Auth"
+          "Authentication"
         ],
         "parameters": [],
         "requestBody": {
-          "description": "Current password and accepted replacement password.",
+          "description": "Email identity to notify when it exists",
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/IAuth.IChangePassword"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "A success marker after the credential transaction commits.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "additionalProperties": false,
-                  "properties": {
-                    "success": {
-                      "const": true,
-                      "description": null,
-                      "title": null
-                    }
-                  },
-                  "required": [
-                    "success"
-                  ],
-                  "type": "object"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "when unauthenticated; 403 for a wrong current password; 422 for invalid or reused input.",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          }
-        },
-        "x-samchon-accessor": [
-          "auth",
-          "user",
-          "password",
-          "changePassword"
-        ],
-        "x-samchon-controller": "AuthController"
-      }
-    },
-    "/auth/user/recover/start": {
-      "post": {
-        "summary": "Start non-disclosing forgotten-password recovery",
-        "description": "Start non-disclosing forgotten-password recovery.",
-        "tags": [
-          "Auth"
-        ],
-        "parameters": [],
-        "requestBody": {
-          "description": "Email identity requesting an out-of-band recovery proof.",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/IAuth.IRecoverStart"
+                "$ref": "#/components/schemas/IUser.IRecoveryRequest"
               }
             }
           },
@@ -328,57 +290,41 @@
         },
         "responses": {
           "201": {
-            "description": "A proof-shaped response with no account-existence signal.",
+            "description": "A non-disclosing acknowledgement",
             "content": {
               "application/json": {
                 "schema": {
-                  "additionalProperties": false,
-                  "properties": {
-                    "proof": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "proof"
-                  ],
-                  "type": "object"
+                  "$ref": "#/components/schemas/IOperationResult"
                 }
-              }
-            }
-          },
-          "422": {
-            "description": "for an invalid email value.",
-            "content": {
-              "application/json": {
-                "schema": {}
               }
             }
           }
         },
         "x-samchon-accessor": [
+          "todo",
           "auth",
           "user",
-          "recover",
-          "start",
-          "recoverStart"
+          "recovery",
+          "request",
+          "recoveryRequest"
         ],
         "x-samchon-controller": "AuthController"
       }
     },
-    "/auth/user/recover": {
+    "/todo/auth/user/recovery/confirm": {
       "post": {
-        "summary": "Complete forgotten-password recovery with the proven email identity",
-        "description": "Complete forgotten-password recovery with the proven email identity.",
+        "summary": "Consume the one-time email proof and issue a replacement session",
+        "description": "Consume the one-time email proof and issue a replacement session.\nRefuses an unknown, expired, consumed, or incorrect proof.",
         "tags": [
-          "Auth"
+          "Authentication"
         ],
         "parameters": [],
         "requestBody": {
-          "description": "Registered email, one-time proof, and replacement password.",
+          "description": "Email, delivered proof, and replacement password",
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/IAuth.IRecoverPassword"
+                "$ref": "#/components/schemas/IUser.IRecoveryConfirm"
               }
             }
           },
@@ -386,99 +332,23 @@
         },
         "responses": {
           "201": {
-            "description": "A success marker after credential and session invalidation commit.",
+            "description": "A new authenticated session",
             "content": {
               "application/json": {
                 "schema": {
-                  "additionalProperties": false,
-                  "properties": {
-                    "success": {
-                      "const": true,
-                      "description": null,
-                      "title": null
-                    }
-                  },
-                  "required": [
-                    "success"
-                  ],
-                  "type": "object"
+                  "$ref": "#/components/schemas/IUser.IAuthorized"
                 }
-              }
-            }
-          },
-          "401": {
-            "description": "for an invalid or reused proof; 422 for an invalid replacement.",
-            "content": {
-              "application/json": {
-                "schema": {}
               }
             }
           }
         },
         "x-samchon-accessor": [
+          "todo",
           "auth",
           "user",
-          "recover",
-          "recover"
-        ],
-        "x-samchon-controller": "AuthController"
-      }
-    },
-    "/auth/user/account": {
-      "delete": {
-        "summary": "Permanently delete the current account and all owned private data",
-        "description": "Permanently delete the current account and all owned private data.",
-        "tags": [
-          "Auth"
-        ],
-        "parameters": [],
-        "requestBody": {
-          "description": "Current password confirmation.",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/IAuth.IDeleteAccount"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "A success marker after cascading account deletion commits.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "additionalProperties": false,
-                  "properties": {
-                    "success": {
-                      "const": true,
-                      "description": null,
-                      "title": null
-                    }
-                  },
-                  "required": [
-                    "success"
-                  ],
-                  "type": "object"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "when unauthenticated; 403 for a wrong current password.",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          }
-        },
-        "x-samchon-accessor": [
-          "auth",
-          "user",
-          "account",
-          "deleteAccount"
+          "recovery",
+          "confirm",
+          "recoveryConfirm"
         ],
         "x-samchon-controller": "AuthController"
       }
@@ -508,53 +378,47 @@
         "x-samchon-controller": "HealthController"
       }
     },
-    "/profile": {
+    "/todo/user/profile": {
       "get": {
-        "summary": "Read the display name for the authenticated account",
-        "description": "Read the display name for the authenticated account.",
+        "summary": "Return the current account's private display profile",
+        "description": "Return the current account's private display profile.",
         "tags": [
           "Profile"
         ],
         "parameters": [],
         "responses": {
           "200": {
-            "description": "The caller's current display name only.",
+            "description": "The authenticated owner's profile",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/IProfile"
+                  "$ref": "#/components/schemas/IUser"
                 }
-              }
-            }
-          },
-          "401": {
-            "description": "when unauthenticated; 404 when the account profile is absent.",
-            "content": {
-              "application/json": {
-                "schema": {}
               }
             }
           }
         },
         "x-samchon-accessor": [
+          "todo",
+          "user",
           "profile",
           "at"
         ],
         "x-samchon-controller": "ProfileController"
       },
       "put": {
-        "summary": "Replace only the authenticated account's display name",
-        "description": "Replace only the authenticated account's display name.",
+        "summary": "Replace only the current account's display name",
+        "description": "Replace only the current account's display name.\nRefuses a blank or overlong trimmed name.",
         "tags": [
           "Profile"
         ],
         "parameters": [],
         "requestBody": {
-          "description": "Trimmed display-name replacement.",
+          "description": "Replacement display name",
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/IProfile.IUpdate"
+                "$ref": "#/components/schemas/IUser.IUpdateProfile"
               }
             }
           },
@@ -562,41 +426,35 @@
         },
         "responses": {
           "200": {
-            "description": "The updated private display name.",
+            "description": "The updated private profile",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/IProfile"
+                  "$ref": "#/components/schemas/IUser"
                 }
-              }
-            }
-          },
-          "401": {
-            "description": "when unauthenticated; 422 for an empty or overlong name.",
-            "content": {
-              "application/json": {
-                "schema": {}
               }
             }
           }
         },
         "x-samchon-accessor": [
+          "todo",
+          "user",
           "profile",
           "update"
         ],
         "x-samchon-controller": "ProfileController"
       }
     },
-    "/todo": {
+    "/todo/user/todo": {
       "patch": {
-        "summary": "Browse the owner's active todos with filter, sort, and pagination",
-        "description": "Browse the owner's active todos with filter, sort, and pagination.",
+        "summary": "Browse the authenticated owner's active Todos with completion filtering and stable date sorting",
+        "description": "Browse the authenticated owner's active Todos with completion filtering and stable date sorting.\nRefuses unsupported filters, sort choices, or pagination values.",
         "tags": [
           "Todo"
         ],
         "parameters": [],
         "requestBody": {
-          "description": "Completion filter, supported date sort, and bounded page.",
+          "description": "Completion, sort, and page selection",
           "content": {
             "application/json": {
               "schema": {
@@ -608,7 +466,7 @@
         },
         "responses": {
           "200": {
-            "description": "One page of compact active todo summaries and totals.",
+            "description": "One page of compact active Todo summaries",
             "content": {
               "application/json": {
                 "schema": {
@@ -616,31 +474,25 @@
                 }
               }
             }
-          },
-          "401": {
-            "description": "when unauthenticated; 422 for unsupported controls.",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
           }
         },
         "x-samchon-accessor": [
+          "todo",
+          "user",
           "todo",
           "index"
         ],
         "x-samchon-controller": "TodoController"
       },
       "post": {
-        "summary": "Create one active incomplete todo owned by the caller",
-        "description": "Create one active incomplete todo owned by the caller.",
+        "summary": "Create an incomplete active Todo owned permanently by the authenticated user",
+        "description": "Create an incomplete active Todo owned permanently by the authenticated user.\nRefuses invalid content or an incoherent date interval.",
         "tags": [
           "Todo"
         ],
         "parameters": [],
         "requestBody": {
-          "description": "Required title and independent optional content/date fields.",
+          "description": "Todo content and optional planning dates",
           "content": {
             "application/json": {
               "schema": {
@@ -652,7 +504,7 @@
         },
         "responses": {
           "201": {
-            "description": "The newly created active todo.",
+            "description": "The created Todo detail",
             "content": {
               "application/json": {
                 "schema": {
@@ -660,27 +512,21 @@
                 }
               }
             }
-          },
-          "401": {
-            "description": "when unauthenticated; 422 for invalid content or dates.",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
           }
         },
         "x-samchon-accessor": [
+          "todo",
+          "user",
           "todo",
           "create"
         ],
         "x-samchon-controller": "TodoController"
       }
     },
-    "/todo/{id}": {
+    "/todo/user/todo/{id}": {
       "get": {
-        "summary": "Read one owned active todo",
-        "description": "Read one owned active todo.",
+        "summary": "View one active Todo owned by the authenticated user",
+        "description": "View one active Todo owned by the authenticated user.\nReturns `404` for absent, trashed, or other-owned targets.",
         "tags": [
           "Todo"
         ],
@@ -693,12 +539,12 @@
               "type": "string"
             },
             "required": true,
-            "description": "Stable todo identifier."
+            "description": "Active Todo identifier"
           }
         ],
         "responses": {
           "200": {
-            "description": "Full active todo content and state.",
+            "description": "Full active Todo detail",
             "content": {
               "application/json": {
                 "schema": {
@@ -706,25 +552,19 @@
                 }
               }
             }
-          },
-          "401": {
-            "description": "when unauthenticated; 404 when absent, trashed, or foreign.",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
           }
         },
         "x-samchon-accessor": [
+          "todo",
+          "user",
           "todo",
           "at"
         ],
         "x-samchon-controller": "TodoController"
       },
       "put": {
-        "summary": "Edit owned active todo content and append one history entry",
-        "description": "Edit owned active todo content and append one history entry.",
+        "summary": "Edit active Todo content and append one immutable history entry atomically",
+        "description": "Edit active Todo content and append one immutable history entry atomically.\nRefuses invalid, no-op, stale, trashed, absent, or other-owned edits.",
         "tags": [
           "Todo"
         ],
@@ -737,11 +577,11 @@
               "type": "string"
             },
             "required": true,
-            "description": "Stable todo identifier."
+            "description": "Active Todo identifier"
           }
         ],
         "requestBody": {
-          "description": "Changed content plus the required revision read before editing.",
+          "description": "Changed content and version read at edit start",
           "content": {
             "application/json": {
               "schema": {
@@ -753,7 +593,7 @@
         },
         "responses": {
           "200": {
-            "description": "The updated active todo.",
+            "description": "The updated Todo detail",
             "content": {
               "application/json": {
                 "schema": {
@@ -764,16 +604,18 @@
           }
         },
         "x-samchon-accessor": [
+          "todo",
+          "user",
           "todo",
           "update"
         ],
         "x-samchon-controller": "TodoController"
       },
       "delete": {
-        "summary": "Move an owned active todo to trash without adding content history",
-        "description": "Move an owned active todo to trash without adding content history.",
+        "summary": "Move an owned active Todo into trash without changing content or history",
+        "description": "Move an owned active Todo into trash without changing content or history.\nRefuses an already trashed, absent, or other-owned target.",
         "tags": [
-          "Todo"
+          "Trash"
         ],
         "parameters": [
           {
@@ -784,12 +626,12 @@
               "type": "string"
             },
             "required": true,
-            "description": "Stable todo identifier."
+            "description": "Active Todo identifier"
           }
         ],
         "responses": {
           "200": {
-            "description": "The same todo in trashed availability.",
+            "description": "The same Todo in trash",
             "content": {
               "application/json": {
                 "schema": {
@@ -801,15 +643,17 @@
         },
         "x-samchon-accessor": [
           "todo",
-          "erase"
+          "user",
+          "todo",
+          "trash"
         ],
         "x-samchon-controller": "TodoController"
       }
     },
-    "/todo/{id}/complete": {
+    "/todo/user/todo/{id}/complete": {
       "put": {
-        "summary": "Mark an owned active todo complete, idempotently",
-        "description": "Mark an owned active todo complete, idempotently.",
+        "summary": "Mark an owned active Todo complete; repeating the state is idempotent",
+        "description": "Mark an owned active Todo complete; repeating the state is idempotent.",
         "tags": [
           "Todo"
         ],
@@ -822,12 +666,12 @@
               "type": "string"
             },
             "required": true,
-            "description": "Stable todo identifier."
+            "description": "Active Todo identifier"
           }
         ],
         "responses": {
           "200": {
-            "description": "The active todo with complete status.",
+            "description": "The resulting Todo detail",
             "content": {
               "application/json": {
                 "schema": {
@@ -838,16 +682,18 @@
           }
         },
         "x-samchon-accessor": [
+          "todo",
+          "user",
           "todo",
           "complete"
         ],
         "x-samchon-controller": "TodoController"
       }
     },
-    "/todo/{id}/incomplete": {
+    "/todo/user/todo/{id}/incomplete": {
       "put": {
-        "summary": "Mark an owned active todo incomplete, idempotently",
-        "description": "Mark an owned active todo incomplete, idempotently.",
+        "summary": "Mark an owned active Todo incomplete; repeating the state is idempotent",
+        "description": "Mark an owned active Todo incomplete; repeating the state is idempotent.",
         "tags": [
           "Todo"
         ],
@@ -860,12 +706,12 @@
               "type": "string"
             },
             "required": true,
-            "description": "Stable todo identifier."
+            "description": "Active Todo identifier"
           }
         ],
         "responses": {
           "200": {
-            "description": "The active todo with incomplete status.",
+            "description": "The resulting Todo detail",
             "content": {
               "application/json": {
                 "schema": {
@@ -877,17 +723,19 @@
         },
         "x-samchon-accessor": [
           "todo",
+          "user",
+          "todo",
           "incomplete"
         ],
         "x-samchon-controller": "TodoController"
       }
     },
-    "/todo/{id}/history": {
+    "/todo/user/todo/{id}/history": {
       "get": {
-        "summary": "Read complete content-edit history for an owned active or trashed todo",
-        "description": "Read complete content-edit history for an owned active or trashed todo.",
+        "summary": "View the complete newest-first content-edit history of an owned active or trashed Todo",
+        "description": "View the complete newest-first content-edit history of an owned active or trashed Todo.\nCompletion, trash, and restore transitions never appear as history entries.",
         "tags": [
-          "Todo"
+          "History"
         ],
         "parameters": [
           {
@@ -898,12 +746,12 @@
               "type": "string"
             },
             "required": true,
-            "description": "Stable todo identifier."
+            "description": "Owned Todo identifier"
           }
         ],
         "responses": {
           "200": {
-            "description": "Immutable history entries newest first.",
+            "description": "Immutable content-edit chronology",
             "content": {
               "application/json": {
                 "schema": {
@@ -918,21 +766,23 @@
         },
         "x-samchon-accessor": [
           "todo",
+          "user",
+          "todo",
           "history"
         ],
         "x-samchon-controller": "TodoController"
       }
     },
-    "/trash": {
+    "/todo/user/trash": {
       "patch": {
-        "summary": "Browse the owner's trashed todos newest-deleted first",
-        "description": "Browse the owner's trashed todos newest-deleted first.",
+        "summary": "Browse the authenticated owner's retained Todos newest-trash-first",
+        "description": "Browse the authenticated owner's retained Todos newest-trash-first.\nRefuses unsupported pagination values and excludes active or other-owned Todos.",
         "tags": [
           "Trash"
         ],
         "parameters": [],
         "requestBody": {
-          "description": "Bounded one-based page controls.",
+          "description": "Page selection",
           "content": {
             "application/json": {
               "schema": {
@@ -944,7 +794,7 @@
         },
         "responses": {
           "200": {
-            "description": "One page of trashed summaries with trash-entry times and totals.",
+            "description": "One page of compact trashed Todo summaries",
             "content": {
               "application/json": {
                 "schema": {
@@ -952,27 +802,21 @@
                 }
               }
             }
-          },
-          "401": {
-            "description": "when unauthenticated; 422 for invalid pagination.",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
           }
         },
         "x-samchon-accessor": [
+          "todo",
+          "user",
           "trash",
           "index"
         ],
         "x-samchon-controller": "TrashController"
       }
     },
-    "/trash/{id}": {
+    "/todo/user/trash/{id}": {
       "get": {
-        "summary": "Read one owned trashed todo",
-        "description": "Read one owned trashed todo.",
+        "summary": "Inspect one owned trashed Todo before recovery or permanent deletion",
+        "description": "Inspect one owned trashed Todo before recovery or permanent deletion.\nReturns `404` for active, absent, or other-owned targets.",
         "tags": [
           "Trash"
         ],
@@ -985,12 +829,12 @@
               "type": "string"
             },
             "required": true,
-            "description": "Stable todo identifier."
+            "description": "Trashed Todo identifier"
           }
         ],
         "responses": {
           "200": {
-            "description": "Full preserved todo content, trash time, and trashed state.",
+            "description": "Preserved full Todo detail",
             "content": {
               "application/json": {
                 "schema": {
@@ -1001,14 +845,16 @@
           }
         },
         "x-samchon-accessor": [
+          "todo",
+          "user",
           "trash",
           "at"
         ],
         "x-samchon-controller": "TrashController"
       },
       "delete": {
-        "summary": "Permanently delete one owned trashed todo and its history",
-        "description": "Permanently delete one owned trashed todo and its history.",
+        "summary": "Permanently delete one trashed Todo and every attached history entry",
+        "description": "Permanently delete one trashed Todo and every attached history entry.\nRefuses an active, absent, or other-owned target.",
         "tags": [
           "Trash"
         ],
@@ -1021,43 +867,34 @@
               "type": "string"
             },
             "required": true,
-            "description": "Stable todo identifier."
+            "description": "Trashed Todo identifier"
           }
         ],
         "responses": {
           "200": {
-            "description": "A success marker after cascading todo deletion commits.",
+            "description": "A successful acknowledgement",
             "content": {
               "application/json": {
                 "schema": {
-                  "additionalProperties": false,
-                  "properties": {
-                    "success": {
-                      "const": true,
-                      "description": null,
-                      "title": null
-                    }
-                  },
-                  "required": [
-                    "success"
-                  ],
-                  "type": "object"
+                  "$ref": "#/components/schemas/IOperationResult"
                 }
               }
             }
           }
         },
         "x-samchon-accessor": [
+          "todo",
+          "user",
           "trash",
           "erase"
         ],
         "x-samchon-controller": "TrashController"
       }
     },
-    "/trash/{id}/restore": {
+    "/todo/user/trash/{id}/restore": {
       "put": {
-        "summary": "Restore one owned trashed todo to active work",
-        "description": "Restore one owned trashed todo to active work.",
+        "summary": "Restore the same Todo identity to active work without adding history",
+        "description": "Restore the same Todo identity to active work without adding history.\nRefuses an active, absent, or other-owned target.",
         "tags": [
           "Trash"
         ],
@@ -1070,12 +907,12 @@
               "type": "string"
             },
             "required": true,
-            "description": "Stable todo identifier."
+            "description": "Trashed Todo identifier"
           }
         ],
         "responses": {
           "200": {
-            "description": "The same todo in active availability.",
+            "description": "The restored active Todo",
             "content": {
               "application/json": {
                 "schema": {
@@ -1086,49 +923,10 @@
           }
         },
         "x-samchon-accessor": [
+          "todo",
+          "user",
           "trash",
           "restore"
-        ],
-        "x-samchon-controller": "TrashController"
-      }
-    },
-    "/trash/{id}/history": {
-      "get": {
-        "summary": "Read complete content-edit history for one trashed todo",
-        "description": "Read complete content-edit history for one trashed todo.",
-        "tags": [
-          "Trash"
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "schema": {
-              "format": "uuid",
-              "type": "string"
-            },
-            "required": true,
-            "description": "Stable todo identifier."
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Immutable history entries newest first.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/ITodoHistory"
-                  },
-                  "type": "array"
-                }
-              }
-            }
-          }
-        },
-        "x-samchon-accessor": [
-          "trash",
-          "history"
         ],
         "x-samchon-controller": "TrashController"
       }
@@ -1136,143 +934,32 @@
   },
   "components": {
     "schemas": {
-      "IAuth.IAuthorized": {
+      "IOperationResult": {
         "additionalProperties": false,
-        "description": "Issued authorization material and private actor identity.",
+        "description": "Successful acknowledgement for stateful commands without a resource body.",
         "properties": {
-          "id": {
-            "description": "Account identifier.",
-            "format": "uuid",
-            "type": "string"
-          },
-          "accessToken": {
-            "description": "Bearer access token.",
-            "type": "string"
-          },
-          "refreshToken": {
-            "description": "Bearer refresh token.",
-            "type": "string"
-          },
-          "token": {
-            "additionalProperties": false,
-            "description": "Tokens retained by the SDK connection helper.",
-            "properties": {
-              "access": {
-                "type": "string"
-              },
-              "refresh": {
-                "type": "string"
-              }
-            },
-            "required": [
-              "access",
-              "refresh"
-            ],
-            "type": "object"
-          },
-          "expiresIn": {
-            "description": "Access-token lifetime in seconds.",
-            "minimum": 0,
-            "type": "integer"
-          },
-          "profile": {
-            "additionalProperties": false,
-            "description": "Current private profile.",
-            "properties": {
-              "displayName": {
-                "type": "string"
-              }
-            },
-            "required": [
-              "displayName"
-            ],
-            "type": "object"
+          "success": {
+            "const": true,
+            "description": "Always true when the operation completed.",
+            "title": null
           }
         },
         "required": [
-          "id",
-          "accessToken",
-          "refreshToken",
-          "token",
-          "expiresIn",
-          "profile"
+          "success"
         ],
         "type": "object"
       },
-      "IAuth": {
+      "IUser.IChangePassword": {
         "additionalProperties": false,
-        "description": "Account registration input.",
-        "properties": {
-          "email": {
-            "description": "Canonicalized email identity.",
-            "maxLength": 320,
-            "minLength": 1,
-            "type": "string"
-          },
-          "password": {
-            "description": "Password evaluated exactly as submitted.",
-            "maxLength": 128,
-            "minLength": 8,
-            "type": "string"
-          },
-          "displayName": {
-            "description": "Initial private display name.",
-            "maxLength": 100,
-            "minLength": 1,
-            "type": "string"
-          }
-        },
-        "required": [
-          "email",
-          "password",
-          "displayName"
-        ],
-        "type": "object"
-      },
-      "IAuth.ILogin": {
-        "additionalProperties": false,
-        "description": "Email/password login input.",
-        "properties": {
-          "email": {
-            "maxLength": 320,
-            "minLength": 1,
-            "type": "string"
-          },
-          "password": {
-            "maxLength": 128,
-            "minLength": 8,
-            "type": "string"
-          }
-        },
-        "required": [
-          "email",
-          "password"
-        ],
-        "type": "object"
-      },
-      "IAuth.IRefresh": {
-        "additionalProperties": false,
-        "description": "Refresh input carrying the previously issued refresh token.",
-        "properties": {
-          "refreshToken": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "refreshToken"
-        ],
-        "type": "object"
-      },
-      "IAuth.IChangePassword": {
-        "additionalProperties": false,
-        "description": "Known-current-password plus replacement input.",
+        "description": "Password replacement input.",
         "properties": {
           "currentPassword": {
-            "maxLength": 128,
-            "minLength": 8,
+            "description": "Current password proving authority.",
+            "minLength": 1,
             "type": "string"
           },
           "newPassword": {
+            "description": "New eight-through-128-character password.",
             "maxLength": 128,
             "minLength": 8,
             "type": "string"
@@ -1284,12 +971,168 @@
         ],
         "type": "object"
       },
-      "IAuth.IRecoverStart": {
+      "IUser.IDeleteAccount": {
         "additionalProperties": false,
-        "description": "Recovery-start input.",
+        "description": "Password confirmation for terminal account deletion.",
+        "properties": {
+          "currentPassword": {
+            "description": "Current password proving authority.",
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "currentPassword"
+        ],
+        "type": "object"
+      },
+      "IUser": {
+        "additionalProperties": false,
+        "description": "Private profile shown only to its authenticated owner.",
+        "properties": {
+          "id": {
+            "description": "Profile identifier.",
+            "format": "uuid",
+            "type": "string"
+          },
+          "displayName": {
+            "description": "Current display name.",
+            "maxLength": 100,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "displayName"
+        ],
+        "type": "object"
+      },
+      "IUser.IAuthorized": {
+        "additionalProperties": false,
+        "description": "Authentication material returned by join, login, and refresh.",
+        "properties": {
+          "accessToken": {
+            "description": "Short-lived bearer token.",
+            "minLength": 1,
+            "type": "string"
+          },
+          "refreshToken": {
+            "description": "Session continuation token.",
+            "minLength": 1,
+            "type": "string"
+          },
+          "accessExpiresAt": {
+            "description": "Access-token expiry instant.",
+            "format": "date-time",
+            "type": "string"
+          },
+          "user": {
+            "$ref": "#/components/schemas/IUser",
+            "description": "Authenticated private profile."
+          },
+          "token": {
+            "additionalProperties": false,
+            "description": "Tokens also issued through the standard Nestia authorization header hook.",
+            "properties": {
+              "access": {
+                "description": "Short-lived access bearer token.",
+                "minLength": 1,
+                "type": "string"
+              },
+              "refresh": {
+                "description": "Session continuation token.",
+                "minLength": 1,
+                "type": "string"
+              }
+            },
+            "required": [
+              "access",
+              "refresh"
+            ],
+            "type": "object"
+          }
+        },
+        "required": [
+          "accessToken",
+          "refreshToken",
+          "accessExpiresAt",
+          "user",
+          "token"
+        ],
+        "type": "object"
+      },
+      "IUser.IJoin": {
+        "additionalProperties": false,
+        "description": "Registration input.",
         "properties": {
           "email": {
-            "maxLength": 320,
+            "description": "Canonicalized by the server after validation.",
+            "minLength": 1,
+            "type": "string"
+          },
+          "password": {
+            "description": "Eight through 128 characters; not trimmed.",
+            "maxLength": 128,
+            "minLength": 8,
+            "type": "string"
+          },
+          "displayName": {
+            "description": "Trimmed by the server and bounded to one through 100 characters.",
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "password",
+          "displayName"
+        ],
+        "type": "object"
+      },
+      "IUser.ILogin": {
+        "additionalProperties": false,
+        "description": "Login input.",
+        "properties": {
+          "email": {
+            "description": "Account email.",
+            "minLength": 1,
+            "type": "string"
+          },
+          "password": {
+            "description": "Account password.",
+            "maxLength": 128,
+            "minLength": 8,
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ],
+        "type": "object"
+      },
+      "IUser.IRefresh": {
+        "additionalProperties": false,
+        "description": "Refresh input for a still-valid session.",
+        "properties": {
+          "refreshToken": {
+            "description": "Previously issued refresh token.",
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "refreshToken"
+        ],
+        "type": "object"
+      },
+      "IUser.IRecoveryRequest": {
+        "additionalProperties": false,
+        "description": "Starts a non-disclosing email recovery journey.",
+        "properties": {
+          "email": {
+            "description": "Email whose ownership should receive a proof.",
             "minLength": 1,
             "type": "string"
           }
@@ -1299,71 +1142,40 @@
         ],
         "type": "object"
       },
-      "IAuth.IRecoverPassword": {
+      "IUser.IRecoveryConfirm": {
         "additionalProperties": false,
-        "description": "Forgotten-password recovery proof and replacement.",
+        "description": "Consumes the proof delivered to the registered email.",
         "properties": {
           "email": {
-            "maxLength": 320,
+            "description": "Registered email identity.",
+            "minLength": 1,
+            "type": "string"
+          },
+          "proof": {
+            "description": "One-time proof from the recorded email effect.",
             "minLength": 1,
             "type": "string"
           },
           "newPassword": {
+            "description": "Replacement password.",
             "maxLength": 128,
             "minLength": 8,
-            "type": "string"
-          },
-          "proof": {
-            "description": "Proof token issued by the recovery-start operation.",
             "type": "string"
           }
         },
         "required": [
           "email",
-          "newPassword",
-          "proof"
+          "proof",
+          "newPassword"
         ],
         "type": "object"
       },
-      "IAuth.IDeleteAccount": {
+      "IUser.IUpdateProfile": {
         "additionalProperties": false,
-        "description": "Current-password confirmation for terminal account deletion.",
-        "properties": {
-          "currentPassword": {
-            "description": "Current password required for terminal deletion.",
-            "maxLength": 128,
-            "minLength": 8,
-            "type": "string"
-          }
-        },
-        "required": [
-          "currentPassword"
-        ],
-        "type": "object"
-      },
-      "IProfile": {
-        "additionalProperties": false,
-        "description": "Private profile read shape.",
+        "description": "Profile edit input.",
         "properties": {
           "displayName": {
-            "description": "Current trimmed display name.",
-            "maxLength": 100,
-            "minLength": 1,
-            "type": "string"
-          }
-        },
-        "required": [
-          "displayName"
-        ],
-        "type": "object"
-      },
-      "IProfile.IUpdate": {
-        "additionalProperties": false,
-        "description": "Display-name replacement input.",
-        "properties": {
-          "displayName": {
-            "description": "Proposed display name, trimmed by the server.",
-            "maxLength": 100,
+            "description": "Replacement display name.",
             "minLength": 1,
             "type": "string"
           }
@@ -1430,40 +1242,21 @@
       },
       "ITodo.ISummary": {
         "additionalProperties": false,
-        "description": "Compact active-list item.",
+        "description": "Compact active/trash list projection.",
         "properties": {
           "id": {
+            "description": "Todo identifier.",
             "format": "uuid",
             "type": "string"
           },
           "title": {
+            "description": "Current title.",
             "maxLength": 200,
             "minLength": 1,
             "type": "string"
           },
-          "startDate": {
-            "oneOf": [
-              {
-                "type": "null"
-              },
-              {
-                "format": "date",
-                "type": "string"
-              }
-            ]
-          },
-          "dueDate": {
-            "oneOf": [
-              {
-                "type": "null"
-              },
-              {
-                "format": "date",
-                "type": "string"
-              }
-            ]
-          },
-          "status": {
+          "completion": {
+            "description": "Completion state.",
             "oneOf": [
               {
                 "const": "complete",
@@ -1477,7 +1270,32 @@
               }
             ]
           },
+          "startDate": {
+            "description": "Optional start date.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "format": "date",
+                "type": "string"
+              }
+            ]
+          },
+          "dueDate": {
+            "description": "Optional due date.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "format": "date",
+                "type": "string"
+              }
+            ]
+          },
           "createdAt": {
+            "description": "Original creation instant.",
             "format": "date-time",
             "type": "string"
           }
@@ -1485,16 +1303,16 @@
         "required": [
           "id",
           "title",
+          "completion",
           "startDate",
           "dueDate",
-          "status",
           "createdAt"
         ],
         "type": "object"
       },
       "ITodo.IRequest": {
         "additionalProperties": false,
-        "description": "Active-list request.",
+        "description": "Active list request.",
         "properties": {
           "page": {
             "description": "One-indexed page to read.",
@@ -1521,8 +1339,12 @@
               }
             ]
           },
-          "filter": {
+          "completion": {
+            "description": "Completion scope.",
             "oneOf": [
+              {
+                "type": "null"
+              },
               {
                 "const": "all",
                 "description": null,
@@ -1541,33 +1363,38 @@
             ]
           },
           "sort": {
+            "description": "One supported date sort token.",
             "oneOf": [
               {
-                "const": "createdAt",
+                "type": "null"
+              },
+              {
+                "const": "created-asc",
                 "description": null,
                 "title": null
               },
               {
-                "const": "dueDate",
+                "const": "created-desc",
                 "description": null,
                 "title": null
               },
               {
-                "const": "startDate",
-                "description": null,
-                "title": null
-              }
-            ]
-          },
-          "direction": {
-            "oneOf": [
-              {
-                "const": "asc",
+                "const": "due-asc",
                 "description": null,
                 "title": null
               },
               {
-                "const": "desc",
+                "const": "due-desc",
+                "description": null,
+                "title": null
+              },
+              {
+                "const": "start-asc",
+                "description": null,
+                "title": null
+              },
+              {
+                "const": "start-desc",
                 "description": null,
                 "title": null
               }
@@ -1579,21 +1406,21 @@
       },
       "ITodo": {
         "additionalProperties": false,
-        "description": "Complete private todo detail.",
+        "description": "One private Todo, including its current lifecycle state.",
         "properties": {
           "id": {
-            "description": "Stable todo identifier.",
+            "description": "Todo identifier.",
             "format": "uuid",
             "type": "string"
           },
           "title": {
-            "description": "Required trimmed title.",
+            "description": "Current trimmed title.",
             "maxLength": 200,
             "minLength": 1,
             "type": "string"
           },
           "description": {
-            "description": "Optional full description; null means empty.",
+            "description": "Full description, or null when empty.",
             "oneOf": [
               {
                 "type": "null"
@@ -1605,7 +1432,7 @@
             ]
           },
           "startDate": {
-            "description": "Optional start calendar date.",
+            "description": "Date-only planning start, or null.",
             "oneOf": [
               {
                 "type": "null"
@@ -1617,7 +1444,7 @@
             ]
           },
           "dueDate": {
-            "description": "Optional due calendar date.",
+            "description": "Date-only planning due date, or null.",
             "oneOf": [
               {
                 "type": "null"
@@ -1628,7 +1455,7 @@
               }
             ]
           },
-          "status": {
+          "completion": {
             "description": "Completion state.",
             "oneOf": [
               {
@@ -1664,7 +1491,7 @@
             "type": "string"
           },
           "trashedAt": {
-            "description": "Most recent trash instant, or null while active.",
+            "description": "Most recent trash-entry instant, or null.",
             "oneOf": [
               {
                 "type": "null"
@@ -1675,10 +1502,10 @@
               }
             ]
           },
-          "updatedAt": {
-            "description": "Latest content revision instant, used for stale-edit detection.",
-            "format": "date-time",
-            "type": "string"
+          "version": {
+            "description": "Content version used to reject stale edits.",
+            "minimum": 0,
+            "type": "integer"
           }
         },
         "required": [
@@ -1687,24 +1514,25 @@
           "description",
           "startDate",
           "dueDate",
-          "status",
+          "completion",
           "availability",
           "createdAt",
           "trashedAt",
-          "updatedAt"
+          "version"
         ],
         "type": "object"
       },
       "ITodo.ICreate": {
         "additionalProperties": false,
-        "description": "Caller-supplied creation fields.",
+        "description": "Creation input.",
         "properties": {
           "title": {
-            "maxLength": 200,
+            "description": "Required title; provider trims it.",
             "minLength": 1,
             "type": "string"
           },
           "description": {
+            "description": "Optional description; null clears it.",
             "oneOf": [
               {
                 "type": "null"
@@ -1716,6 +1544,7 @@
             ]
           },
           "startDate": {
+            "description": "Optional date-only start.",
             "oneOf": [
               {
                 "type": "null"
@@ -1727,6 +1556,7 @@
             ]
           },
           "dueDate": {
+            "description": "Optional date-only due date.",
             "oneOf": [
               {
                 "type": "null"
@@ -1745,14 +1575,15 @@
       },
       "ITodo.IUpdate": {
         "additionalProperties": false,
-        "description": "Partial content edit. Omitted differs from explicit null.",
+        "description": "Partial content edit with optimistic version.",
         "properties": {
           "title": {
-            "maxLength": 200,
+            "description": "New title when supplied.",
             "minLength": 1,
             "type": "string"
           },
           "description": {
+            "description": "New description, including null to clear.",
             "oneOf": [
               {
                 "type": "null"
@@ -1764,6 +1595,7 @@
             ]
           },
           "startDate": {
+            "description": "New start date, including null to clear.",
             "oneOf": [
               {
                 "type": "null"
@@ -1775,6 +1607,7 @@
             ]
           },
           "dueDate": {
+            "description": "New due date, including null to clear.",
             "oneOf": [
               {
                 "type": "null"
@@ -1785,39 +1618,39 @@
               }
             ]
           },
-          "updatedAt": {
-            "description": "Detail revision read before editing, required for stale-write refusal.",
-            "format": "date-time",
-            "type": "string"
+          "version": {
+            "description": "Version read when the edit began.",
+            "minimum": 0,
+            "type": "integer"
           }
         },
         "required": [
-          "updatedAt"
+          "version"
         ],
         "type": "object"
       },
       "ITodoHistory": {
         "additionalProperties": false,
-        "description": "One immutable accepted content-edit entry.",
+        "description": "One immutable content-edit history entry.",
         "properties": {
           "id": {
-            "description": "Stable history identifier.",
+            "description": "History identifier.",
             "format": "uuid",
             "type": "string"
           },
-          "editedAt": {
+          "createdAt": {
             "description": "Edit instant.",
             "format": "date-time",
             "type": "string"
           },
           "title": {
-            "description": "Changed-to title when title participated.",
+            "description": "New title when title participated in the edit.",
             "maxLength": 200,
             "minLength": 1,
             "type": "string"
           },
           "description": {
-            "description": "Changed-to description; null explicitly records clearing.",
+            "description": "New description when changed; null means explicitly cleared.",
             "oneOf": [
               {
                 "type": "null"
@@ -1829,7 +1662,7 @@
             ]
           },
           "startDate": {
-            "description": "Changed-to start date; null explicitly records clearing.",
+            "description": "New start date when changed; null means explicitly cleared.",
             "oneOf": [
               {
                 "type": "null"
@@ -1841,7 +1674,7 @@
             ]
           },
           "dueDate": {
-            "description": "Changed-to due date; null explicitly records clearing.",
+            "description": "New due date when changed; null means explicitly cleared.",
             "oneOf": [
               {
                 "type": "null"
@@ -1855,7 +1688,7 @@
         },
         "required": [
           "id",
-          "editedAt"
+          "createdAt"
         ],
         "type": "object"
       },
@@ -1883,40 +1716,21 @@
       },
       "ITodo.ITrashSummary": {
         "additionalProperties": false,
-        "description": "Compact trash-list item, including the most recent trash instant.",
+        "description": "Compact trash-list projection, including the recovery timestamp.",
         "properties": {
           "id": {
+            "description": "Todo identifier.",
             "format": "uuid",
             "type": "string"
           },
           "title": {
+            "description": "Current title.",
             "maxLength": 200,
             "minLength": 1,
             "type": "string"
           },
-          "startDate": {
-            "oneOf": [
-              {
-                "type": "null"
-              },
-              {
-                "format": "date",
-                "type": "string"
-              }
-            ]
-          },
-          "dueDate": {
-            "oneOf": [
-              {
-                "type": "null"
-              },
-              {
-                "format": "date",
-                "type": "string"
-              }
-            ]
-          },
-          "status": {
+          "completion": {
+            "description": "Completion state.",
             "oneOf": [
               {
                 "const": "complete",
@@ -1930,22 +1744,54 @@
               }
             ]
           },
+          "startDate": {
+            "description": "Optional start date.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "format": "date",
+                "type": "string"
+              }
+            ]
+          },
+          "dueDate": {
+            "description": "Optional due date.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "format": "date",
+                "type": "string"
+              }
+            ]
+          },
           "createdAt": {
+            "description": "Original creation instant.",
             "format": "date-time",
             "type": "string"
           },
           "trashedAt": {
-            "description": "Most recent move into trash.",
-            "format": "date-time",
-            "type": "string"
+            "description": "Most recent trash-entry instant.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "format": "date-time",
+                "type": "string"
+              }
+            ]
           }
         },
         "required": [
           "id",
           "title",
+          "completion",
           "startDate",
           "dueDate",
-          "status",
           "createdAt",
           "trashedAt"
         ],
@@ -1994,7 +1840,7 @@
   },
   "tags": [
     {
-      "name": "Auth"
+      "name": "Authentication"
     },
     {
       "name": "Profile"
@@ -2004,6 +1850,9 @@
     },
     {
       "name": "Trash"
+    },
+    {
+      "name": "History"
     }
   ],
   "x-typia-emended-v12": true

@@ -1,2 +1,0 @@
-import * as core from "@nestia/core"; import { Controller } from "@nestjs/common"; import type { IAuth, ITask } from "@benchmark/erp-api"; import { ProjectWorkProvider } from "../providers/ProjectWorkProvider";
-/** Advances a task through work and completion. */ @Controller("task-status") export class TaskStatusController { @core.TypedRoute.Post(":id") public async status(@core.TypedHeaders() h: IAuth.IHeaders, @core.TypedParam("id") id: string, @core.TypedBody() input: ITask.IStatus): Promise<ITask> { return ProjectWorkProvider.taskStatus(h, id, input); } }

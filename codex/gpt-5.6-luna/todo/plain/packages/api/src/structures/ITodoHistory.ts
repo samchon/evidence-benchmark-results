@@ -1,17 +1,17 @@
 import type { tags } from "typia";
 
-/** One immutable accepted content-edit entry. */
+/** One immutable content-edit history entry. */
 export interface ITodoHistory {
-  /** Stable history identifier. */
+  /** History identifier. */
   id: string & tags.Format<"uuid">;
   /** Edit instant. */
-  editedAt: string & tags.Format<"date-time">;
-  /** Changed-to title when title participated. */
+  createdAt: string & tags.Format<"date-time">;
+  /** New title when title participated in the edit. */
   title?: string & tags.MinLength<1> & tags.MaxLength<200>;
-  /** Changed-to description; null explicitly records clearing. */
-  description?: (string & tags.MaxLength<10000>) | null;
-  /** Changed-to start date; null explicitly records clearing. */
-  startDate?: (string & tags.Format<"date">) | null;
-  /** Changed-to due date; null explicitly records clearing. */
-  dueDate?: (string & tags.Format<"date">) | null;
+  /** New description when changed; null means explicitly cleared. */
+  description?: null | (string & tags.MaxLength<10_000>);
+  /** New start date when changed; null means explicitly cleared. */
+  startDate?: null | (string & tags.Format<"date">);
+  /** New due date when changed; null means explicitly cleared. */
+  dueDate?: null | (string & tags.Format<"date">);
 }

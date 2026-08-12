@@ -1,8 +1,8 @@
 {
   "private": true,
-  "name": "@benchmark/shopping2-backend",
+  "name": "@benchmark/shopping-backend",
   "version": "0.1.0",
-  "description": "NestJS, Nestia, and Prisma backend for benchmark-shopping2",
+  "description": "NestJS, Nestia, and Prisma backend for benchmark-shopping",
   "scripts": {
     "build": "pnpm build:prisma && pnpm build:main && pnpm build:sdk && pnpm build:test",
     "build:main": "rimraf lib && ttsc",
@@ -27,7 +27,7 @@
     "@nestjs/platform-express": "catalog:backend",
     "@prisma/adapter-better-sqlite3": "catalog:backend",
     "@prisma/client": "catalog:backend",
-    "@benchmark/shopping2-api": "workspace:*",
+    "@benchmark/shopping-api": "workspace:*",
     "better-sqlite3": "catalog:backend",
     "dotenv": "catalog:backend",
     "dotenv-expand": "catalog:backend",

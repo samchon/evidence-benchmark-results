@@ -8,121 +8,173 @@
 
 ```mermaid
 erDiagram
-"user_accounts" {
+"todo_users" {
   String id PK
   String email UK
   String password_hash
-  Int credential_version
   DateTime created_at
 }
-"user_profiles" {
+"todo_profiles" {
   String id PK
-  String user_account_id FK,UK
+  String todo_user_id FK,UK
   String display_name
   DateTime created_at
 }
-"user_sessions" {
+"todo_sessions" {
   String id PK
-  String user_account_id FK
-  Int credential_version
+  String todo_user_id FK
+  String refresh_hash
   DateTime created_at
+  DateTime expires_at
+  DateTime revoked_at "nullable"
 }
-"user_todos" {
+"todo_todos" {
   String id PK
-  String user_account_id FK
+  String todo_user_id FK
   String title
   String description "nullable"
   DateTime start_date "nullable"
   DateTime due_date "nullable"
-  Boolean completed
-  Boolean trashed
-  DateTime trashed_at "nullable"
+  Boolean completion
+  Boolean availability
   DateTime created_at
   DateTime updated_at
+  Int content_version
+  DateTime trashed_at "nullable"
 }
-"user_todo_histories" {
+"todo_todo_histories" {
   String id PK
-  String user_todo_id FK
-  DateTime edited_at
+  String todo_todo_id FK
+  DateTime created_at
+  Boolean title_changed
   String title "nullable"
-  String description "nullable"
-  DateTime start_date "nullable"
-  DateTime due_date "nullable"
   Boolean description_changed
+  String description "nullable"
   Boolean start_date_changed
+  DateTime start_date "nullable"
   Boolean due_date_changed
+  DateTime due_date "nullable"
 }
-"user_profiles" |o--|| "user_accounts" : account
-"user_sessions" }o--|| "user_accounts" : account
-"user_todos" }o--|| "user_accounts" : account
-"user_todo_histories" }o--|| "user_todos" : todo
+"todo_recovery_requests" {
+  String id PK
+  String todo_user_id FK
+  String email
+  String proof_hash
+  DateTime expires_at
+  DateTime consumed_at "nullable"
+  DateTime created_at
+}
+"todo_delivery_effects" {
+  String id PK
+  String todo_user_id FK "nullable"
+  String recipient
+  String kind
+  String payload
+  DateTime created_at
+}
+"todo_profiles" |o--|| "todo_users" : user
+"todo_sessions" }o--|| "todo_users" : user
+"todo_todos" }o--|| "todo_users" : user
+"todo_todo_histories" }o--|| "todo_todos" : todo
+"todo_recovery_requests" }o--|| "todo_users" : user
+"todo_delivery_effects" }o--o| "todo_users" : user
 ```
 
-### `user_accounts`
+### `todo_users`
 
-Credentialed private account.
+Credentialed private Todo account.
 
 Properties as follows:
 
 - `id`: Primary identifier.
-- `email`: Canonical lower-case, trimmed email identity.
-- `password_hash`: Password hash produced by the backend.
-- `credential_version`: Credential replacement generation; incrementing it invalidates old tokens.
+- `email`: Canonical lower-case, trimmed login email.
+- `password_hash`: Password hash; never exposed through the API.
 - `created_at`: Account creation instant.
 
-### `user_profiles`
+### `todo_profiles`
 
-One-to-one private display profile.
+The one private display profile belonging to an account.
 
 Properties as follows:
 
 - `id`: Primary identifier.
-- `user_account_id`: Owning account identifier.
+- `todo_user_id`: Owning account identifier.
 - `display_name`: Current trimmed display name.
 - `created_at`: Profile creation instant.
 
-### `user_sessions`
+### `todo_sessions`
 
-One authenticated connection for an account.
+One authenticated device/session for an account.
 
 Properties as follows:
 
-- `id`: Primary identifier.
-- `user_account_id`: Owning account identifier.
-- `credential_version`: Credential generation accepted when this session was issued.
+- `id`: Primary identifier embedded in signed tokens.
+- `todo_user_id`: Owning account identifier.
+- `refresh_hash`: Hash of the current refresh secret.
 - `created_at`: Session creation instant.
+- `expires_at`: Refresh expiry instant.
+- `revoked_at`: Session invalidation instant, or null while valid.
 
-### `user_todos`
+### `todo_todos`
 
-Private todo owned permanently by one account.
+A privately owned Todo with independent content and availability state.
 
 Properties as follows:
 
 - `id`: Primary identifier.
-- `user_account_id`: Owning account identifier.
-- `title`: Required task title.
-- `description`: Optional task description. Null means no description.
-- `start_date`: Optional intended start calendar date. Null means unset.
-- `due_date`: Optional intended due calendar date. Null means unset.
-- `completed`: Completion state: incomplete or complete.
-- `trashed`: Availability state: active or trashed.
-- `trashed_at`: Most recent move into trash. Null while active.
+- `todo_user_id`: Owning account identifier.
+- `title`: Required trimmed task title.
+- `description`: Optional task details; null means empty.
+- `start_date`: Optional date-only planning start.
+- `due_date`: Optional date-only planning due date.
+- `completion`: Completion flag: false is `incomplete`, true is `complete`.
+- `availability`: Availability flag: true is `active`, false is `trashed`.
 - `created_at`: Original creation instant.
-- `updated_at`: Latest accepted content-edit instant, or creation instant before edits.
+- `updated_at`: Last content mutation instant.
+- `content_version`: Incremented for each accepted content edit.
+- `trashed_at`: Most recent move into trash, or null while never trashed.
 
-### `user_todo_histories`
+### `todo_todo_histories`
 
-Immutable snapshot of one accepted todo content edit.
+Immutable record of one accepted Todo content edit.
 
 Properties as follows:
 
 - `id`: Primary identifier.
-- `user_todo_id`: Todo whose content was edited.
-- `edited_at`: Edit instant.
-- `title`: New title when title participated in the edit; null otherwise.
-- `description`: New description when description participated; null otherwise.
-- `start_date`: New start date when start date participated; null otherwise.
-- `due_date`: New due date when due date participated; null otherwise.
-- `description_changed`: Whether the description field participated, preserving an explicit clear.
-- `start_date_changed`: Whether the start date field participated, preserving an explicit clear.
-- `due_date_changed`: Whether the due date field participated, preserving an explicit clear.
+- `todo_todo_id`: Todo whose content was edited.
+- `created_at`: Edit instant.
+- `title_changed`: True when title participated in this edit.
+- `title`: New title when title_changed is true.
+- `description_changed`: True when description participated in this edit.
+- `description`: New description, including null when explicitly cleared.
+- `start_date_changed`: True when start date participated in this edit.
+- `start_date`: New start date, including null when explicitly cleared.
+- `due_date_changed`: True when due date participated in this edit.
+- `due_date`: New due date, including null when explicitly cleared.
+
+### `todo_recovery_requests`
+
+One email recovery proof stored behind the delivery boundary.
+
+Properties as follows:
+
+- `id`: Primary identifier.
+- `todo_user_id`: Account receiving the proof.
+- `email`: Canonical email submitted for recovery.
+- `proof_hash`: Hash of the one-time proof.
+- `expires_at`: Proof expiry instant.
+- `consumed_at`: Consumption instant, or null while unused.
+- `created_at`: Request creation instant.
+
+### `todo_delivery_effects`
+
+Durable record for an outbound effect the local workspace cannot deliver.
+
+Properties as follows:
+
+- `id`: Primary identifier.
+- `todo_user_id`: Optional account recipient; null for a non-account effect.
+- `recipient`: Recipient address.
+- `kind`: Effect kind.
+- `payload`: Effect payload, including any secret held by the delivery boundary.
+- `created_at`: Recording instant.

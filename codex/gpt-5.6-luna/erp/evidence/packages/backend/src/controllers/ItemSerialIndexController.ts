@@ -1,2 +1,0 @@
-import * as core from "@nestia/core"; import { Controller } from "@nestjs/common"; import type { IAuth, IItemSerial, IPage } from "@benchmark/erp-api"; import { TraceabilityProvider } from "../providers/TraceabilityProvider";
-/** Lists item serials. */ @Controller("item-serial-search") export class ItemSerialIndexController { @core.TypedRoute.Patch() public async index(@core.TypedHeaders() h: IAuth.IHeaders, @core.TypedBody() input: IItemSerial.IRequest): Promise<IPage<IItemSerial>> { return TraceabilityProvider.serialIndex(h, input); } }

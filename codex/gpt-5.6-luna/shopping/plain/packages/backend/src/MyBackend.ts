@@ -4,11 +4,13 @@ import { NestFactory } from "@nestjs/core";
 
 import { MyConfiguration } from "./MyConfiguration";
 import { MyModule } from "./MyModule";
+import { ShoppingProvider } from "./providers/ShoppingProvider";
 
 /** Owns the lifecycle of the generated Nest application. */
 export class MyBackend {
   private application_?: INestApplication;
   private closing_?: Promise<void>;
+  private deliveryTimer_?: NodeJS.Timeout;
 
   /** Creates and starts the HTTP application once. */
   public async open(): Promise<void> {
@@ -18,6 +20,9 @@ export class MyBackend {
     await WebSocketAdaptor.upgrade(this.application_);
     this.application_.enableCors();
     await this.application_.listen(MyConfiguration.API_PORT(), "0.0.0.0");
+    this.deliveryTimer_ = setInterval(() => {
+      void ShoppingProvider.autoDeliverExpired().catch(() => undefined);
+    }, 60_000);
     if (process.send) process.send("ready");
   }
 
@@ -28,6 +33,8 @@ export class MyBackend {
 
     const application: INestApplication = this.application_;
     delete this.application_;
+    if (this.deliveryTimer_ !== undefined) clearInterval(this.deliveryTimer_);
+    delete this.deliveryTimer_;
     this.closing_ = application.close();
     try {
       await this.closing_;

@@ -1,6 +1,9 @@
-# Product-facing operation notes
+# Recorded omissions
 
-No published product operation is omitted. `health.get` is consumed by the
-health hook and shown in the shell status; recovery proof is shown in the
-recovery form; history is an inline panel on both active and trash detail; and
-account security operations are inline actions on the account panel.
+There are no product omissions for this frontend implementation. The
+recovery confirmation screen intentionally requires the proof delivered by
+the registered-email effect; the frontend cannot synthesize that proof without
+violating the non-disclosure boundary. The backend recovery tests own the
+delivery-effect fixture and proof-consumption verification. This recorded test
+boundary is invalidated when a browser-test email transport or equivalent
+delivery fixture becomes available to the frontend suite.

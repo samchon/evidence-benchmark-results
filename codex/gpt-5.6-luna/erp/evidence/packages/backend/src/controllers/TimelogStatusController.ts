@@ -1,2 +1,0 @@
-import * as core from "@nestia/core"; import { Controller } from "@nestjs/common"; import type { IAuth, ITimelog } from "@benchmark/erp-api"; import { ProjectWorkProvider } from "../providers/ProjectWorkProvider";
-/** Submits or approves a time entry. */ @Controller("timelog-status") export class TimelogStatusController { @core.TypedRoute.Post(":id") public async status(@core.TypedHeaders() h: IAuth.IHeaders, @core.TypedParam("id") id: string, @core.TypedBody() input: ITimelog.IStatus): Promise<ITimelog> { return ProjectWorkProvider.timelogStatus(h, id, input); } }
