@@ -1,0 +1,233 @@
+/// A manual or source-linked journal entry.
+model journals {
+  /// Primary key.
+  id String @id
+  /// Organization identifier.
+  organization_id String
+  /// Source module.
+  source_module String
+  /// Optional source identity.
+  source_id String?
+  /// Fiscal period selected for the journal date.
+  fiscal_period_id String?
+  /// Draft, submitted, posted, reversed, or void.
+  status String
+  /// Journal date.
+  journal_date DateTime
+  /// Memo.
+  memo String
+  /// Membership that created the journal.
+  creator_membership_id String?
+  /// Membership that approved the journal.
+  approver_membership_id String?
+  /// Membership that posted the journal.
+  poster_membership_id String?
+  /// Membership that reversed or voided the journal.
+  reverser_membership_id String?
+  /// Creation instant.
+  created_at DateTime
+  /// Posting instant.
+  posted_at DateTime?
+  /// Posted journal this entry reverses.
+  reversal_of_id String?
+  /// Posted journal this entry adjusts.
+  adjustment_of_id String?
+  /// Reason recorded for a void operation.
+  void_reason String?
+}
+
+/// A journal debit or credit line.
+model journal_lines {
+  /// Primary key.
+  id String @id
+  /// Journal identifier.
+  journal_id String
+  /// Account identifier.
+  account_id String
+  /// Tax treatment code retained for reconciliation.
+  tax_code_id String?
+  /// Debit amount in transaction currency.
+  debit Float
+  /// Credit amount in transaction currency.
+  credit Float
+  /// Debit amount in base currency.
+  base_debit Float?
+  /// Credit amount in base currency.
+  base_credit Float?
+  /// Currency code.
+  currency String
+  /// Exchange rate snapshot.
+  exchange_rate Float
+  /// Optional department dimension.
+  department_id String?
+  /// Optional project dimension.
+  project_id String?
+  /// Optional cost-center dimension.
+  cost_center_id String?
+  /// Optional profit-center dimension.
+  profit_center_id String?
+  /// Optional customer dimension.
+  customer_id String?
+  /// Optional vendor dimension.
+  vendor_id String?
+  /// Optional employee dimension.
+  employee_id String?
+  /// Optional item dimension.
+  item_id String?
+  /// Optional warehouse dimension.
+  warehouse_id String?
+  /// Creation instant.
+  created_at DateTime
+}
+
+/// An immutable stock movement.
+model stock_movements {
+  /// Primary key.
+  id String @id
+  /// Organization identifier.
+  organization_id String
+  /// Item identifier.
+  item_id String
+  /// Warehouse identifier.
+  warehouse_id String
+  /// Location identifier.
+  location_id String
+  /// Receipt, shipment, transfer, adjustment, production, return, or service.
+  type String
+  /// Signed quantity.
+  quantity Float
+  /// Unit cost snapshot.
+  unit_cost Float
+  /// Optional lot identity.
+  lot_id String?
+  /// Optional serial identity.
+  serial_code String?
+  /// Source document type.
+  source_type String
+  /// Source document identifier.
+  source_id String
+  /// Operator membership identifier.
+  operator_membership_id String?
+  /// Creation instant.
+  created_at DateTime
+  @@index([organization_id, item_id, warehouse_id, location_id])
+}
+
+/// Quantity reserved for an approved sales-order line.
+model stock_allocations {
+  /// Primary key.
+  id String @id
+  /// Organization identifier.
+  organization_id String
+  /// Sales order identifier.
+  order_id String
+  /// Sales order line identifier.
+  order_line_id String
+  /// Item identifier.
+  item_id String
+  /// Warehouse identifier.
+  warehouse_id String
+  /// Location identifier.
+  location_id String
+  /// Lot identity reserved by this allocation.
+  lot_id String?
+  /// Serial identity reserved by this allocation.
+  serial_code String?
+  /// Reserved quantity.
+  quantity Float
+  /// Quantity consumed by posted shipments.
+  consumed_quantity Float
+  /// Active, released, or consumed.
+  status String
+  /// Creation instant.
+  created_at DateTime
+  /// Last change instant.
+  updated_at DateTime
+  @@index([organization_id, order_line_id])
+  @@index([organization_id, item_id, warehouse_id, location_id, status])
+}
+
+/// Quantity reserved for a released production-order component.
+model production_reservations {
+  /// Primary key.
+  id String @id
+  /// Organization identifier.
+  organization_id String
+  /// Production order identifier.
+  production_order_id String
+  /// Component item identifier.
+  item_id String
+  /// Warehouse and location holding the component.
+  warehouse_id String
+  location_id String
+  /// Reserved quantity.
+  quantity Float
+  /// Quantity consumed by production movements.
+  consumed_quantity Float
+  /// Active, released, or consumed.
+  status String
+  /// Creation instant.
+  created_at DateTime
+  /// Last change instant.
+  updated_at DateTime
+  @@index([organization_id, production_order_id, status])
+  @@index([organization_id, item_id, warehouse_id, location_id, status])
+}
+
+/// An inventory lot.
+model lots {
+  /// Primary key.
+  id String @id
+  /// Organization identifier.
+  organization_id String
+  /// Item identifier.
+  item_id String
+  /// Lot code.
+  code String
+  /// Availability state.
+  status String
+  /// Creation instant.
+  created_at DateTime
+  @@unique([organization_id, item_id, code])
+}
+
+/// A serial identity.
+model serials {
+  /// Primary key.
+  id String @id
+  /// Organization identifier.
+  organization_id String
+  /// Item identifier.
+  item_id String
+  /// Serial code.
+  code String
+  /// Availability state.
+  status String
+  /// Creation instant.
+  created_at DateTime
+  @@unique([organization_id, item_id, code])
+}
+
+/// A bank or cash account.
+model bank_accounts {
+  /// Primary key.
+  id String @id
+  /// Organization identifier.
+  organization_id String
+  /// Ledger account identifier.
+  ledger_account_id String
+  /// Account name.
+  name String
+  /// Masked account number.
+  masked_number String
+  /// Account currency.
+  currency String @default("USD")
+  /// Opening balance at account creation.
+  opening_balance Float @default(0)
+  /// Unreconciled, in_progress, or reconciled.
+  reconciliation_state String @default("unreconciled")
+  /// Active lifecycle.
+  active Boolean
+  /// Creation instant.
+  created_at DateTime
+}

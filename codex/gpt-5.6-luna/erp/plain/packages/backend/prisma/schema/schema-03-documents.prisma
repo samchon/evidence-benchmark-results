@@ -1,0 +1,336 @@
+/// A purchase request and its approval lifecycle.
+model purchase_requests {
+  /// Primary key.
+  id String @id
+  /// Organization identifier.
+  organization_id String
+  /// Requester employee identifier.
+  requester_id String
+  /// Human document number.
+  number String
+  /// Draft, submitted, approved, rejected, returned, cancelled, or converted.
+  status String
+  /// Requested currency.
+  currency String
+  /// Justification.
+  justification String
+  /// Creation instant.
+  created_at DateTime
+  /// Last change instant.
+  updated_at DateTime
+  @@unique([organization_id, number])
+}
+
+/// A purchase request line.
+model purchase_request_lines {
+  /// Primary key.
+  id String @id
+  /// Request identifier.
+  request_id String
+  /// Optional item identifier.
+  item_id String?
+  /// Service or item description.
+  description String
+  /// Requested quantity.
+  quantity Float
+  /// Converted quantity.
+  converted_quantity Float
+  /// Unit identifier.
+  unit_id String
+  /// Estimated unit cost.
+  estimated_unit_cost Float
+  /// Optional preferred vendor.
+  vendor_id String?
+  /// Creation instant.
+  created_at DateTime
+}
+
+/// A purchase order.
+model purchase_orders {
+  /// Primary key.
+  id String @id
+  /// Organization identifier.
+  organization_id String
+  /// Vendor party identifier.
+  vendor_id String
+  /// Human document number.
+  number String
+  /// Draft, submitted, approved, sent, partial, received, closed, or cancelled.
+  status String
+  /// Transaction currency.
+  currency String
+  /// Payment term identifier.
+  payment_term_id String?
+  /// Optional source request identifier.
+  source_request_id String?
+  /// Optional MRP recommendation that created this draft order.
+  mrp_recommendation_id String?
+  /// Optional MRP run that created this draft order.
+  mrp_run_id String?
+  /// Creation instant.
+  created_at DateTime
+  /// Last change instant.
+  updated_at DateTime
+  @@unique([organization_id, number])
+}
+
+/// A purchase order line.
+model purchase_order_lines {
+  /// Primary key.
+  id String @id
+  /// Purchase order identifier.
+  order_id String
+  /// Optional request line identifier.
+  source_request_line_id String?
+  /// Item identifier.
+  item_id String
+  /// Ordered quantity.
+  ordered_quantity Float
+  /// Received quantity.
+  received_quantity Float
+  /// Billed quantity.
+  billed_quantity Float
+  /// Unit price snapshot.
+  unit_price Float
+  /// Unit identifier.
+  unit_id String
+  /// Warehouse identifier.
+  warehouse_id String?
+  /// Creation instant.
+  created_at DateTime
+}
+
+/// A posted or draft purchase receipt.
+model purchase_receipts {
+  /// Primary key.
+  id String @id
+  /// Organization identifier.
+  organization_id String
+  /// Source purchase order identifier.
+  order_id String
+  /// Human document number.
+  number String
+  /// Draft or posted.
+  status String
+  /// Operator membership identifier.
+  operator_membership_id String
+  /// Creation instant.
+  created_at DateTime
+  /// Posting instant.
+  posted_at DateTime?
+  @@unique([organization_id, number])
+}
+
+/// A purchase receipt line.
+model purchase_receipt_lines {
+  /// Primary key.
+  id String @id
+  /// Receipt identifier.
+  receipt_id String
+  /// Source order line identifier.
+  order_line_id String
+  /// Received quantity.
+  received_quantity Float
+  /// Accepted quantity.
+  accepted_quantity Float
+  /// Rejected quantity.
+  rejected_quantity Float
+  /// Warehouse identifier.
+  warehouse_id String
+  /// Location identifier.
+  location_id String
+  /// Optional lot identifier.
+  lot_id String?
+  /// Optional serial code.
+  serial_code String?
+  /// Creation instant.
+  created_at DateTime
+}
+
+/// A sales quote.
+model sales_quotes {
+  /// Primary key.
+  id String @id
+  /// Organization identifier.
+  organization_id String
+  /// Customer party identifier.
+  customer_id String
+  /// Human document number.
+  number String
+  /// Draft, sent, accepted, rejected, expired, or converted.
+  status String
+  /// Expiration date.
+  expires_at DateTime?
+  /// Converted sales-order identifier.
+  converted_order_id String?
+  /// Creation instant.
+  created_at DateTime
+  /// Last change instant.
+  updated_at DateTime
+  @@unique([organization_id, number])
+}
+
+/// A sales quote line with a price snapshot.
+model sales_quote_lines {
+  /// Primary key.
+  id String @id
+  /// Quote identifier.
+  quote_id String
+  /// Item identifier.
+  item_id String
+  /// Quantity.
+  quantity Float
+  /// Unit price snapshot.
+  unit_price Float
+  /// Currency snapshot.
+  currency String
+  /// Creation instant.
+  created_at DateTime
+}
+
+/// A sales order.
+model sales_orders {
+  /// Primary key.
+  id String @id
+  /// Organization identifier.
+  organization_id String
+  /// Customer party identifier.
+  customer_id String
+  /// Human document number.
+  number String
+  /// Draft, submitted, approved, allocated, shipped, closed, or cancelled.
+  status String
+  /// Transaction currency.
+  currency String
+  /// Optional source quote identifier.
+  source_quote_id String?
+  /// Credit limit snapshot used by the last approval evaluation.
+  credit_limit Float?
+  /// Customer exposure including this order at approval evaluation.
+  credit_exposure Float @default(0)
+  /// not_checked, within_limit, exceeded, or not_configured.
+  credit_status String @default("not_checked")
+  /// Creation instant.
+  created_at DateTime
+  /// Last change instant.
+  updated_at DateTime
+  @@unique([organization_id, number])
+}
+
+/// A sales order line.
+model sales_order_lines {
+  /// Primary key.
+  id String @id
+  /// Sales order identifier.
+  order_id String
+  /// Item identifier.
+  item_id String
+  /// Ordered quantity.
+  ordered_quantity Float
+  /// Allocated quantity.
+  allocated_quantity Float
+  /// Shipped quantity.
+  shipped_quantity Float
+  /// Invoiced quantity.
+  invoiced_quantity Float
+  /// Unit price snapshot.
+  unit_price Float
+  /// Unit identifier.
+  unit_id String
+  /// Creation instant.
+  created_at DateTime
+}
+
+/// A sales shipment.
+model shipments {
+  /// Primary key.
+  id String @id
+  /// Organization identifier.
+  organization_id String
+  /// Source sales order identifier.
+  order_id String
+  /// Human document number.
+  number String
+  /// Draft, picked, packed, shipped, delivered, or cancelled.
+  status String
+  /// Creation instant.
+  created_at DateTime
+  /// Posting instant.
+  posted_at DateTime?
+  @@unique([organization_id, number])
+}
+
+/// A shipment line.
+model shipment_lines {
+  /// Primary key.
+  id String @id
+  /// Shipment identifier.
+  shipment_id String
+  /// Source order line identifier.
+  order_line_id String
+  /// Item identifier.
+  item_id String
+  /// Shipped quantity.
+  quantity Float
+  /// Optional lot identifier.
+  lot_id String?
+  /// Optional serial code.
+  serial_code String?
+  /// Warehouse identifier.
+  warehouse_id String
+  /// Location identifier.
+  location_id String
+  /// Optional stock allocation consumed by this line.
+  allocation_id String?
+  /// Creation instant.
+  created_at DateTime
+}
+
+/// A sales invoice.
+model sales_invoices {
+  /// Primary key.
+  id String @id
+  /// Organization identifier.
+  organization_id String
+  /// Customer party identifier.
+  customer_id String
+  /// Human document number.
+  number String
+  /// Draft, approved, posted, sent, partial, paid, overdue, or void.
+  status String
+  /// Transaction currency.
+  currency String
+  /// Total invoice amount.
+  total Float
+  /// Due date.
+  due_at DateTime?
+  /// Creation instant.
+  created_at DateTime
+  /// Posting instant.
+  posted_at DateTime?
+  @@unique([organization_id, number])
+}
+
+/// An invoice line.
+model sales_invoice_lines {
+  /// Primary key.
+  id String @id
+  /// Invoice identifier.
+  invoice_id String
+  /// Optional source sales-order line.
+  order_line_id String?
+  /// Optional source shipment line.
+  shipment_line_id String?
+  /// Item identifier.
+  item_id String
+  /// Optional source service order.
+  service_order_id String?
+  /// Quantity.
+  quantity Float
+  /// Net line amount.
+  amount Float
+  /// Tax amount.
+  tax_amount Float
+  /// Creation instant.
+  created_at DateTime
+}

@@ -1,0 +1,369 @@
+/// A reusable organization-scoped postal address.
+model addresses {
+  /// Primary key.
+  id String @id
+  /// Organization identifier.
+  organization_id String
+  /// Address purpose.
+  purpose String
+  /// Street address.
+  line1 String
+  /// Optional second line.
+  line2 String?
+  /// City.
+  city String
+  /// Region or state.
+  region String?
+  /// Postal code.
+  postal_code String?
+  /// Country code.
+  country String
+  /// Selection lifecycle.
+  active Boolean
+  /// Creation instant.
+  created_at DateTime
+  /// Last change instant.
+  updated_at DateTime
+  @@index([organization_id, active])
+}
+
+/// A person used as a party contact.
+model contacts {
+  /// Primary key.
+  id String @id
+  /// Organization identifier.
+  organization_id String
+  /// Person name.
+  name String
+  /// Email address.
+  email String?
+  /// Phone number.
+  phone String?
+  /// Selection lifecycle.
+  active Boolean
+  /// Creation instant.
+  created_at DateTime
+  /// Last change instant.
+  updated_at DateTime
+}
+
+/// An external purchasing or sales party.
+model parties {
+  /// Primary key.
+  id String @id
+  /// Organization identifier.
+  organization_id String
+  /// vendor or customer.
+  kind String
+  /// Legal or display name.
+  name String
+  /// Tax identity.
+  tax_identity String?
+  /// Currency code.
+  currency String
+  /// Payment term identifier.
+  payment_term_id String?
+  /// Credit limit for customers.
+  credit_limit Float?
+  /// Current lifecycle.
+  status String
+  /// Optional primary contact identifier.
+  primary_contact_id String?
+  /// Optional billing address identifier.
+  billing_address_id String?
+  /// Optional shipping address identifier.
+  shipping_address_id String?
+  /// Country used by commercial and tax search.
+  country String?
+  /// Procurement or sales risk classification.
+  risk_level String?
+  /// Free-form commercial notes.
+  notes String?
+  /// Approved bank relationship reference.
+  bank_account_reference String?
+  /// Creation instant.
+  created_at DateTime
+  /// Last change instant.
+  updated_at DateTime
+  @@unique([organization_id, kind, name])
+  @@index([organization_id, kind, status])
+}
+
+/// A supported currency.
+model currencies {
+  /// Primary key.
+  id String @id
+  /// Organization identifier.
+  organization_id String
+  /// ISO currency code.
+  code String
+  /// Display name.
+  name String
+  /// Monetary precision.
+  precision Int
+  /// Selection lifecycle.
+  active Boolean
+  /// Creation instant.
+  created_at DateTime
+  @@unique([organization_id, code])
+}
+
+/// An effective exchange rate.
+model exchange_rates {
+  /// Primary key.
+  id String @id
+  /// Organization identifier.
+  organization_id String
+  /// Source currency.
+  source_currency String
+  /// Target currency.
+  target_currency String
+  /// Effective date.
+  effective_at DateTime
+  /// Exact rate used at posting.
+  rate Float
+  /// Manual or system origin.
+  origin String
+  /// Creation instant.
+  created_at DateTime
+  @@unique([organization_id, source_currency, target_currency, effective_at])
+}
+
+/// An organization payment term.
+model payment_terms {
+  /// Primary key.
+  id String @id
+  /// Organization identifier.
+  organization_id String
+  /// Term name.
+  name String
+  /// Days until due.
+  due_days Int
+  /// Selection lifecycle.
+  active Boolean
+  /// Creation instant.
+  created_at DateTime
+  /// Last change instant.
+  updated_at DateTime
+  @@unique([organization_id, name])
+}
+
+/// An organization unit of measure.
+model units {
+  /// Primary key.
+  id String @id
+  /// Organization identifier.
+  organization_id String
+  /// Stable code.
+  code String
+  /// Display name.
+  name String
+  /// Quantity category.
+  category String
+  /// Selection lifecycle.
+  active Boolean
+  /// Creation instant.
+  created_at DateTime
+  @@unique([organization_id, code])
+}
+
+/// An organization tax jurisdiction.
+model tax_jurisdictions {
+  /// Primary key.
+  id String @id
+  /// Organization identifier.
+  organization_id String
+  /// Name.
+  name String
+  /// Territorial identity.
+  territory String
+  /// Selection lifecycle.
+  active Boolean
+  /// Creation instant.
+  created_at DateTime
+  @@unique([organization_id, name])
+}
+
+/// A tax treatment code.
+model tax_codes {
+  /// Primary key.
+  id String @id
+  /// Organization identifier.
+  organization_id String
+  /// Jurisdiction identifier.
+  jurisdiction_id String
+  /// Allowed tax type.
+  type String
+  /// Display name.
+  name String
+  /// Payable or receivable account identifier.
+  account_id String?
+  /// Selection lifecycle.
+  active Boolean
+  /// Creation instant.
+  created_at DateTime
+  @@unique([organization_id, name])
+}
+
+/// A dated tax rate history row.
+model tax_rates {
+  /// Primary key.
+  id String @id
+  /// Tax code identifier.
+  tax_code_id String
+  /// Inclusive effective start.
+  starts_at DateTime
+  /// Exclusive effective end.
+  ends_at DateTime?
+  /// Percentage rate.
+  rate Float
+  /// Creation instant.
+  created_at DateTime
+}
+
+/// A ledger account.
+model accounts {
+  /// Primary key.
+  id String @id
+  /// Organization identifier.
+  organization_id String
+  /// Account code.
+  code String
+  /// Account name.
+  name String
+  /// Asset, liability, equity, revenue, or expense.
+  type String
+  /// Optional parent account.
+  parent_id String?
+  /// Account currency.
+  currency String
+  /// Active lifecycle.
+  active Boolean
+  /// Creation instant.
+  created_at DateTime
+  /// Last change instant.
+  updated_at DateTime
+  /// Account that receives future references after an approved merge.
+  merged_into_id String?
+  @@unique([organization_id, code])
+}
+
+/// A controlled account merge request.
+model account_merge_requests {
+  id String @id
+  organization_id String
+  source_account_id String
+  target_account_id String
+  approval_id String @unique
+  reason String
+  status String
+  requested_by String
+  created_at DateTime
+  resolved_at DateTime?
+  executed_at DateTime?
+  @@index([organization_id, status])
+}
+
+/// An inventory or service item.
+model items {
+  /// Primary key.
+  id String @id
+  /// Organization identifier.
+  organization_id String
+  /// Organization-unique SKU.
+  sku String
+  /// Display name.
+  name String
+  /// Optional descriptive text.
+  description String?
+  /// Optional commercial category.
+  category String?
+  /// inventory or service.
+  type String
+  /// Default unit identifier.
+  unit_id String
+  /// Tax code identifier.
+  tax_code_id String?
+  /// none, lot, or serial.
+  tracking_mode String
+  /// Purchase price.
+  purchase_price Float
+  /// Sales price.
+  sales_price Float
+  /// Whether output/input tax applies by default.
+  taxable Boolean
+  /// Inventory valuation method.
+  costing_method String
+  /// Make-or-buy planning choice.
+  make_or_buy String
+  /// Planning safety stock.
+  safety_stock Float
+  /// Planning reorder point.
+  reorder_point Float
+  /// Planning minimum order quantity.
+  minimum_order_quantity Float
+  /// Planning order multiple.
+  order_multiple Float
+  /// Planning lead time in days.
+  lead_time_days Int
+  /// Preferred vendor identifier.
+  preferred_vendor_id String?
+  /// Default warehouse identifier.
+  default_warehouse_id String?
+  /// Active lifecycle.
+  active Boolean
+  /// Creation instant.
+  created_at DateTime
+  /// Last change instant.
+  updated_at DateTime
+  @@unique([organization_id, sku])
+  @@index([organization_id, type, active])
+}
+
+/// A warehouse.
+model warehouses {
+  /// Primary key.
+  id String @id
+  /// Organization identifier.
+  organization_id String
+  /// Organization-unique code.
+  code String
+  /// Display name.
+  name String
+  /// Address identifier.
+  address_id String?
+  /// Manager employee identifier.
+  manager_id String?
+  /// Inventory valuation policy.
+  valuation_policy String
+  /// Active lifecycle.
+  active Boolean
+  /// Creation instant.
+  created_at DateTime
+  /// Last change instant.
+  updated_at DateTime
+  @@unique([organization_id, code])
+}
+
+/// A hierarchical storage location.
+model locations {
+  /// Primary key.
+  id String @id
+  /// Warehouse identifier.
+  warehouse_id String
+  /// Location code.
+  code String
+  /// Display name.
+  name String
+  /// Optional operational description.
+  description String?
+  /// Optional parent location.
+  parent_id String?
+  /// Hierarchy depth.
+  depth Int
+  /// Active lifecycle.
+  active Boolean
+  /// Creation instant.
+  created_at DateTime
+  @@unique([warehouse_id, code])
+}

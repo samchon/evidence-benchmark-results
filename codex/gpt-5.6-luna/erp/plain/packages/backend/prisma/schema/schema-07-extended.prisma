@@ -1,0 +1,587 @@
+/// A reusable custom-field definition.
+model custom_field_definitions {
+  /// Primary key.
+  id String @id
+  /// Organization identifier.
+  organization_id String
+  /// Business concept receiving the field.
+  target_type String
+  /// Stable field key.
+  key String
+  /// Display label.
+  label String
+  /// text, number, boolean, date, or select.
+  value_kind String
+  /// Selection lifecycle.
+  active Boolean
+  /// Creation instant.
+  created_at DateTime
+  /// Last change instant.
+  updated_at DateTime
+  @@unique([organization_id, target_type, key])
+}
+
+/// A custom-field value attached to a concrete record.
+model custom_field_values {
+  /// Primary key.
+  id String @id
+  /// Organization identifier.
+  organization_id String
+  /// Definition identifier.
+  definition_id String
+  /// Target record type.
+  target_type String
+  /// Target record identifier.
+  target_id String
+  /// Serialized value.
+  value String?
+  /// Creation instant.
+  created_at DateTime
+  /// Last change instant.
+  updated_at DateTime
+  @@unique([definition_id, target_type, target_id])
+}
+
+/// An imported or manually recorded bank transaction.
+model bank_transactions {
+  /// Primary key.
+  id String @id
+  /// Organization identifier.
+  organization_id String
+  /// Bank account identifier.
+  bank_account_id String
+  /// Statement date.
+  statement_date DateTime
+  /// Signed transaction amount.
+  amount Float
+  /// Transaction currency.
+  currency String
+  /// External reference.
+  reference String?
+  /// imported, matched, ignored, or reconciled.
+  status String
+  /// Matched source document type.
+  matched_target_type String?
+  /// Matched source document identifier.
+  matched_target_id String?
+  /// Creation instant.
+  created_at DateTime
+}
+
+/// A bank reconciliation statement.
+model reconciliations {
+  /// Primary key.
+  id String @id
+  /// Organization identifier.
+  organization_id String
+  /// Bank account identifier.
+  bank_account_id String
+  /// Statement period start.
+  starts_at DateTime
+  /// Statement period end.
+  ends_at DateTime
+  /// Beginning statement balance.
+  beginning_balance Float
+  /// Ending statement balance.
+  ending_balance Float
+  /// draft, in_progress, completed, or reopened.
+  status String
+  /// Creation instant.
+  created_at DateTime
+  /// Completion instant.
+  completed_at DateTime?
+}
+
+/// A reconciliation line linked to statement activity.
+model reconciliation_lines {
+  /// Primary key.
+  id String @id
+  /// Reconciliation identifier.
+  reconciliation_id String
+  /// Bank transaction identifier.
+  bank_transaction_id String
+  /// Whether the line is resolved.
+  resolved Boolean
+  /// Creation instant.
+  created_at DateTime
+}
+
+/// A vendor bill matched to procurement evidence.
+model vendor_bills {
+  /// Primary key.
+  id String @id
+  /// Organization identifier.
+  organization_id String
+  /// Vendor party identifier.
+  vendor_id String
+  /// Human document number.
+  number String
+  /// draft, approved, posted, partial, paid, disputed, or void.
+  status String
+  /// Transaction currency.
+  currency String
+  /// Total amount.
+  total Float
+  /// Creation instant.
+  created_at DateTime
+  /// Posting instant.
+  posted_at DateTime?
+  @@unique([organization_id, number])
+}
+
+/// A vendor bill line.
+model vendor_bill_lines {
+  /// Primary key.
+  id String @id
+  /// Bill identifier.
+  bill_id String
+  /// Optional purchase-order line.
+  purchase_order_line_id String?
+  /// Item identifier.
+  item_id String
+  /// Billed quantity.
+  quantity Float
+  /// Net amount.
+  amount Float
+  /// Tax amount.
+  tax_amount Float
+  /// Creation instant.
+  created_at DateTime
+}
+
+/// A supplier credit created by a return or bill correction.
+model vendor_credits {
+  /// Primary key.
+  id String @id
+  /// Organization identifier.
+  organization_id String
+  /// Vendor identifier.
+  vendor_id String
+  /// Optional originating purchase return.
+  purchase_return_id String?
+  /// Optional originating vendor bill correction.
+  vendor_bill_id String?
+  /// Credit currency.
+  currency String
+  /// Original amount.
+  amount Float
+  /// Remaining unapplied amount.
+  remaining_amount Float
+  /// Draft, open, partially_applied, applied, or refunded.
+  status String
+  /// Reason for the credit.
+  reason String @default("customer_credit")
+  /// Creation instant.
+  created_at DateTime
+  /// Last change instant.
+  updated_at DateTime
+}
+
+/// Application of a vendor credit to a vendor bill.
+model vendor_credit_applications {
+  /// Primary key.
+  id String @id
+  /// Organization identifier.
+  organization_id String
+  /// Vendor credit identifier.
+  credit_id String
+  /// Vendor bill identifier.
+  vendor_bill_id String
+  /// Applied amount.
+  amount Float
+  /// Creation instant.
+  created_at DateTime
+}
+
+/// Refund movement for a vendor credit.
+model vendor_credit_refunds {
+  /// Primary key.
+  id String @id
+  /// Organization identifier.
+  organization_id String
+  /// Vendor credit identifier.
+  credit_id String
+  /// Payment movement identifier.
+  payment_id String
+  /// Refunded amount.
+  amount Float
+  /// Creation instant.
+  created_at DateTime
+}
+
+/// A purchase return linked to a receipt.
+model purchase_returns {
+  /// Primary key.
+  id String @id
+  /// Organization identifier.
+  organization_id String
+  /// Source receipt identifier.
+  receipt_id String
+  /// Optional quality quarantine that created this return.
+  source_quarantine_id String?
+  /// Human document number.
+  number String
+  /// draft, approved, posted, or cancelled.
+  status String
+  /// Creation instant.
+  created_at DateTime
+  /// Posting instant.
+  posted_at DateTime?
+  @@unique([organization_id, number])
+}
+
+/// A purchase return line.
+model purchase_return_lines {
+  /// Primary key.
+  id String @id
+  /// Return identifier.
+  return_id String
+  /// Source purchase-order line.
+  order_line_id String
+  /// Returned quantity.
+  quantity Float
+  /// Warehouse identifier.
+  warehouse_id String
+  /// Location identifier.
+  location_id String
+  /// Optional lot identifier.
+  lot_id String?
+  /// Optional serial code.
+  serial_code String?
+  /// Creation instant.
+  created_at DateTime
+}
+
+/// A sales return linked to a shipment.
+model sales_returns {
+  /// Primary key.
+  id String @id
+  /// Organization identifier.
+  organization_id String
+  /// Customer party identifier.
+  customer_id String
+  /// Human document number.
+  number String
+  /// draft, approved, received, refunded, or cancelled.
+  status String
+  /// Creation instant.
+  created_at DateTime
+  /// Receipt instant.
+  received_at DateTime?
+  @@unique([organization_id, number])
+}
+
+/// A sales return line.
+model sales_return_lines {
+  /// Primary key.
+  id String @id
+  /// Return identifier.
+  return_id String
+  /// Source shipment line.
+  shipment_line_id String
+  /// Item identifier.
+  item_id String
+  /// Returned quantity.
+  quantity Float
+  /// Restock decision.
+  restock Boolean
+  /// Warehouse identifier.
+  warehouse_id String
+  /// Location identifier.
+  location_id String
+  /// Optional lot identity.
+  lot_id String?
+  /// Optional serial identity.
+  serial_code String?
+  /// Creation instant.
+  created_at DateTime
+}
+
+/// A customer credit memo.
+model credit_memos {
+  /// Primary key.
+  id String @id
+  /// Organization identifier.
+  organization_id String
+  /// Customer party identifier.
+  customer_id String
+  /// Human document number.
+  number String
+  /// draft, posted, applied, or settled.
+  status String
+  /// Total credit amount.
+  total Float
+  /// Reason for the credit.
+  reason String @default("customer_credit")
+  /// Creation instant.
+  created_at DateTime
+  /// Posting instant.
+  posted_at DateTime?
+  @@unique([organization_id, number])
+}
+
+/// A credit memo line linked to an invoice.
+model credit_memo_lines {
+  /// Primary key.
+  id String @id
+  /// Credit memo identifier.
+  memo_id String
+  /// Optional invoice identifier.
+  invoice_id String?
+  /// Optional sales return identifier.
+  sales_return_id String?
+  /// Credit amount.
+  amount Float
+  /// Creation instant.
+  created_at DateTime
+}
+
+/// Application of a customer credit memo to an invoice.
+model credit_memo_applications {
+  /// Primary key.
+  id String @id
+  /// Organization identifier.
+  organization_id String
+  /// Credit memo identifier.
+  memo_id String
+  /// Invoice receiving the application.
+  invoice_id String
+  /// Applied amount.
+  amount Float
+  /// Creation instant.
+  created_at DateTime
+  @@index([organization_id, memo_id])
+  @@index([organization_id, invoice_id])
+}
+
+/// Cash or bank refund of a customer credit memo.
+model credit_memo_refunds {
+  /// Primary key.
+  id String @id
+  /// Organization identifier.
+  organization_id String
+  /// Credit memo identifier.
+  memo_id String
+  /// Refunded amount.
+  amount Float
+  /// Optional bank account receiving the refund.
+  bank_account_id String?
+  /// Outbound payment identifier.
+  payment_id String?
+  /// Creation instant.
+  created_at DateTime
+  @@index([organization_id, memo_id])
+}
+
+/// An organization department.
+model departments {
+  /// Primary key.
+  id String @id
+  /// Organization identifier.
+  organization_id String
+  /// Department name.
+  name String
+  /// Optional parent department.
+  parent_id String?
+  /// Optional department-manager employee identifier.
+  manager_id String?
+  /// Optional cost center dimension.
+  cost_center_id String?
+  /// Active lifecycle.
+  active Boolean
+  /// Creation instant.
+  created_at DateTime
+  @@unique([organization_id, name])
+}
+
+/// A project receiving employee time.
+model projects {
+  /// Primary key.
+  id String @id
+  /// Organization identifier.
+  organization_id String
+  /// Organization-unique project key.
+  code String
+  /// Project name.
+  name String
+  /// Optional project description.
+  description String?
+  /// Optional customer party.
+  customer_id String?
+  /// Optional organizational department.
+  department_id String?
+  /// Optional cost-center dimension.
+  cost_center_id String?
+  /// Planned project budget.
+  budget Float
+  /// Planned hours budget.
+  hours_budget Float
+  /// Planned amount budget.
+  amount_budget Float
+  /// Optional billing method.
+  billing_method String?
+  /// Planned start date.
+  starts_at DateTime?
+  /// Planned end date.
+  ends_at DateTime?
+  /// active, archived, completed, or cancelled.
+  status String
+  /// Optional project-manager employee identifier.
+  manager_id String?
+  /// Creation instant.
+  created_at DateTime
+  @@unique([organization_id, code])
+}
+
+/// An employee assignment to a project.
+model project_members {
+  /// Primary key.
+  id String @id
+  /// Project identifier.
+  project_id String
+  /// Employee identifier.
+  employee_id String
+  /// Assignment lifecycle.
+  active Boolean
+  /// Project role.
+  role String
+  /// Allocation percentage.
+  allocation Float
+  /// Assignment start date.
+  starts_at DateTime
+  /// Optional assignment end date.
+  ends_at DateTime?
+  /// Creation instant.
+  created_at DateTime
+  @@unique([project_id, employee_id])
+}
+
+/// A project task.
+model tasks {
+  /// Primary key.
+  id String @id
+  /// Project identifier.
+  project_id String
+  /// Task name.
+  name String
+  /// Optional one-level parent task.
+  parent_id String?
+  /// open, in_progress, completed, or cancelled.
+  status String
+  /// Creation instant.
+  created_at DateTime
+}
+
+/// An immutable task status transition.
+model task_status_history {
+  /// Primary key.
+  id String @id
+  /// Task identifier.
+  task_id String
+  /// Previous status, or null for the initial status.
+  from_status String?
+  /// New status.
+  to_status String
+  /// Actor membership identifier.
+  changed_by String
+  /// Transition instant.
+  created_at DateTime
+  @@index([task_id, created_at])
+}
+
+/// An effective sales price for an item and optional customer.
+model sales_prices {
+  /// Primary key.
+  id String @id
+  /// Organization identifier.
+  organization_id String
+  /// Item identifier.
+  item_id String
+  /// Optional customer-specific price.
+  customer_id String?
+  /// Transaction currency.
+  currency String
+  /// Unit price.
+  unit_price Float
+  /// Effective start.
+  starts_at DateTime
+  /// Optional effective end.
+  ends_at DateTime?
+  /// Selection lifecycle.
+  active Boolean
+  /// Creation instant.
+  created_at DateTime
+}
+
+/// A jurisdiction-period tax return.
+model tax_returns {
+  /// Primary key.
+  id String @id
+  /// Organization identifier.
+  organization_id String
+  /// Tax jurisdiction identifier.
+  jurisdiction_id String
+  /// Period label.
+  period String
+  /// draft, prepared, approved, filed, or amended.
+  status String
+  /// Tax amount reconciled to posted activity.
+  total_tax Float
+  /// Optional original filed return.
+  original_return_id String?
+  /// Creation instant.
+  created_at DateTime
+  /// Filing instant.
+  filed_at DateTime?
+}
+
+/// A tax return reconciliation line.
+model tax_return_lines {
+  /// Primary key.
+  id String @id
+  /// Return identifier.
+  return_id String
+  /// Tax code identifier.
+  tax_code_id String
+  /// Tax amount.
+  amount Float
+  /// Amount reconciled to posted activity.
+  reconciled_amount Float
+  /// Creation instant.
+  created_at DateTime
+}
+
+/// A controlled vendor-bank or customer-credit change request.
+model party_change_requests {
+  id String @id
+  organization_id String
+  party_id String
+  kind String
+  proposed_value String
+  reason String
+  requested_by String
+  status String
+  resolved_by String?
+  created_at DateTime
+  resolved_at DateTime?
+  applied_at DateTime?
+  @@index([organization_id, party_id, status])
+}
+
+/// A reasoned purchase-order change awaiting approval.
+model purchase_order_change_requests {
+  id String @id
+  organization_id String
+  order_id String
+  approval_id String
+  reason String
+  before_lines String
+  after_lines String
+  status String
+  requested_by String
+  resolved_by String?
+  created_at DateTime
+  resolved_at DateTime?
+  applied_at DateTime?
+  @@index([organization_id, order_id, status])
+}

@@ -1,0 +1,6 @@
+import type { tags } from "typia";
+
+export interface ICostCenter { id: string & tags.Format<"uuid">; code: string; name: string; managerId: null | (string & tags.Format<"uuid">); parentId: null | (string & tags.Format<"uuid">); status: "active" | "inactive"; description: null | string; }
+export namespace ICostCenter { export interface ICreate { code: string; name: string; managerId?: null | (string & tags.Format<"uuid">); parentId?: null | (string & tags.Format<"uuid">); description?: null | string; } export interface IUpdate { name?: string; managerId?: null | (string & tags.Format<"uuid">); parentId?: null | (string & tags.Format<"uuid">); description?: null | string; } }
+export interface IProfitCenter { id: string & tags.Format<"uuid">; code: string; name: string; managerId: null | (string & tags.Format<"uuid">); parentId: null | (string & tags.Format<"uuid">); status: "active" | "inactive"; description: null | string; }
+export namespace IProfitCenter { export interface ICreate { code: string; name: string; managerId?: null | (string & tags.Format<"uuid">); parentId?: null | (string & tags.Format<"uuid">); description?: null | string; } export interface IUpdate { name?: string; managerId?: null | (string & tags.Format<"uuid">); parentId?: null | (string & tags.Format<"uuid">); description?: null | string; } }

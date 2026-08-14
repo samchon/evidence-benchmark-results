@@ -1,0 +1,845 @@
+/// A warehouse transfer.
+model transfers {
+  /// Primary key.
+  id String @id
+  /// Organization identifier.
+  organization_id String
+  /// Human document number.
+  number String
+  /// Source warehouse.
+  from_warehouse_id String
+  /// Target warehouse.
+  to_warehouse_id String
+  /// Draft, shipped, received, partial, or cancelled.
+  status String
+  /// Creation instant.
+  created_at DateTime
+  /// Last change instant.
+  updated_at DateTime
+  @@unique([organization_id, number])
+}
+
+/// A transfer line.
+model transfer_lines {
+  /// Primary key.
+  id String @id
+  /// Transfer identifier.
+  transfer_id String
+  /// Item identifier.
+  item_id String
+  /// Lot evidence.
+  lot_id String?
+  /// Serial evidence.
+  serial_code String?
+  /// Requested quantity.
+  quantity Float
+  /// Source storage location.
+  from_location_id String
+  /// Destination storage location.
+  to_location_id String
+  /// Unit-cost snapshot.
+  unit_cost Float
+  /// Shipped quantity.
+  shipped_quantity Float
+  /// Received quantity.
+  received_quantity Float
+  /// Creation instant.
+  created_at DateTime
+}
+
+/// A cycle count with an expected snapshot.
+model cycle_counts {
+  /// Primary key.
+  id String @id
+  /// Organization identifier.
+  organization_id String
+  /// Warehouse identifier.
+  warehouse_id String
+  /// Draft, performed, submitted, approved, rejected, or posted.
+  status String
+  /// Reason.
+  reason String
+  /// Creation instant.
+  created_at DateTime
+  /// Last change instant.
+  updated_at DateTime
+}
+
+/// A cycle count line.
+model cycle_count_lines {
+  /// Primary key.
+  id String @id
+  /// Count identifier.
+  count_id String
+  /// Item identifier.
+  item_id String
+  /// Location identifier.
+  location_id String
+  /// Lot identity counted by this line.
+  lot_id String?
+  /// Serial identity counted by this line.
+  serial_code String?
+  /// Expected snapshot quantity.
+  expected_quantity Float
+  /// Counted quantity.
+  counted_quantity Float?
+  /// Creation instant.
+  created_at DateTime
+}
+
+/// An inventory adjustment.
+model inventory_adjustments {
+  /// Primary key.
+  id String @id
+  /// Organization identifier.
+  organization_id String
+  /// Reason.
+  reason String
+  /// Adjusted item identifier.
+  item_id String
+  /// Adjusted warehouse identifier.
+  warehouse_id String
+  /// Adjusted location identifier.
+  location_id String
+  /// Lot identity adjusted by this record.
+  lot_id String?
+  /// Serial identity adjusted by this record.
+  serial_code String?
+  /// Signed adjustment quantity.
+  quantity Float
+  /// Unit-cost snapshot.
+  unit_cost Float
+  /// Draft, pending, approved, rejected, or posted.
+  status String
+  /// Creation instant.
+  created_at DateTime
+  /// Posting instant.
+  posted_at DateTime?
+  /// Original posted adjustment corrected by this reversing draft.
+  reverses_id String?
+}
+
+/// A customer or vendor payment.
+model payments {
+  /// Primary key.
+  id String @id
+  /// Organization identifier.
+  organization_id String
+  /// Customer or vendor party identifier.
+  party_id String
+  /// inbound or outbound.
+  direction String
+  /// Amount.
+  amount Float
+  /// Currency code.
+  currency String
+  /// Draft, posted, or reversed.
+  status String
+  /// Bank account identifier.
+  bank_account_id String?
+  /// Creation instant.
+  created_at DateTime
+  /// Posting instant.
+  posted_at DateTime?
+}
+
+/// A payment allocation against one invoice or vendor bill.
+model payment_allocations {
+  /// Primary key.
+  id String @id
+  /// Organization identifier.
+  organization_id String
+  /// Payment identifier.
+  payment_id String
+  /// Optional customer invoice identifier.
+  invoice_id String?
+  /// Optional vendor bill identifier.
+  bill_id String?
+  /// Allocated amount.
+  amount Float
+  /// Creation instant.
+  created_at DateTime
+  /// Last change instant.
+  updated_at DateTime
+  @@index([organization_id, payment_id])
+  @@index([organization_id, invoice_id])
+  @@index([organization_id, bill_id])
+}
+
+/// A budget version.
+model budgets {
+  /// Primary key.
+  id String @id
+  /// Organization identifier.
+  organization_id String
+  /// Budget name.
+  name String
+  /// Version number.
+  version Int
+  /// Draft, active, superseded, or closed.
+  status String
+  /// Creation instant.
+  created_at DateTime
+  @@unique([organization_id, name, version])
+}
+
+/// A fixed asset.
+model assets {
+  /// Primary key.
+  id String @id
+  /// Organization identifier.
+  organization_id String
+  /// Asset tag.
+  tag String
+  /// Asset name.
+  name String
+  /// Acquisition cost.
+  acquisition_cost Float
+  /// Source document type for the acquisition.
+  source_type String?
+  /// Source document identifier for the acquisition.
+  source_id String?
+  /// Residual value.
+  residual_value Float
+  /// Useful life in months.
+  useful_life_months Int
+  /// straight_line, declining_balance, units_of_production, or manual.
+  depreciation_method String
+  /// Draft, pending, active, disposed, or retired.
+  status String
+  /// Current custodian employee identifier.
+  custodian_id String?
+  /// Current storage location identifier.
+  location_id String?
+  /// Creation instant.
+  created_at DateTime
+  /// Last change instant.
+  updated_at DateTime
+  @@unique([organization_id, tag])
+}
+
+/// An immutable fixed-asset custody or location transfer.
+model asset_transfers {
+  id String @id
+  organization_id String
+  asset_id String
+  prior_custodian_id String?
+  next_custodian_id String?
+  prior_location_id String?
+  next_location_id String?
+  reason String
+  actor_membership_id String
+  created_at DateTime
+  @@index([organization_id, asset_id, created_at])
+}
+
+/// An immutable fixed-asset impairment posting record.
+model asset_impairments {
+  id String @id
+  organization_id String
+  asset_id String
+  amount Float
+  carrying_value_before Float
+  carrying_value_after Float
+  reason String
+  actor_membership_id String
+  created_at DateTime
+  @@index([organization_id, asset_id, created_at])
+}
+
+/// An immutable fixed-asset disposal posting record.
+model asset_disposals {
+  id String @id
+  organization_id String
+  asset_id String
+  type String
+  reason String
+  proceeds Float
+  carrying_value Float
+  gain_or_loss Float
+  actor_membership_id String
+  created_at DateTime
+  @@index([organization_id, asset_id, created_at])
+}
+
+/// A planned or posted depreciation period for an asset.
+model depreciation_schedules {
+  /// Primary key.
+  id String @id
+  /// Organization identifier.
+  organization_id String
+  /// Asset identifier.
+  asset_id String
+  /// Fiscal period label.
+  period String
+  /// Opening book value.
+  opening_value Float
+  /// Planned depreciation.
+  planned_amount Float
+  /// Accumulated depreciation after this row.
+  accumulated_amount Float
+  /// Closing book value.
+  closing_value Float
+  /// Planned or posted.
+  status String
+  /// Creation instant.
+  created_at DateTime
+  @@unique([organization_id, asset_id, period])
+}
+
+/// A depreciation posting run.
+model depreciation_runs {
+  /// Primary key.
+  id String @id
+  /// Organization identifier.
+  organization_id String
+  /// Fiscal period label.
+  period String
+  /// Draft or posted.
+  status String
+  /// Total depreciation.
+  total Float
+  /// Creation instant.
+  created_at DateTime
+  /// Posting instant.
+  posted_at DateTime?
+}
+
+/// A schedule row selected by a depreciation run.
+model depreciation_run_lines {
+  /// Primary key.
+  id String @id
+  /// Run identifier.
+  run_id String
+  /// Schedule identifier.
+  schedule_id String
+  /// Amount copied at calculation time.
+  amount Float
+  /// Creation instant.
+  created_at DateTime
+}
+
+/// A bill-of-materials version.
+model boms {
+  /// Primary key.
+  id String @id
+  /// Organization identifier.
+  organization_id String
+  /// Finished item identifier.
+  finished_item_id String
+  /// Version number.
+  version Int
+  /// Draft, active, or superseded.
+  status String
+  /// Creation instant.
+  created_at DateTime
+  @@unique([organization_id, finished_item_id, version])
+}
+
+/// A bill-of-materials component.
+model bom_lines {
+  /// Primary key.
+  id String @id
+  /// BOM identifier.
+  bom_id String
+  /// Component item identifier.
+  item_id String
+  /// Component quantity.
+  quantity Float
+  /// Creation instant.
+  created_at DateTime
+}
+
+/// A routing version.
+model routings {
+  /// Primary key.
+  id String @id
+  /// Organization identifier.
+  organization_id String
+  /// Finished item identifier.
+  finished_item_id String
+  /// Version number.
+  version Int
+  /// Draft, active, or superseded.
+  status String
+  /// Creation instant.
+  created_at DateTime
+  @@unique([organization_id, finished_item_id, version])
+}
+
+/// A production work center.
+model work_centers {
+  /// Primary key.
+  id String @id
+  /// Organization identifier.
+  organization_id String
+  /// Organization-unique code.
+  code String
+  /// Name.
+  name String
+  /// Warehouse identifier.
+  warehouse_id String
+  /// Capacity per planning interval.
+  capacity Float
+  /// Labor rate.
+  labor_rate Float
+  /// Machine rate.
+  machine_rate Float
+  /// Active or inactive.
+  status String
+  /// Optional cost center identifier.
+  cost_center_id String?
+  /// Creation instant.
+  created_at DateTime
+  /// Last change instant.
+  updated_at DateTime
+  @@unique([organization_id, code])
+}
+
+/// A machine assigned to a work center.
+model machines {
+  /// Primary key.
+  id String @id
+  /// Organization identifier.
+  organization_id String
+  /// Work-center identifier.
+  work_center_id String
+  /// Organization-unique code.
+  code String
+  /// Name.
+  name String
+  /// Capacity.
+  capacity Float
+  /// Active, unavailable, or retired.
+  status String
+  /// Operational maintenance state.
+  maintenance_status String
+  /// Optional equipment record.
+  equipment_id String?
+  /// Creation instant.
+  created_at DateTime
+  /// Last change instant.
+  updated_at DateTime
+  @@unique([organization_id, code])
+}
+
+/// A production order preserving selected BOM and routing versions.
+model production_orders {
+  /// Primary key.
+  id String @id
+  /// Organization identifier.
+  organization_id String
+  /// Finished item identifier.
+  finished_item_id String
+  /// Selected BOM identifier.
+  bom_id String?
+  /// Selected routing identifier.
+  routing_id String?
+  /// Optional MRP recommendation that created this draft order.
+  mrp_recommendation_id String?
+  /// Optional MRP run that created this draft order.
+  mrp_run_id String?
+  /// Optional quarantine that created rework.
+  source_quarantine_id String?
+  /// Optional equipment dependency used for downtime scheduling checks.
+  equipment_id String?
+  /// Optional work center used for scheduling and utilization attribution.
+  work_center_id String?
+  /// Optional machine used for execution and utilization attribution.
+  machine_id String?
+  /// Planned quantity.
+  planned_quantity Float
+  /// Completed quantity.
+  completed_quantity Float
+  /// Scrap quantity.
+  scrap_quantity Float
+  /// Planned material cost.
+  planned_material_cost Float @default(0)
+  /// Planned labor cost.
+  planned_labor_cost Float @default(0)
+  /// Planned machine cost.
+  planned_machine_cost Float @default(0)
+  /// Planned overhead cost.
+  planned_overhead_cost Float @default(0)
+  /// Actual material cost from consumed source movements.
+  actual_material_cost Float @default(0)
+  /// Reported labor hours.
+  labor_hours Float @default(0)
+  /// Reported labor cost.
+  labor_cost Float @default(0)
+  /// Reported machine hours.
+  machine_hours Float @default(0)
+  /// Reported machine cost.
+  machine_cost Float @default(0)
+  /// Applied manufacturing overhead.
+  overhead_cost Float @default(0)
+  /// Manufacturing variance calculated at closure.
+  variance Float @default(0)
+  /// Optional warehouse for production output.
+  warehouse_id String?
+  /// Optional location for production output.
+  location_id String?
+  /// Start instant.
+  started_at DateTime?
+  /// Close instant.
+  closed_at DateTime?
+  /// Draft, released, started, completed, approved, closed, or cancelled.
+  status String
+  /// Creation instant.
+  created_at DateTime
+  /// Last change instant.
+  updated_at DateTime
+}
+
+/// A quality inspection.
+model inspections {
+  /// Primary key.
+  id String @id
+  /// Organization identifier.
+  organization_id String
+  /// Optional source document type.
+  source_type String?
+  /// Optional source document identifier.
+  source_id String?
+  /// Item identifier.
+  item_id String
+  /// Optional inspection plan used to generate this order.
+  inspection_plan_id String?
+  /// Pending, in_progress, passed, failed, waived, or finalized.
+  status String
+  /// Result reason.
+  reason String?
+  /// Quantity accepted by a partial inspection outcome.
+  accepted_quantity Float @default(0)
+  /// Quantity rejected by a partial inspection outcome.
+  rejected_quantity Float @default(0)
+  /// Creation instant.
+  created_at DateTime
+  /// Finalization instant.
+  finalized_at DateTime?
+}
+
+/// A versioned inspection plan for an item and inspection context.
+model inspection_plans {
+  /// Primary key.
+  id String @id
+  /// Organization identifier.
+  organization_id String
+  /// Item identifier.
+  item_id String
+  /// Incoming receipt, in-process production, final production, or sales return.
+  inspection_type String
+  /// Sampling rule expressed by the plan owner.
+  sample_rule String
+  /// JSON array of characteristic definitions.
+  characteristics String
+  /// Draft, active, or inactive.
+  status String
+  /// Plan revision number.
+  version Int
+  /// Effective date.
+  effective_from DateTime
+  /// Optional expiry date.
+  effective_to DateTime?
+  /// Creation instant.
+  created_at DateTime
+  /// Last change instant.
+  updated_at DateTime
+  @@unique([organization_id, item_id, inspection_type, version])
+}
+
+/// Stock held for quality disposition.
+model quarantines {
+  /// Primary key.
+  id String @id
+  /// Organization identifier.
+  organization_id String
+  /// Item identifier.
+  item_id String
+  /// Quantity held.
+  quantity Float
+  /// Inspection identifier.
+  inspection_id String
+  /// Warehouse holding the quantity.
+  warehouse_id String
+  /// Location holding the quantity.
+  location_id String
+  /// Lot held when the item is lot-tracked.
+  lot_id String?
+  /// Serial held when the item is serial-tracked.
+  serial_code String?
+  /// Disposition reason.
+  reason String
+  /// Pending approval, approved, accepted, rejected, rework, returned, or scrapped.
+  status String
+  /// Selected disposition action.
+  decision String?
+  /// Approval actor.
+  approved_by String?
+  /// Approval instant.
+  approved_at DateTime?
+  /// Decision reason retained through execution.
+  decision_reason String?
+  /// Resulting source document or movement.
+  linked_document_id String?
+  /// Creation instant.
+  created_at DateTime
+  /// Resolution instant.
+  resolved_at DateTime?
+}
+
+/// Equipment used by maintenance and production.
+model equipment {
+  /// Primary key.
+  id String @id
+  /// Organization identifier.
+  organization_id String
+  /// Equipment tag.
+  tag String
+  /// Name.
+  name String
+  /// Active, maintenance, out_of_service, or retired.
+  status String
+  /// Criticality level.
+  criticality String
+  /// Optional warehouse identifier.
+  warehouse_id String?
+  /// Creation instant.
+  created_at DateTime
+  /// Last change instant.
+  updated_at DateTime
+  @@unique([organization_id, tag])
+}
+
+/// A maintenance work order.
+model maintenance_orders {
+  /// Primary key.
+  id String @id
+  /// Organization identifier.
+  organization_id String
+  /// Equipment identifier.
+  equipment_id String
+  /// Optional maintenance plan identifier.
+  maintenance_plan_id String?
+  /// Plan revision retained when the order was created.
+  maintenance_plan_version Int?
+  /// Draft, assigned, started, completed, or cancelled.
+  status String
+  /// Work notes.
+  notes String
+  /// Scheduled execution instant.
+  scheduled_at DateTime?
+  /// Assigned employee identifier.
+  assignee_id String?
+  /// Start instant.
+  started_at DateTime?
+  /// Cancellation instant.
+  cancelled_at DateTime?
+  /// Recorded downtime hours.
+  downtime_hours Float @default(0)
+  /// Recorded labor hours.
+  labor_hours Float @default(0)
+  /// Accumulated labor and parts cost.
+  total_cost Float @default(0)
+  /// Cost center receiving posted labor cost.
+  cost_center_id String?
+  /// Hourly labor rate retained on the work order.
+  labor_rate Float @default(0)
+  /// Whether labor cost has been posted to the cost center.
+  labor_posted Boolean @default(false)
+  /// Creation instant.
+  created_at DateTime
+  /// Completion instant.
+  completed_at DateTime?
+}
+
+/// A preventive maintenance plan for equipment.
+model maintenance_plans {
+  /// Primary key.
+  id String @id
+  /// Organization identifier.
+  organization_id String
+  /// Equipment identifier.
+  equipment_id String
+  /// Frequency in days.
+  frequency_days Int
+  /// JSON array of checklist tasks.
+  checklist String
+  /// JSON array of required item identifiers and quantities.
+  required_parts String
+  /// JSON array of required labor skills.
+  labor_skills String
+  /// Next due date.
+  next_due_at DateTime
+  /// Active or inactive.
+  status String
+  /// Plan revision number.
+  version Int
+  /// Creation instant.
+  created_at DateTime
+  /// Last change instant.
+  updated_at DateTime
+}
+
+/// An immutable material-requirements planning evaluation.
+model mrp_runs {
+  /// Primary key.
+  id String @id
+  /// Organization identifier.
+  organization_id String
+  /// Planning horizon start.
+  horizon_from DateTime
+  /// Planning horizon end.
+  horizon_to DateTime
+  /// Manual or scheduled trigger.
+  trigger_type String
+  /// Initiating principal identifier.
+  initiated_by String
+  /// JSON snapshot of demand, supply, stock, and safety inputs.
+  input_snapshot String
+  /// Completed or failed.
+  status String
+  /// JSON calculation summary.
+  summary String
+  /// Creation instant.
+  created_at DateTime
+}
+
+/// A recommendation produced by one MRP run.
+model mrp_recommendations {
+  /// Primary key.
+  id String @id
+  /// Organization identifier.
+  organization_id String
+  /// MRP run identifier.
+  run_id String
+  /// Planned purchase, planned production, expedite, delay, or shortage.
+  recommendation_type String
+  /// Item identifier.
+  item_id String
+  /// Optional warehouse planning context.
+  warehouse_id String?
+  /// Recommended quantity.
+  quantity Float
+  /// Required date.
+  required_date DateTime
+  /// Source demand identifier when known.
+  source_demand_id String?
+  /// Open, accepted, dismissed, or expired.
+  status String
+  /// Explanation for the recommendation.
+  rationale String
+  /// Optional accepted document identifier.
+  linked_document_id String?
+  /// Actor that accepted or dismissed the recommendation.
+  decision_actor String?
+  /// Decision reason, including dismissal rationale.
+  decision_reason String?
+  /// Decision instant.
+  decision_at DateTime?
+  /// Creation instant.
+  created_at DateTime
+  /// Last change instant.
+  updated_at DateTime
+}
+
+/// A customer service case.
+model service_cases {
+  /// Primary key.
+  id String @id
+  /// Organization identifier.
+  organization_id String
+  /// Customer identifier.
+  customer_id String
+  /// Optional item identifier.
+  item_id String?
+  /// Optional sold serial identity.
+  serial_number String?
+  /// Service priority.
+  priority String @default("normal")
+  /// SLA due instant.
+  sla_due_at DateTime?
+  /// First response instant.
+  first_response_at DateTime?
+  /// Resolution instant.
+  resolved_at DateTime?
+  /// Closure instant.
+  closed_at DateTime?
+  /// Assigned service employee.
+  assignee_id String?
+  /// Open, investigating, waiting, resolved, closed, or cancelled.
+  status String
+  /// Case description.
+  description String
+  /// Resolution notes.
+  resolution String?
+  /// Creation instant.
+  created_at DateTime
+  /// Last change instant.
+  updated_at DateTime
+}
+
+/// A service work order.
+model service_orders {
+  /// Primary key.
+  id String @id
+  /// Organization identifier.
+  organization_id String
+  /// Customer identifier.
+  customer_id String
+  /// Optional case identifier.
+  case_id String?
+  /// Service type or work category.
+  service_type String @default("repair")
+  /// Optional item being serviced.
+  item_id String?
+  /// Optional serialized unit being serviced.
+  serial_number String?
+  /// Draft, assigned, started, completed, invoiced, or cancelled.
+  status String
+  /// Warranty decision.
+  warranty Boolean?
+  /// Billable decision.
+  billable Boolean?
+  /// Assigned employee identifier.
+  assignee_id String?
+  /// Scheduled service instant.
+  scheduled_at DateTime?
+  /// Parts and labor notes.
+  work_notes String?
+  /// Resolution notes.
+  resolution String?
+  /// Linked billable-service invoice.
+  invoice_id String?
+  /// Linked warranty-expense journal.
+  warranty_expense_journal_id String?
+  /// Creation instant.
+  created_at DateTime
+  /// Last change instant.
+  updated_at DateTime
+}
+
+/// An explicit service-order part consumption record.
+model service_order_parts {
+  id String @id
+  organization_id String
+  service_order_id String
+  item_id String
+  quantity Float
+  warehouse_id String
+  location_id String
+  lot_id String?
+  serial_code String?
+  unit_cost Float
+  created_at DateTime
+}
+
+/// An explicit service-order labor record.
+model service_order_labor {
+  id String @id
+  organization_id String
+  service_order_id String
+  hours Float
+  rate Float
+  created_at DateTime
+}

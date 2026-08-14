@@ -24,7 +24,7 @@ The two modes of one project sit side by side because that pair is what the benc
 
 Each leaf is the application's complete source.
 
-`codex/gpt-5.6-luna/erp/plain` is absent: its cell is still running, and it is added when it completes.
+All eight cells of the second `gpt-5.6-luna` campaign are here.
 
 ## What a leaf omits
 

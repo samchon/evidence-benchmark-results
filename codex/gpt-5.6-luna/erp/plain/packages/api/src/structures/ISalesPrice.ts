@@ -1,0 +1,4 @@
+import type { tags } from "typia";
+
+export interface ISalesPrice { id: string & tags.Format<"uuid">; itemId: string & tags.Format<"uuid">; customerId: null | (string & tags.Format<"uuid">); currency: string; unitPrice: number; startsAt: string & tags.Format<"date-time">; endsAt: null | (string & tags.Format<"date-time">); active: boolean; }
+export namespace ISalesPrice { export interface ICreate { itemId: string & tags.Format<"uuid">; customerId?: null | (string & tags.Format<"uuid">); currency: string; unitPrice: number & tags.Minimum<0>; startsAt: string & tags.Format<"date-time">; endsAt?: null | (string & tags.Format<"date-time">); } export interface IIndex { page?: number; limit?: number; itemId?: string & tags.Format<"uuid">; currency?: string; } export interface IResolve { itemId: string & tags.Format<"uuid">; customerId?: null | (string & tags.Format<"uuid">); currency: string; at?: string & tags.Format<"date-time">; } }

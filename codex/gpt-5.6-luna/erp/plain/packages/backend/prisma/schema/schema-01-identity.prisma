@@ -1,0 +1,268 @@
+/// A global credentialed person.
+model users {
+  /// Primary key.
+  id String @id
+  /// Unique login email.
+  email String @unique
+  /// Password hash, never exposed.
+  password_hash String
+  /// Display name.
+  display_name String
+  /// Optional avatar reference.
+  avatar String?
+  /// Optional phone number.
+  phone String?
+  /// Locale preference.
+  locale String
+  /// Timezone preference.
+  timezone String
+  /// Account lifecycle: active or deactivated.
+  status String
+  /// Creation instant.
+  created_at DateTime
+  /// Last profile change.
+  updated_at DateTime
+}
+
+/// An organization tenant and its operational defaults.
+model organizations {
+  /// Primary key.
+  id String @id
+  /// Legal and display name.
+  name String
+  /// Base currency code.
+  base_currency String
+  /// IANA timezone.
+  timezone String
+  /// Fiscal year start month.
+  fiscal_start_month Int
+  /// Default tax jurisdiction identifier.
+  default_tax_jurisdiction_id String?
+  /// Default payment term identifier.
+  default_payment_term_id String?
+  /// Whether negative inventory is allowed.
+  negative_stock_allowed Boolean
+  /// Approval threshold for material changes.
+  approval_threshold Float
+  /// Lifecycle status.
+  status String
+  /// Creation instant.
+  created_at DateTime
+  /// Last configuration change.
+  updated_at DateTime
+  /// Distinct system user used for scheduled tenant work.
+  system_user_id String?
+  /// Distinct system membership used for scheduled tenant work.
+  system_membership_id String?
+}
+
+/// A user's organization-scoped membership.
+model memberships {
+  /// Primary key.
+  id String @id
+  /// Global user identifier.
+  user_id String
+  /// Organization identifier.
+  organization_id String
+  /// invited, active, suspended, or revoked.
+  status String
+  /// Creation instant.
+  created_at DateTime
+  /// Last state change.
+  updated_at DateTime
+  @@unique([user_id, organization_id])
+  @@index([organization_id, status])
+}
+
+/// An owner-issued invitation to join an organization.
+model invitations {
+  /// Primary key.
+  id String @id
+  /// Organization receiving the member.
+  organization_id String
+  /// Inviter membership identifier.
+  inviter_membership_id String
+  /// Intended email address.
+  email String
+  /// Single-use opaque acceptance proof hash.
+  token_hash String @unique
+  /// Initial role name.
+  role_name String
+  /// pending, accepted, or revoked.
+  status String
+  /// Expiry instant.
+  expires_at DateTime
+  /// Creation instant.
+  created_at DateTime
+  /// Acceptance instant.
+  accepted_at DateTime?
+  @@index([organization_id, email, status])
+}
+
+/// A durable out-of-band delivery effect for an invitation proof.
+model invitation_deliveries {
+  /// Primary key.
+  id String @id
+  /// Organization receiving the invited member.
+  organization_id String
+  /// Invitation represented by this delivery.
+  invitation_id String
+  /// Recipient email address.
+  email String
+  /// One-way lookup key for the out-of-band proof.
+  token_hash String @unique
+  /// queued, delivered, consumed, or failed.
+  status String
+  /// Delivery attempt count.
+  attempts Int
+  /// Creation instant.
+  created_at DateTime
+  /// Last delivery attempt.
+  delivered_at DateTime?
+  /// Consumption instant.
+  consumed_at DateTime?
+  @@index([organization_id, invitation_id, status])
+  @@index([email, status])
+}
+
+/// A short-lived out-of-band account-recovery proof.
+model recovery_deliveries {
+  /// Primary key.
+  id String @id
+  /// Global user receiving the recovery proof.
+  user_id String
+  /// Verified login email.
+  email String
+  /// One-way lookup key for the proof.
+  token_hash String @unique
+  /// pending, consumed, or failed.
+  status String
+  /// Expiry instant.
+  expires_at DateTime
+  /// Creation instant.
+  created_at DateTime
+  /// Consumption instant.
+  consumed_at DateTime?
+  @@index([email, status, expires_at])
+}
+
+/// A concurrently usable authenticated session.
+model sessions {
+  /// Primary key.
+  id String @id
+  /// Global user identifier.
+  user_id String
+  /// Hashed bearer token.
+  token_hash String @unique
+  /// Hashed rotating continuation credential.
+  refresh_token_hash String @unique
+  /// Selected active membership, if any.
+  membership_id String?
+  /// Expiry instant.
+  expires_at DateTime
+  /// Refresh credential expiry instant.
+  refresh_expires_at DateTime
+  /// Revocation instant.
+  revoked_at DateTime?
+  /// Creation instant.
+  created_at DateTime
+  @@index([user_id, revoked_at])
+}
+
+/// A role catalog entry within an organization.
+model roles {
+  /// Primary key.
+  id String @id
+  /// Organization identifier.
+  organization_id String
+  /// Stable role name.
+  name String
+  /// Built-in roles cannot be deleted.
+  builtin Boolean
+  /// JSON array of permission names.
+  permissions_json String
+  /// Active lifecycle flag.
+  active Boolean
+  /// Creation instant.
+  created_at DateTime
+  @@unique([organization_id, name])
+}
+
+/// Assignment of a role to a membership.
+model role_assignments {
+  /// Primary key.
+  id String @id
+  /// Membership identifier.
+  membership_id String
+  /// Role identifier.
+  role_id String
+  /// Creation instant.
+  created_at DateTime
+  @@unique([membership_id, role_id])
+}
+
+/// An organization-scoped employee placement.
+model employees {
+  /// Primary key.
+  id String @id
+  /// Organization identifier.
+  organization_id String
+  /// Global user identifier.
+  user_id String
+  /// Employee number.
+  employee_number String
+  /// Department name.
+  department String?
+  /// Optional department identifier.
+  department_id String?
+  /// Organizational position.
+  position String?
+  /// Manager employee identifier.
+  manager_id String?
+  /// Cost-center dimension.
+  cost_center_id String?
+  /// full_time, part_time, contractor, intern, or temporary.
+  employment_type String?
+  /// Employment lifecycle.
+  status String
+  /// Hire date.
+  hire_date DateTime?
+  /// Termination date.
+  termination_date DateTime?
+  /// Payroll configuration JSON.
+  payroll_settings String
+  /// Visibility-scope policy.
+  visibility_scope String
+  /// Creation instant.
+  created_at DateTime
+  /// Last change instant.
+  updated_at DateTime
+  @@unique([organization_id, employee_number])
+  @@unique([organization_id, user_id])
+}
+
+/// An immutable or current employment contract.
+model employment_contracts {
+  /// Primary key.
+  id String @id
+  /// Organization tenant.
+  organization_id String
+  /// Employee identifier.
+  employee_id String
+  /// Contract start date.
+  starts_at DateTime
+  /// Optional contract end date.
+  ends_at DateTime?
+  /// Salary or hourly rate.
+  rate Float
+  /// Monthly or hourly.
+  rate_kind String
+  /// Active or ended lifecycle.
+  status String
+  /// Membership that created the contract.
+  created_by_membership_id String
+  /// Creation instant.
+  created_at DateTime
+  @@index([organization_id, employee_id, starts_at])
+  @@index([organization_id, employee_id, status])
+}

@@ -1,0 +1,9 @@
+import type { tags } from "typia";
+
+export interface IServiceOrder { id: string & tags.Format<"uuid">; customerId: string & tags.Format<"uuid">; caseId: null | (string & tags.Format<"uuid">); serviceType: string; itemId: null | (string & tags.Format<"uuid">); serialNumber: null | string; status: "draft" | "assigned" | "started" | "completed" | "invoiced" | "cancelled"; warranty: null | boolean; billable: null | boolean; assigneeId: null | (string & tags.Format<"uuid">); scheduledAt: null | (string & tags.Format<"date-time">); workNotes: null | string; resolution: null | string; parts: IServiceOrder.IPart[]; labor: IServiceOrder.ILabor[]; invoiceId: null | (string & tags.Format<"uuid">); warrantyExpenseJournalId: null | (string & tags.Format<"uuid">); }
+export namespace IServiceOrder {
+  export interface ICreate { customerId: string & tags.Format<"uuid">; caseId?: null | (string & tags.Format<"uuid">); serviceType?: string; itemId?: null | (string & tags.Format<"uuid">); serialNumber?: null | string; scheduledAt?: null | (string & tags.Format<"date-time">); }
+  export interface IUpdate { assigneeId?: null | (string & tags.Format<"uuid">); scheduledAt?: null | (string & tags.Format<"date-time">); workNotes?: null | string; resolution?: null | string; warranty?: null | boolean; billable?: null | boolean; status?: "draft" | "assigned" | "started" | "completed" | "invoiced" | "cancelled"; }
+  export interface IPart { itemId: string & tags.Format<"uuid">; quantity: number & tags.Minimum<0>; warehouseId: string & tags.Format<"uuid">; locationId: string & tags.Format<"uuid">; lotId?: null | (string & tags.Format<"uuid">); serialCode?: null | string; unitCost: number & tags.Minimum<0>; }
+  export interface ILabor { id: string & tags.Format<"uuid">; hours: number; rate: number; }
+}
